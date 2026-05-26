@@ -713,12 +713,31 @@ async function clearDoneOrders() {
 function reprintOrder(id) {
   const o = allOrders.find(x=>x._id===id);
   if (!o) return;
-  const win = window.open('','_blank','width=340,height=720');
-  if (!win) { toast('Allow popups to print'); return; }
+const printFrame = document.createElement('iframe');
+printFrame.style.position = 'fixed';
+printFrame.style.right = '0';
+printFrame.style.bottom = '0';
+printFrame.style.width = '0';
+printFrame.style.height = '0';
+printFrame.style.border = '0';
+
+document.body.appendChild(printFrame);
+
+const doc = printFrame.contentWindow.document;
   const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${i.name}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${i.note}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
   const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">GRISTO</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div>Order <b>#${o.orderNumber||'—'}</b></div><div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${o.customerName||'—'}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings>0.005?`<tr><td style="font-size:10px;color:#555">Saved</td><td style="text-align:right;font-size:10px;color:#555">-$${o.savings.toFixed(2)}</td></tr>`:''}<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing GRISTO!</div></body></html>`);
-  win.document.close(); win.focus(); setTimeout(()=>win.print(),600);
+  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">GRISTO</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div>Order <b>#${o.orderNumber||'—'}</b></div><div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${o.customerName||'—'}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings>0.005?`<tr><td style="font-size:10px;color:#555">Saved</td><td style="text-align:right;font-size:10px;color:#555">-$${o.savings.toFixed(2)}</td></tr>`:''}<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing GRISTO!</div></body></html>`);
+  doc.close();
+
+setTimeout(() => {
+  printFrame.contentWindow.focus();
+  printFrame.contentWindow.print();
+
+  setTimeout(() => {
+    document.body.removeChild(printFrame);
+  }, 3000);
+
+}, 500);
 }
 
 // ── MENU ITEMS ─────────────────────────────────
