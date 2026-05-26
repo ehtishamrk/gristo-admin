@@ -487,8 +487,6 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
 <script>
 // ════════════════════════════════════════════════
 // ★ FIREBASE CONFIG — replace with your config ★
@@ -502,11 +500,11 @@ const firebaseConfig = {
   appId: "1:519398387537:web:fc52f003d5735073e2ed70"
 };
 
-let db = null, storage = null;
+let db = null;
+
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
-  storage = firebase.storage();
 } catch(e) {
   console.warn('Firebase:', e.message);
 }
@@ -826,22 +824,6 @@ function handleImgSelect(e) {
   reader.readAsDataURL(file);
 }
 
-async function uploadImage(file) {
-  if (!storage) return '';
-  const ref = storage.ref(`menu-images/${Date.now()}_${file.name}`);
-  document.getElementById('img-progress').style.display = 'block';
-  try {
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    document.getElementById('img-progress').style.display = 'none';
-    return url;
-  } catch(e) {
-    document.getElementById('img-progress').style.display = 'none';
-    console.warn('Upload:', e);
-    return '';
-  }
-}
-
 async function saveItem() {
   const name  = document.getElementById('im-name').value.trim();
   const desc  = document.getElementById('im-desc').value.trim();
@@ -854,9 +836,12 @@ async function saveItem() {
   const btn = document.getElementById('item-save-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
 
-  let imgUrl = document.getElementById('im-img-url').value || '';
-  const file = document.getElementById('img-file').files[0];
-  if (file && storage) imgUrl = await uploadImage(file);
+let imgUrl = document.getElementById('im-img-url').value || '';
+const file = document.getElementById('img-file').files[0];
+
+if (file) {
+  imgUrl = document.getElementById('img-preview').src;
+}
 
   const data = { name, desc, cat, price, avail, img: imgUrl };
   try {
