@@ -586,7 +586,11 @@ function startOrdersListener() {
       allOrders = snap.docs.map(d => ({...d.data(), _id: d.id}));
       let newCount = 0;
       allOrders.forEach(o => {
-        if (!prevIds.has(o._id) && prevIds.size > 0 && o.status === 'pending') { newCount++; playBeep(); }
+if (!prevIds.has(o._id) && prevIds.size > 0 && o.status === 'pending') { 
+  newCount++; 
+  playBeep(); 
+  reprintOrder(o._id); // This triggers the print popup automatically 
+}
         knownOrderIds.add(o._id);
       });
       if (newCount > 0) {
