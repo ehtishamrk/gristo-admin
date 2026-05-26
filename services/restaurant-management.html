@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRISTO — Admin Panel</title>
+<title>Spice Korner — Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -203,7 +203,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- LOGIN -->
 <div id="login-overlay">
   <div class="login-box">
-    <div class="login-logo">GRISTO</div>
+    <div class="login-logo">Spice Korner</div>
     <div class="login-sub">Admin Panel</div>
     <input type="password" id="pw-input" class="login-input" placeholder="••••••••••"
       onkeydown="if(event.key==='Enter')tryLogin()">
@@ -215,7 +215,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- ADMIN APP -->
 <div id="admin-app" style="display:none">
   <div id="topbar">
-    <span class="tb-brand">GRISTO</span>
+    <span class="tb-brand">Spice Korner</span>
     <span class="tb-badge">Admin</span>
     <span class="tb-badge live" id="live-badge"><span class="live-dot"></span>LIVE</span>
     <div class="tb-spacer"></div>
@@ -303,7 +303,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 
     <div class="setup-card">
       <div class="setup-title">🌱 Initialize Menu (First Time)</div>
-      <div class="setup-desc">Populate your Firestore database with the full GRISTO menu. Run this once when setting up — it will not overwrite existing items.</div>
+      <div class="setup-desc">Populate your Firestore database with the full Spice Korner menu. Run this once when setting up — it will not overwrite existing items.</div>
       <div id="seed-status"></div>
       <button class="btn btn-gold" onclick="seedMenu()" id="seed-btn">Seed Menu to Firebase</button>
     </div>
@@ -735,7 +735,7 @@ document.body.appendChild(printFrame);
 const doc = printFrame.contentWindow.document;
   const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${i.name}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${i.note}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
   const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
-  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">GRISTO</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">Spice Korner</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
   <div>
   Order <b>#${o.orderNumber || '—'}</b>
 </div>
@@ -780,7 +780,7 @@ ${o.orderTypeMode === 'addition'
   </td>
 </tr>
 ` : ''}
-<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing GRISTO!</div></body></html>`);
+<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing Spice Korner!</div></body></html>`);
   doc.close();
 
 setTimeout(() => {
