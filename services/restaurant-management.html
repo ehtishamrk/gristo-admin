@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRISTO — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080808;--s1:#111;--s2:#181818;--s3:#212121;--s4:#2A2A2A;
+  --bd:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.12);
+  --gold:#C8922A;--gold-l:#E8B84B;--gold-d:rgba(200,146,42,0.13);
+  --text:#F0EBE2;--tm:#8A8070;--td:#4E4840;
+  --green:#3D9B6A;--green-d:rgba(61,155,106,0.14);
+  --amber:#C8922A;--amber-d:rgba(200,146,42,0.14);
+  --blue:#4A7FC8;--blue-d:rgba(74,127,200,0.14);
+  --red:#C04040;--red-d:rgba(192,64,64,0.14);
+  --purple:#8A50C8;
+  --r:12px;--rs:8px;--rl:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* ── LOGIN ── */
+#login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{text-align:center;padding:48px 40px;background:var(--s1);border:1px solid var(--bd);border-radius:20px;width:360px;max-width:90vw;}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--gold);letter-spacing:6px;margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--td);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:32px;}
+.login-input{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;padding:13px 16px;outline:none;transition:border-color .2s;text-align:center;letter-spacing:4px;margin-bottom:14px;}
+.login-input:focus{border-color:rgba(200,146,42,.45);}
+.login-err{font-size:12px;color:var(--red);margin-bottom:10px;height:18px;}
+
+/* ── TOPBAR ── */
+#topbar{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
+.tb-brand{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:3px;}
+.tb-badge{font-size:10px;font-weight:700;background:var(--s3);border:1px solid var(--bd);color:var(--tm);padding:3px 9px;border-radius:100px;letter-spacing:.5px;}
+.tb-badge.live{background:var(--green-d);border-color:rgba(61,155,106,.3);color:var(--green);}
+.tb-spacer{flex:1;}
+.tb-time{font-size:12px;color:var(--td);}
+.tb-logout{font-size:12px;color:var(--tm);background:none;border:none;cursor:pointer;padding:5px 10px;border-radius:var(--rs);transition:background .15s;}
+.tb-logout:hover{background:var(--s3);}
+
+/* ── TABS ── */
+#tab-nav{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;}
+#tab-nav::-webkit-scrollbar{display:none;}
+.tab-btn{padding:12px 16px;border:none;background:transparent;color:var(--tm);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600;}
+.tab-btn:hover:not(.active){color:var(--text);}
+.tab-btn .notif{background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;margin-left:5px;padding:0 4px;}
+
+/* ── PANELS ── */
+.tab-panel{display:none;padding:20px;max-width:1100px;margin:0 auto;}
+.tab-panel.active{display:block;}
+
+/* ── COMMON UI ── */
+.page-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--text);}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .18s;border-radius:var(--r);}
+.btn-gold{background:var(--gold);color:#0A0A0A;padding:9px 18px;font-size:13px;}
+.btn-gold:hover{background:var(--gold-l);}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--bd);padding:8px 16px;font-size:13px;}
+.btn-ghost:hover{border-color:var(--bd2);background:var(--s3);}
+.btn-red{background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.25);padding:7px 14px;font-size:12px;}
+.btn-red:hover{background:rgba(192,64,64,.22);}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:var(--rs);}
+.btn-icon{width:30px;height:30px;padding:0;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.3px;}
+.badge-amber{background:var(--amber-d);color:var(--amber);}
+.badge-blue{background:var(--blue-d);color:var(--blue);}
+.badge-green{background:var(--green-d);color:var(--green);}
+.badge-grey{background:var(--s4);color:var(--tm);}
+.badge-red{background:var(--red-d);color:var(--red);}
+.divider{border:none;border-top:1px solid var(--bd);margin:16px 0;}
+.spinner{width:30px;height:30px;border:2px solid var(--s4);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;margin:40px auto;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:50px 20px;color:var(--tm);}
+.empty-state .emoji{font-size:40px;margin-bottom:12px;}
+.empty-state h3{font-size:17px;margin-bottom:6px;color:var(--text);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.span2{grid-column:1/-1;}
+.fl{font-size:11px;font-weight:700;color:var(--td);letter-spacing:1.5px;text-transform:uppercase;}
+.fi{background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);font-size:13.5px;font-family:'DM Sans',sans-serif;padding:10px 12px;outline:none;transition:border-color .2s;width:100%;}
+.fi:focus{border-color:rgba(200,146,42,.4);}
+.fi::placeholder{color:var(--td);}
+select.fi{cursor:pointer;}
+textarea.fi{resize:vertical;min-height:70px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);}
+.toggle-label{font-size:13px;font-weight:500;}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--s4);border-radius:100px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;left:3px;bottom:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;}
+.toggle input:checked + .toggle-slider{background:var(--gold);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px);}
+.days-grid{display:flex;gap:6px;flex-wrap:wrap;}
+.day-chip{padding:5px 10px;border-radius:100px;border:1px solid var(--bd);background:var(--s3);color:var(--tm);font-size:12px;cursor:pointer;transition:all .15s;user-select:none;}
+.day-chip.active{background:var(--gold-d);border-color:rgba(200,146,42,.4);color:var(--gold-l);}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:8px 14px;margin-bottom:14px;}
+.search-bar input{background:none;border:none;color:var(--text);font-size:13.5px;font-family:'DM Sans',sans-serif;outline:none;flex:1;}
+.search-bar input::placeholder{color:var(--td);}
+
+/* ── ORDERS ── */
+.order-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.ofilter{padding:6px 13px;border-radius:100px;border:1px solid var(--bd);background:var(--s2);color:var(--tm);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
+.ofilter.active{background:var(--gold);color:#0A0A0A;border-color:var(--gold);font-weight:700;}
+.orders-grid{display:flex;flex-direction:column;gap:10px;}
+.order-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;transition:border-color .2s;}
+.order-card.new-order{border-color:rgba(200,146,42,.5);animation:pulseCard 1.5s ease;}
+@keyframes pulseCard{0%,100%{border-color:rgba(200,146,42,.5)}50%{border-color:rgba(200,146,42,.9)}}
+.oc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.oc-num{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold);}
+.oc-type-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;}
+.oc-time{font-size:11px;color:var(--td);margin-left:auto;}
+.oc-items{font-size:12.5px;color:var(--tm);margin-bottom:10px;line-height:1.6;}
+.oc-item-row{display:flex;gap:6px;}
+.oc-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.oc-total{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--text);}
+.oc-cust{font-size:12px;color:var(--tm);}
+.status-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.sbtn{padding:5px 12px;border-radius:var(--rs);font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s;font-family:'DM Sans',sans-serif;letter-spacing:.3px;}
+.sbtn-prep{background:var(--blue-d);border-color:rgba(74,127,200,.3);color:var(--blue);}
+.sbtn-prep:hover{background:rgba(74,127,200,.22);}
+.sbtn-ready{background:var(--green-d);border-color:rgba(61,155,106,.3);color:var(--green);}
+.sbtn-ready:hover{background:rgba(61,155,106,.22);}
+.sbtn-done{background:var(--s4);border-color:var(--bd);color:var(--tm);}
+.sbtn-done:hover{background:var(--s4);}
+.sbtn-print{background:var(--gold-d);border-color:rgba(200,146,42,.3);color:var(--gold);}
+.sbtn-print:hover{background:rgba(200,146,42,.22);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── MENU ITEMS ── */
+.menu-items-list{display:flex;flex-direction:column;gap:8px;}
+.mi-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .2s;}
+.mi-card:hover{border-color:var(--bd2);}
+.mi-card.unavail{opacity:.55;}
+.mi-photo{width:52px;height:52px;border-radius:var(--rs);background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;}
+.mi-photo img{width:100%;height:100%;object-fit:cover;}
+.mi-info{flex:1;min-width:0;}
+.mi-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mi-meta{font-size:11.5px;color:var(--tm);}
+.mi-price{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--gold);white-space:nowrap;}
+.mi-actions{display:flex;gap:6px;flex-shrink:0;}
+.cat-group-label{font-size:11px;font-weight:700;color:var(--td);letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 8px;}
+
+/* ── DEALS ── */
+.deals-grid{display:flex;flex-direction:column;gap:10px;}
+.deal-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;}
+.deal-card.inactive{opacity:.55;}
+.dc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.dc-name{font-size:15px;font-weight:700;}
+.dc-time{font-size:12px;color:var(--tm);}
+.dc-days{font-size:11px;color:var(--td);}
+.dc-desc{font-size:12.5px;color:var(--tm);margin-bottom:10px;}
+.dc-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.active-now{font-size:11px;font-weight:700;background:var(--green-d);color:var(--green);border-radius:100px;padding:3px 9px;border:1px solid rgba(61,155,106,.25);}
+.deal-preview{background:var(--gold-d);border:1px solid rgba(200,146,42,.2);border-radius:var(--r);padding:14px;margin-bottom:16px;}
+.dp-title{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.dp-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--text);margin-bottom:4px;}
+
+/* ── TABLES ── */
+.table-manager{max-width:420px;}
+.table-display{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;}
+.table-tile{aspect-ratio:1;border-radius:var(--rs);background:var(--s3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--tm);}
+.table-count-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.tcc-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--gold);min-width:60px;text-align:center;}
+.tcc-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--bd2);background:var(--s2);color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;}
+.tcc-btn:hover{background:var(--s3);}
+
+/* ── SETUP ── */
+.setup-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;}
+.setup-title{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.setup-desc{font-size:12.5px;color:var(--tm);margin-bottom:14px;line-height:1.6;}
+.code-block{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;font-family:'Courier New',monospace;font-size:11.5px;color:var(--gold-l);overflow-x:auto;margin-bottom:10px;line-height:1.7;}
+.warning-box{background:var(--amber-d);border:1px solid rgba(200,146,42,.25);border-radius:var(--rs);padding:10px 14px;font-size:12.5px;color:var(--gold-l);margin-bottom:14px;}
+.success-box{background:var(--green-d);border:1px solid rgba(61,155,106,.25);border-radius:var(--rs);padding:10px 14px;font-size:12.5px;color:var(--green);margin-bottom:14px;}
+
+/* ── MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;}
+#modal-overlay.show{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--bd2);border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:24px;position:relative;scrollbar-width:thin;scrollbar-color:var(--s4) transparent;}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{width:30px;height:30px;border-radius:50%;background:var(--s3);border:none;color:var(--tm);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.modal-close:hover{background:var(--s4);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--bd);}
+.img-upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;}
+.img-upload-zone:hover{border-color:rgba(200,146,42,.5);}
+.img-preview{width:80px;height:80px;border-radius:var(--rs);object-fit:cover;margin:0 auto 8px;display:block;}
+.img-upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s3);border:1px solid var(--bd2);color:var(--text);padding:10px 18px;border-radius:var(--r);font-size:13px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:999;pointer-events:none;}
+.toast.show{opacity:1;transform:none;}
+.toast.success{border-color:rgba(61,155,106,.4);color:var(--green);}
+.toast.error{border-color:rgba(192,64,64,.4);color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">GRISTO</div>
+    <div class="login-sub">Admin Panel</div>
+    <input type="password" id="pw-input" class="login-input" placeholder="••••••••••"
+      onkeydown="if(event.key==='Enter')tryLogin()">
+    <div class="login-err" id="login-err"></div>
+    <button class="btn btn-gold" style="width:100%" onclick="tryLogin()">Sign In →</button>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app" style="display:none">
+  <div id="topbar">
+    <span class="tb-brand">GRISTO</span>
+    <span class="tb-badge">Admin</span>
+    <span class="tb-badge live" id="live-badge"><span class="live-dot"></span>LIVE</span>
+    <div class="tb-spacer"></div>
+    <span class="tb-time" id="tb-time"></span>
+    <button class="tb-logout" onclick="logout()">Sign Out</button>
+  </div>
+
+  <nav id="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('orders')" id="tab-orders-btn">
+      📋 Orders <span class="notif" id="new-notif" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('menu')" id="tab-menu-btn">🍽 Menu</button>
+    <button class="tab-btn" onclick="switchTab('deals')" id="tab-deals-btn">🏷 Deals</button>
+    <button class="tab-btn" onclick="switchTab('tables')" id="tab-tables-btn">🪑 Tables</button>
+    <button class="tab-btn" onclick="switchTab('setup')" id="tab-setup-btn">⚙️ Setup</button>
+  </nav>
+
+  <!-- ORDERS TAB -->
+  <div class="tab-panel active" id="panel-orders">
+    <div class="page-hd">
+      <div class="page-title">Live Orders</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="markAllDone()">Mark All Done</button>
+        <button class="btn btn-red btn-sm" onclick="clearDoneOrders()">Clear Completed</button>
+      </div>
+    </div>
+    <div class="order-filters" id="order-filters">
+      <button class="ofilter active" onclick="filterOrders('all')" data-f="all">All</button>
+      <button class="ofilter" onclick="filterOrders('pending')" data-f="pending">🟡 Pending</button>
+      <button class="ofilter" onclick="filterOrders('preparing')" data-f="preparing">🔵 Preparing</button>
+      <button class="ofilter" onclick="filterOrders('ready')" data-f="ready">🟢 Ready</button>
+      <button class="ofilter" onclick="filterOrders('completed')" data-f="completed">✅ Completed</button>
+    </div>
+    <div id="orders-container"><div class="spinner"></div></div>
+  </div>
+
+  <!-- MENU TAB -->
+  <div class="tab-panel" id="panel-menu">
+    <div class="page-hd">
+      <div class="page-title">Menu Manager</div>
+      <button class="btn btn-gold" onclick="openItemModal()">+ Add Item</button>
+    </div>
+    <div class="search-bar">
+      <span style="color:var(--td)">🔍</span>
+      <input type="text" id="menu-search" placeholder="Search items..." oninput="filterMenuItems()">
+    </div>
+    <div id="menu-items-container"><div class="spinner"></div></div>
+  </div>
+
+  <!-- DEALS TAB -->
+  <div class="tab-panel" id="panel-deals">
+    <div class="page-hd">
+      <div class="page-title">Deals & Dynamic Pricing</div>
+      <button class="btn btn-gold" onclick="openDealModal()">+ Create Deal</button>
+    </div>
+    <div id="active-deals-preview"></div>
+    <div class="deals-grid" id="deals-container"><div class="spinner"></div></div>
+  </div>
+
+  <!-- TABLES TAB -->
+  <div class="tab-panel" id="panel-tables">
+    <div class="page-hd"><div class="page-title">Table Management</div></div>
+    <div class="table-manager">
+      <p style="font-size:13px;color:var(--tm);margin-bottom:20px;">Set the number of tables available for dine-in. Customers will select from these when ordering.</p>
+      <div class="table-count-ctrl">
+        <button class="tcc-btn" onclick="changeTableCount(-1)">−</button>
+        <div class="tcc-num" id="tc-num">10</div>
+        <button class="tcc-btn" onclick="changeTableCount(1)">+</button>
+      </div>
+      <button class="btn btn-gold" onclick="saveTableCount()" style="margin-bottom:20px">Save Table Count</button>
+      <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-weight:700">Table Preview</p>
+      <div class="table-display" id="table-display"></div>
+    </div>
+  </div>
+
+  <!-- SETUP TAB -->
+  <div class="tab-panel" id="panel-setup">
+    <div class="page-hd"><div class="page-title">Setup & Configuration</div></div>
+
+    <div class="setup-card">
+      <div class="setup-title">🔥 Firebase Configuration</div>
+      <div class="setup-desc">Replace the config in both HTML files with your Firebase project config. Get it from: <b>Firebase Console → Project Settings → Your apps → Web app → SDK setup</b></div>
+      <div class="code-block">const FB_CONFIG = {<br>&nbsp;&nbsp;apiKey: "YOUR_API_KEY",<br>&nbsp;&nbsp;authDomain: "YOUR_PROJECT.firebaseapp.com",<br>&nbsp;&nbsp;projectId: "YOUR_PROJECT_ID",<br>&nbsp;&nbsp;storageBucket: "YOUR_PROJECT.appspot.com",<br>&nbsp;&nbsp;messagingSenderId: "YOUR_SENDER_ID",<br>&nbsp;&nbsp;appId: "YOUR_APP_ID"<br>};</div>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-title">🌱 Initialize Menu (First Time)</div>
+      <div class="setup-desc">Populate your Firestore database with the full GRISTO menu. Run this once when setting up — it will not overwrite existing items.</div>
+      <div id="seed-status"></div>
+      <button class="btn btn-gold" onclick="seedMenu()" id="seed-btn">Seed Menu to Firebase</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-title">🖨️ Printer Setup</div>
+      <div class="setup-desc">The system prints using the browser's built-in print dialog. For thermal printers (80mm receipt):<br><br>1. Go to your OS printer settings<br>2. Set paper size to <b>80mm × Auto</b> (or "Receipt" size)<br>3. Disable headers/footers in browser print settings<br>4. Set margins to None<br>5. Test print from the customer app by placing an order</div>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-title">🔒 Firebase Security Rules</div>
+      <div class="setup-desc">Set these rules in Firebase Console → Firestore Database → Rules:</div>
+      <div class="code-block">rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{db}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /{document=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if true; // Demo only<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+      <div class="setup-desc">And for Storage rules:<br></div>
+      <div class="code-block">rules_version = '2';<br>service firebase.storage {<br>&nbsp;&nbsp;match /b/{bucket}/o {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu-images/{f=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+    </div>
+
+    <div class="setup-card">
+      <div class="setup-title">🗑️ Danger Zone</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-red" onclick="clearAllOrders()">Delete All Orders</button>
+        <button class="btn btn-red" onclick="clearAllMenu()">Delete All Menu Items</button>
+        <button class="btn btn-red" onclick="clearAllDeals()">Delete All Deals</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM MODAL -->
+<div id="modal-overlay">
+  <div class="modal" id="item-modal" style="display:none">
+    <div class="modal-title">
+      <span id="item-modal-title">Add Menu Item</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="fg span2">
+        <label class="fl">Item Name</label>
+        <input type="text" class="fi" id="im-name" placeholder="e.g. Chicken Biryani">
+      </div>
+      <div class="fg span2">
+        <label class="fl">Description</label>
+        <textarea class="fi" id="im-desc" placeholder="Describe the dish..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Category</label>
+        <select class="fi" id="im-cat">
+          <option value="bbq">🔥 BBQ & Platters</option>
+          <option value="rolls">🫓 Rolls</option>
+          <option value="rice_bowls">🍚 Rice Bowls</option>
+          <option value="karahi">🥘 Karahi & Curry</option>
+          <option value="street">🥙 Street Food</option>
+          <option value="burgers">🍔 Burgers</option>
+          <option value="breads">🫓 Breads</option>
+          <option value="sides">🍟 Sides & Extras</option>
+          <option value="desserts">🍮 Desserts</option>
+          <option value="drinks">🥤 Drinks</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Price ($)</label>
+        <input type="number" class="fi" id="im-price" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="fg span2">
+        <label class="fl">Photo</label>
+        <div class="img-upload-zone" id="upload-zone" onclick="document.getElementById('img-file').click()">
+          <input type="file" id="img-file" accept="image/*" onchange="handleImgSelect(event)" style="display:none">
+          <img id="img-preview" class="img-preview" style="display:none">
+          <div id="upload-placeholder">
+            <div style="font-size:28px;margin-bottom:6px">📷</div>
+            <div style="font-size:13px;color:var(--tm)">Click to upload photo</div>
+            <div style="font-size:11px;color:var(--td);margin-top:3px">JPG, PNG, WEBP</div>
+          </div>
+        </div>
+        <div id="img-progress" style="display:none;font-size:12px;color:var(--gold);margin-top:6px;text-align:center">Uploading...</div>
+        <input type="hidden" id="im-img-url">
+      </div>
+      <div class="fg span2">
+        <div class="toggle-row">
+          <span class="toggle-label">Item Available</span>
+          <label class="toggle"><input type="checkbox" id="im-avail" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveItem()" id="item-save-btn">Save Item</button>
+    </div>
+  </div>
+
+  <!-- DEAL MODAL -->
+  <div class="modal" id="deal-modal" style="display:none">
+    <div class="modal-title">
+      <span id="deal-modal-title">Create Deal</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="fg span2">
+        <label class="fl">Deal Name</label>
+        <input type="text" class="fi" id="dm-name" placeholder="e.g. Lunch Special, Happy Hour">
+      </div>
+      <div class="fg span2">
+        <label class="fl">Description (shown to customer)</label>
+        <input type="text" class="fi" id="dm-desc" placeholder="e.g. 25% off all mains 12PM–3PM">
+      </div>
+      <div class="fg">
+        <label class="fl">Discount Type</label>
+        <select class="fi" id="dm-type" onchange="updateDealForm()">
+          <option value="percentage">Percentage (%)</option>
+          <option value="fixed">Fixed Amount ($)</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl" id="dm-val-label">Discount Value (%)</label>
+        <input type="number" class="fi" id="dm-val" placeholder="25" min="0" step="0.01">
+      </div>
+      <div class="fg">
+        <label class="fl">Start Time</label>
+        <input type="time" class="fi" id="dm-start" value="12:00">
+      </div>
+      <div class="fg">
+        <label class="fl">End Time</label>
+        <input type="time" class="fi" id="dm-end" value="15:00">
+      </div>
+      <div class="fg span2">
+        <label class="fl" style="margin-bottom:8px">Active Days (leave all unchecked = every day)</label>
+        <div class="days-grid" id="days-grid">
+          <span class="day-chip" data-d="0">Sun</span>
+          <span class="day-chip" data-d="1">Mon</span>
+          <span class="day-chip" data-d="2">Tue</span>
+          <span class="day-chip" data-d="3">Wed</span>
+          <span class="day-chip" data-d="4">Thu</span>
+          <span class="day-chip" data-d="5">Fri</span>
+          <span class="day-chip" data-d="6">Sat</span>
+        </div>
+      </div>
+      <div class="fg span2">
+        <label class="fl">Apply To</label>
+        <select class="fi" id="dm-apply" onchange="updateApplySection()">
+          <option value="all">All Items</option>
+          <option value="category">Specific Categories</option>
+          <option value="items">Specific Items</option>
+        </select>
+      </div>
+      <div class="fg span2" id="apply-cats" style="display:none">
+        <label class="fl" style="margin-bottom:8px">Select Categories</label>
+        <div class="days-grid" id="cat-chips">
+          <span class="day-chip" data-c="bbq">🔥 BBQ</span>
+          <span class="day-chip" data-c="rolls">🫓 Rolls</span>
+          <span class="day-chip" data-c="rice_bowls">🍚 Rice Bowls</span>
+          <span class="day-chip" data-c="karahi">🥘 Karahi</span>
+          <span class="day-chip" data-c="street">🥙 Street Food</span>
+          <span class="day-chip" data-c="burgers">🍔 Burgers</span>
+          <span class="day-chip" data-c="breads">🫓 Breads</span>
+          <span class="day-chip" data-c="sides">🍟 Sides</span>
+          <span class="day-chip" data-c="desserts">🍮 Desserts</span>
+          <span class="day-chip" data-c="drinks">🥤 Drinks</span>
+        </div>
+      </div>
+      <div class="fg span2" id="apply-items" style="display:none">
+        <label class="fl">Search & Select Items</label>
+        <input type="text" class="fi" id="item-search-deal" placeholder="Type to search items..." oninput="renderItemPicker()" style="margin-bottom:8px">
+        <div id="item-picker" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+      <div class="fg span2">
+        <div class="toggle-row">
+          <span class="toggle-label">Deal Active</span>
+          <label class="toggle"><input type="checkbox" id="dm-active" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveDeal()">Save Deal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+// ════════════════════════════════════════════════
+// ★ FIREBASE CONFIG — replace with your config ★
+// ════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let db = null, storage = null;
+try {
+  firebase.initializeApp(FB_CONFIG);
+  db      = firebase.firestore();
+  storage = firebase.storage();
+} catch(e) { console.warn('Firebase:', e.message); }
+
+// ── STATE ──────────────────────────────────────
+let menuItems = [], allDeals = [], allOrders = [], settings = {tableCount:10};
+let editItemId = null, editDealId = null, selectedItemIds = [];
+let orderFilter = 'all', knownOrderIds = new Set(), ordersListener = null;
+let tableCount = 10;
+
+const CATS = [
+  {id:'bbq',name:'BBQ & Platters',e:'🔥'},
+  {id:'rolls',name:'Rolls',e:'🫓'},
+  {id:'rice_bowls',name:'Rice Bowls',e:'🍚'},
+  {id:'karahi',name:'Karahi & Curry',e:'🥘'},
+  {id:'street',name:'Street Food',e:'🥙'},
+  {id:'burgers',name:'Burgers',e:'🍔'},
+  {id:'breads',name:'Breads',e:'🫓'},
+  {id:'sides',name:'Sides & Extras',e:'🍟'},
+  {id:'desserts',name:'Desserts',e:'🍮'},
+  {id:'drinks',name:'Drinks',e:'🥤'},
+];
+
+// ── AUTH ───────────────────────────────────────
+function tryLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === '123456789') {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    initAdmin();
+  } else {
+    document.getElementById('login-err').textContent = 'Incorrect password';
+    document.getElementById('pw-input').value = '';
+    setTimeout(()=>document.getElementById('login-err').textContent='', 2000);
+  }
+}
+function logout() {
+  if (ordersListener) ordersListener();
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') tryLogin(); });
+
+// ── INIT ───────────────────────────────────────
+async function initAdmin() {
+  tickTime();
+  setInterval(tickTime, 30000);
+  await Promise.all([loadMenuItems(), loadDeals(), loadSettings()]);
+  startOrdersListener();
+  renderTablePreview();
+}
+
+function tickTime() {
+  document.getElementById('tb-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── TABS ───────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel-${t}`).classList.add('active');
+  document.getElementById(`tab-${t}-btn`).classList.add('active');
+  if (t==='orders')  renderOrders();
+  if (t==='menu')    renderMenuItems();
+  if (t==='deals')   renderDeals();
+  if (t==='tables')  renderTablePreview();
+  if (t==='setup')   {};
+}
+
+// ── ORDERS ─────────────────────────────────────
+function startOrdersListener() {
+  if (!db) { renderOrders(); return; }
+  if (ordersListener) ordersListener();
+  ordersListener = db.collection('orders')
+    .orderBy('timestamp','desc').limit(100)
+    .onSnapshot(snap => {
+      const prevIds = new Set(knownOrderIds);
+      allOrders = snap.docs.map(d => ({...d.data(), _id: d.id}));
+      let newCount = 0;
+      allOrders.forEach(o => {
+        if (!prevIds.has(o._id) && prevIds.size > 0 && o.status === 'pending') { newCount++; playBeep(); }
+        knownOrderIds.add(o._id);
+      });
+      if (newCount > 0) {
+        toast(`🔔 ${newCount} new order${newCount>1?'s':''}!`,'success');
+      }
+      renderOrders();
+      updateNewBadge();
+    }, err => console.warn('Orders listener:', err));
+}
+
+function playBeep() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.25, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function updateNewBadge() {
+  const pending = allOrders.filter(o=>o.status==='pending').length;
+  const nb = document.getElementById('new-notif');
+  if (pending > 0) { nb.style.display='inline-flex'; nb.textContent=pending; }
+  else nb.style.display='none';
+}
+
+function filterOrders(f) {
+  orderFilter = f;
+  document.querySelectorAll('.ofilter').forEach(b=>b.classList.toggle('active', b.dataset.f===f));
+  renderOrders();
+}
+
+function renderOrders() {
+  const con = document.getElementById('orders-container');
+  if (!db) { con.innerHTML = `<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3><p>Configure Firebase to see live orders</p></div>`; return; }
+
+  let filtered = allOrders;
+  if (orderFilter !== 'all') filtered = allOrders.filter(o => o.status === orderFilter);
+
+  if (!filtered.length) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><h3>No ${orderFilter==='all'?'':orderFilter} orders</h3><p>Orders will appear here in real-time</p></div>`;
+    return;
+  }
+
+  const STATUS_COLORS = { pending:'amber', preparing:'blue', ready:'green', completed:'grey' };
+  const STATUS_LABELS = { pending:'Pending', preparing:'Preparing', ready:'Ready!', completed:'Done' };
+
+  con.innerHTML = '';
+  filtered.forEach(o => {
+    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
+    const timeStr = ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const itemsHTML = (o.items||[]).map(i =>
+      `<div class="oc-item-row"><span style="color:var(--tm)">${i.qty}×</span> ${i.name}${i.note?` <span style="font-size:11px;color:var(--td)">(${i.note})</span>`:''}</div>`
+    ).join('');
+
+    const typeLabel = o.orderType==='dine_in'
+      ? `<span class="oc-type-badge" style="background:var(--blue-d);color:var(--blue)">🍽 Table ${o.tableNumber}</span>`
+      : `<span class="oc-type-badge" style="background:var(--s4);color:var(--tm)">📦 Takeaway</span>`;
+
+    const statusBtns = o.status !== 'completed' ? `
+      ${o.status==='pending'   ? `<button class="sbtn sbtn-prep"  onclick="setStatus('${o._id}','preparing')">→ Preparing</button>` : ''}
+      ${o.status==='preparing' ? `<button class="sbtn sbtn-ready" onclick="setStatus('${o._id}','ready')">→ Ready!</button>` : ''}
+      ${o.status==='ready'     ? `<button class="sbtn sbtn-done"  onclick="setStatus('${o._id}','completed')">✓ Done</button>` : ''}
+      <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
+    ` : `<span style="font-size:11px;color:var(--td)">Completed ${timeStr}</span>
+         <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>`;
+
+    const card = document.createElement('div');
+    card.className = `order-card`;
+    card.innerHTML = `
+      <div class="oc-head">
+        <span class="oc-num">#${o.orderNumber||'—'}</span>
+        ${typeLabel}
+        <span class="badge badge-${STATUS_COLORS[o.status]||'grey'}">${STATUS_LABELS[o.status]||o.status}</span>
+        <span class="oc-time">${timeStr}</span>
+      </div>
+      <div class="oc-cust" style="margin-bottom:8px">👤 ${o.customerName||'—'}</div>
+      <div class="oc-items">${itemsHTML}</div>
+      <div class="oc-foot">
+        <div>
+          <div class="oc-total">$${(o.total||0).toFixed(2)}</div>
+          ${o.savings>0.005?`<div style="font-size:11px;color:var(--gold)">Saved $${o.savings.toFixed(2)}</div>`:''}
+        </div>
+        <div class="status-btns">${statusBtns}</div>
+      </div>`;
+    con.appendChild(card);
+  });
+}
+
+async function setStatus(id, status) {
+  if (!db) return;
+  try { await db.collection('orders').doc(id).update({ status }); }
+  catch(e) { toast('Error updating order','error'); }
+}
+
+async function markAllDone() {
+  if (!db) return;
+  if (!confirm('Mark all active orders as completed?')) return;
+  const batch = db.batch();
+  allOrders.filter(o=>o.status!=='completed').forEach(o => {
+    batch.update(db.collection('orders').doc(o._id), { status: 'completed' });
+  });
+  await batch.commit().catch(e=>console.warn(e));
+}
+
+async function clearDoneOrders() {
+  if (!db) return;
+  if (!confirm('Delete all completed orders?')) return;
+  const done = allOrders.filter(o=>o.status==='completed');
+  const batch = db.batch();
+  done.forEach(o => batch.delete(db.collection('orders').doc(o._id)));
+  await batch.commit().catch(e=>console.warn(e));
+  toast('Completed orders cleared','success');
+}
+
+function reprintOrder(id) {
+  const o = allOrders.find(x=>x._id===id);
+  if (!o) return;
+  const win = window.open('','_blank','width=340,height=720');
+  if (!win) { toast('Allow popups to print'); return; }
+  const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${i.name}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${i.note}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
+  const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">GRISTO</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div>Order <b>#${o.orderNumber||'—'}</b></div><div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${o.customerName||'—'}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings>0.005?`<tr><td style="font-size:10px;color:#555">Saved</td><td style="text-align:right;font-size:10px;color:#555">-$${o.savings.toFixed(2)}</td></tr>`:''}<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing GRISTO!</div></body></html>`);
+  win.document.close(); win.focus(); setTimeout(()=>win.print(),600);
+}
+
+// ── MENU ITEMS ─────────────────────────────────
+async function loadMenuItems() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('menu_items').get();
+    menuItems = snap.docs.map(d => ({...d.data(), _id: d.id}));
+  } catch(e) { console.warn('Load menu:', e); }
+}
+
+function filterMenuItems() {
+  renderMenuItems();
+}
+
+function renderMenuItems() {
+  const con = document.getElementById('menu-items-container');
+  const q   = (document.getElementById('menu-search')?.value||'').toLowerCase();
+  if (!db) { con.innerHTML=`<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3></div>`; return; }
+  if (!menuItems.length) { con.innerHTML=`<div class="empty-state"><div class="emoji">🍽</div><h3>No items yet</h3><p>Add items or go to Setup → Seed Menu</p></div>`; return; }
+
+  const filtered = q ? menuItems.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q)) : menuItems;
+  const CE = {bbq:'🔥',rolls:'🫓',rice_bowls:'🍚',karahi:'🥘',street:'🥙',burgers:'🍔',breads:'🫓',sides:'🍟',desserts:'🍮',drinks:'🥤'};
+  const grouped = {};
+  filtered.forEach(i=>{ const c=i.cat||i.category||'other'; if(!grouped[c]) grouped[c]=[]; grouped[c].push(i); });
+
+  con.innerHTML = '';
+  CATS.forEach(cat => {
+    const items = grouped[cat.id];
+    if (!items) return;
+    const gl = document.createElement('div');
+    gl.className = 'cat-group-label';
+    gl.textContent = `${cat.e} ${cat.name} (${items.length})`;
+    con.appendChild(gl);
+    const list = document.createElement('div');
+    list.className = 'menu-items-list';
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = `mi-card${item.avail===false?' unavail':''}`;
+      const photo = item.img||item.imageUrl
+        ? `<div class="mi-photo"><img src="${item.img||item.imageUrl}" alt="${item.name}"></div>`
+        : `<div class="mi-photo">${CE[item.cat||item.category]||'🍽'}</div>`;
+      card.innerHTML = `
+        ${photo}
+        <div class="mi-info">
+          <div class="mi-name">${item.name}</div>
+          <div class="mi-meta">${CATS.find(c=>c.id===(item.cat||item.category))?.name||item.cat} · ${item.avail===false?'<span style="color:var(--red)">Unavailable</span>':'<span style="color:var(--green)">Available</span>'}</div>
+        </div>
+        <div class="mi-price">$${(item.price||0).toFixed(2)}</div>
+        <div class="mi-actions">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="openItemModal('${item._id}')" title="Edit">✏️</button>
+          <button class="btn btn-red btn-sm btn-icon" onclick="deleteItem('${item._id}')" title="Delete">🗑</button>
+        </div>`;
+      list.appendChild(card);
+    });
+    con.appendChild(list);
+  });
+}
+
+function openItemModal(id) {
+  editItemId = id || null;
+  closeAllModals();
+  document.getElementById('item-modal').style.display = 'block';
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('item-modal-title').textContent = id ? 'Edit Item' : 'Add Item';
+  if (id) {
+    const item = menuItems.find(i=>i._id===id);
+    if (item) {
+      document.getElementById('im-name').value  = item.name||'';
+      document.getElementById('im-desc').value  = item.desc||item.description||'';
+      document.getElementById('im-cat').value   = item.cat||item.category||'bbq';
+      document.getElementById('im-price').value = item.price||'';
+      document.getElementById('im-avail').checked = item.avail !== false;
+      const imgUrl = item.img||item.imageUrl||'';
+      document.getElementById('im-img-url').value = imgUrl;
+      if (imgUrl) {
+        document.getElementById('img-preview').src = imgUrl;
+        document.getElementById('img-preview').style.display = 'block';
+        document.getElementById('upload-placeholder').style.display = 'none';
+      } else { resetImgPreview(); }
+    }
+  } else {
+    document.getElementById('im-name').value  = '';
+    document.getElementById('im-desc').value  = '';
+    document.getElementById('im-cat').value   = 'bbq';
+    document.getElementById('im-price').value = '';
+    document.getElementById('im-avail').checked = true;
+    document.getElementById('im-img-url').value = '';
+    resetImgPreview();
+  }
+}
+
+function resetImgPreview() {
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('upload-placeholder').style.display = 'block';
+}
+
+function handleImgSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('img-preview').src = ev.target.result;
+    document.getElementById('img-preview').style.display = 'block';
+    document.getElementById('upload-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadImage(file) {
+  if (!storage) return '';
+  const ref = storage.ref(`menu-images/${Date.now()}_${file.name}`);
+  document.getElementById('img-progress').style.display = 'block';
+  try {
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    document.getElementById('img-progress').style.display = 'none';
+    return url;
+  } catch(e) {
+    document.getElementById('img-progress').style.display = 'none';
+    console.warn('Upload:', e);
+    return '';
+  }
+}
+
+async function saveItem() {
+  const name  = document.getElementById('im-name').value.trim();
+  const desc  = document.getElementById('im-desc').value.trim();
+  const cat   = document.getElementById('im-cat').value;
+  const price = parseFloat(document.getElementById('im-price').value);
+  const avail = document.getElementById('im-avail').checked;
+  if (!name)     { toast('Enter item name','error'); return; }
+  if (isNaN(price)||price<0) { toast('Enter valid price','error'); return; }
+
+  const btn = document.getElementById('item-save-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+
+  let imgUrl = document.getElementById('im-img-url').value || '';
+  const file = document.getElementById('img-file').files[0];
+  if (file && storage) imgUrl = await uploadImage(file);
+
+  const data = { name, desc, cat, price, avail, img: imgUrl };
+  try {
+    if (!db) throw new Error('No DB');
+    if (editItemId) {
+      await db.collection('menu_items').doc(editItemId).update(data);
+    } else {
+      await db.collection('menu_items').add(data);
+    }
+    closeModal();
+    await loadMenuItems();
+    renderMenuItems();
+    toast(editItemId ? 'Item updated' : 'Item added','success');
+  } catch(e) {
+    toast('Error saving item','error'); console.warn(e);
+  }
+  btn.textContent='Save Item'; btn.disabled=false;
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this item?')) return;
+  if (!db) return;
+  try {
+    await db.collection('menu_items').doc(id).delete();
+    await loadMenuItems();
+    renderMenuItems();
+    toast('Item deleted');
+  } catch(e) { toast('Error','error'); }
+}
+
+// ── DEALS ──────────────────────────────────────
+async function loadDeals() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('deals').get();
+    allDeals = snap.docs.map(d => ({...d.data(), _id: d.id}));
+  } catch(e) { console.warn('Load deals:', e); }
+}
+
+function renderDeals() {
+  const con = document.getElementById('deals-container');
+  if (!db) { con.innerHTML=`<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3></div>`; return; }
+
+  renderActiveDealsPreview();
+
+  if (!allDeals.length) {
+    con.innerHTML=`<div class="empty-state"><div class="emoji">🏷</div><h3>No deals yet</h3><p>Create time-based discounts like Lunch Specials, Happy Hour, Midnight Deals</p></div>`;
+    return;
+  }
+
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  con.innerHTML = '';
+  allDeals.forEach(deal => {
+    const isNowActive = isDealActiveNow(deal);
+    const card = document.createElement('div');
+    card.className = `deal-card${!deal.active?' inactive':''}`;
+    const daysLabel = deal.days && deal.days.length
+      ? deal.days.map(d=>DAY_NAMES[d]).join(', ')
+      : 'Every day';
+    const discLabel = deal.discountType==='percentage' ? `${deal.discountValue}% off` : `$${deal.discountValue} off`;
+    const applyLabel = deal.applyTo==='all' ? 'All items' : deal.applyTo==='category' ? `Categories: ${(deal.categories||[]).join(', ')}` : `${(deal.itemIds||[]).length} specific items`;
+    card.innerHTML = `
+      <div class="dc-head">
+        <span class="dc-name">${deal.name||'Unnamed Deal'}</span>
+        <span class="badge ${deal.active?'badge-green':'badge-grey'}">${deal.active?'Active':'Inactive'}</span>
+        ${isNowActive?'<span class="active-now">● Live Now</span>':''}
+      </div>
+      <div class="dc-desc">${deal.description||''}</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--tm);margin-bottom:10px">
+        <span>🕐 ${deal.startTime||'00:00'} – ${deal.endTime||'23:59'}</span>
+        <span>📅 ${daysLabel}</span>
+        <span>🏷 ${discLabel}</span>
+        <span>🎯 ${applyLabel}</span>
+      </div>
+      <div class="dc-foot">
+        <button class="btn btn-ghost btn-sm" onclick="openDealModal('${deal._id}')">✏️ Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleDeal('${deal._id}',${!deal.active})">${deal.active?'Pause':'Activate'}</button>
+        <button class="btn btn-red btn-sm" onclick="deleteDeal('${deal._id}')">🗑 Delete</button>
+      </div>`;
+    con.appendChild(card);
+  });
+}
+
+function isDealActiveNow(deal) {
+  if (!deal.active) return false;
+  const now = new Date();
+  const mins = now.getHours()*60+now.getMinutes();
+  const day  = now.getDay();
+  if (deal.days && deal.days.length && !deal.days.includes(day)) return false;
+  const [sh,sm] = (deal.startTime||'00:00').split(':').map(Number);
+  const [eh,em] = (deal.endTime||'23:59').split(':').map(Number);
+  return mins >= sh*60+sm && mins < eh*60+em;
+}
+
+function renderActiveDealsPreview() {
+  const con = document.getElementById('active-deals-preview');
+  const active = allDeals.filter(isDealActiveNow);
+  if (!active.length) { con.innerHTML=''; return; }
+  con.innerHTML = `<div class="deal-preview"><div class="dp-title">🟢 Currently Active Deals</div>${active.map(d=>`<div class="dp-row"><span>${d.name}</span><span>${d.discountType==='percentage'?d.discountValue+'% off':'$'+d.discountValue+' off'}</span></div>`).join('')}</div>`;
+}
+
+function openDealModal(id) {
+  editDealId = id || null;
+  selectedItemIds = [];
+  closeAllModals();
+  document.getElementById('deal-modal').style.display='block';
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('deal-modal-title').textContent = id ? 'Edit Deal' : 'Create Deal';
+  document.querySelectorAll('#days-grid .day-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('#cat-chips .day-chip').forEach(c=>c.classList.remove('active'));
+
+  if (id) {
+    const deal = allDeals.find(d=>d._id===id);
+    if (deal) {
+      document.getElementById('dm-name').value   = deal.name||'';
+      document.getElementById('dm-desc').value   = deal.description||'';
+      document.getElementById('dm-type').value   = deal.discountType||'percentage';
+      document.getElementById('dm-val').value    = deal.discountValue||'';
+      document.getElementById('dm-start').value  = deal.startTime||'12:00';
+      document.getElementById('dm-end').value    = deal.endTime||'15:00';
+      document.getElementById('dm-apply').value  = deal.applyTo||'all';
+      document.getElementById('dm-active').checked = deal.active !== false;
+      (deal.days||[]).forEach(d=>document.querySelector(`#days-grid [data-d="${d}"]`)?.classList.add('active'));
+      if (deal.applyTo==='category') (deal.categories||[]).forEach(c=>document.querySelector(`#cat-chips [data-c="${c}"]`)?.classList.add('active'));
+      if (deal.applyTo==='items') selectedItemIds = [...(deal.itemIds||[])];
+    }
+  } else {
+    document.getElementById('dm-name').value   = '';
+    document.getElementById('dm-desc').value   = '';
+    document.getElementById('dm-type').value   = 'percentage';
+    document.getElementById('dm-val').value    = '';
+    document.getElementById('dm-start').value  = '12:00';
+    document.getElementById('dm-end').value    = '15:00';
+    document.getElementById('dm-apply').value  = 'all';
+    document.getElementById('dm-active').checked = true;
+  }
+  updateDealForm();
+  updateApplySection();
+  // Setup day chip toggles
+  document.querySelectorAll('#days-grid .day-chip').forEach(c=>{ c.onclick=()=>c.classList.toggle('active'); });
+  document.querySelectorAll('#cat-chips .day-chip').forEach(c=>{ c.onclick=()=>c.classList.toggle('active'); });
+}
+
+function updateDealForm() {
+  const t = document.getElementById('dm-type').value;
+  document.getElementById('dm-val-label').textContent = t==='percentage' ? 'Discount Value (%)' : 'Discount Value ($)';
+}
+
+function updateApplySection() {
+  const v = document.getElementById('dm-apply').value;
+  document.getElementById('apply-cats').style.display  = v==='category' ? 'flex' : 'none';
+  document.getElementById('apply-items').style.display = v==='items'    ? 'flex' : 'none';
+  if (v==='items') renderItemPicker();
+}
+
+function renderItemPicker() {
+  const q   = (document.getElementById('item-search-deal')?.value||'').toLowerCase();
+  const con = document.getElementById('item-picker');
+  if (!con) return;
+  const items = q ? menuItems.filter(i=>(i.name||'').toLowerCase().includes(q)) : menuItems.slice(0,30);
+  con.innerHTML = '';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    const sel = selectedItemIds.includes(item._id);
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;background:'+(sel?'var(--gold-d)':'var(--s3)');
+    row.innerHTML = `<input type="checkbox" ${sel?'checked':''} style="accent-color:var(--gold)"><span style="font-size:13px">${item.name}</span><span style="margin-left:auto;font-size:12px;color:var(--tm)">$${(item.price||0).toFixed(2)}</span>`;
+    row.onclick = () => {
+      const cb = row.querySelector('input');
+      if (selectedItemIds.includes(item._id)) {
+        selectedItemIds = selectedItemIds.filter(x=>x!==item._id);
+        cb.checked = false; row.style.background='var(--s3)';
+      } else {
+        selectedItemIds.push(item._id);
+        cb.checked = true; row.style.background='var(--gold-d)';
+      }
+    };
+    con.appendChild(row);
+  });
+}
+
+async function saveDeal() {
+  const name  = document.getElementById('dm-name').value.trim();
+  const desc  = document.getElementById('dm-desc').value.trim();
+  const type  = document.getElementById('dm-type').value;
+  const val   = parseFloat(document.getElementById('dm-val').value);
+  const start = document.getElementById('dm-start').value;
+  const end   = document.getElementById('dm-end').value;
+  const apply = document.getElementById('dm-apply').value;
+  const active= document.getElementById('dm-active').checked;
+
+  if (!name) { toast('Enter deal name','error'); return; }
+  if (isNaN(val)||val<=0) { toast('Enter valid discount value','error'); return; }
+  if (!start||!end) { toast('Set start and end time','error'); return; }
+
+  const days = [...document.querySelectorAll('#days-grid .day-chip.active')].map(c=>parseInt(c.dataset.d));
+  const categories = [...document.querySelectorAll('#cat-chips .day-chip.active')].map(c=>c.dataset.c);
+
+  const data = {
+    name, description: desc, discountType: type, discountValue: val,
+    startTime: start, endTime: end, days, applyTo: apply,
+    categories: apply==='category' ? categories : [],
+    itemIds:    apply==='items'    ? selectedItemIds : [],
+    active
+  };
+
+  try {
+    if (!db) throw new Error('No DB');
+    if (editDealId) await db.collection('deals').doc(editDealId).update(data);
+    else await db.collection('deals').add(data);
+    closeModal();
+    await loadDeals();
+    renderDeals();
+    toast(editDealId ? 'Deal updated' : 'Deal created','success');
+  } catch(e) { toast('Error saving deal','error'); console.warn(e); }
+}
+
+async function toggleDeal(id, active) {
+  if (!db) return;
+  try {
+    await db.collection('deals').doc(id).update({ active });
+    await loadDeals(); renderDeals();
+    toast(active ? 'Deal activated' : 'Deal paused','success');
+  } catch(e) { toast('Error','error'); }
+}
+
+async function deleteDeal(id) {
+  if (!confirm('Delete this deal?')) return;
+  if (!db) return;
+  try {
+    await db.collection('deals').doc(id).delete();
+    await loadDeals(); renderDeals();
+    toast('Deal deleted');
+  } catch(e) { toast('Error','error'); }
+}
+
+// ── SETTINGS / TABLES ─────────────────────────
+async function loadSettings() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('global').get();
+    if (snap.exists) {
+      settings = {...settings, ...snap.data()};
+      tableCount = settings.tableCount || 10;
+    }
+  } catch(e) {}
+  document.getElementById('tc-num').textContent = tableCount;
+  renderTablePreview();
+}
+
+function changeTableCount(delta) {
+  tableCount = Math.max(1, Math.min(50, tableCount + delta));
+  document.getElementById('tc-num').textContent = tableCount;
+  renderTablePreview();
+}
+
+function renderTablePreview() {
+  const g = document.getElementById('table-display');
+  if (!g) return;
+  g.innerHTML = '';
+  const n = tableCount || settings.tableCount || 10;
+  for (let i=1;i<=n;i++) {
+    const t = document.createElement('div');
+    t.className = 'table-tile';
+    t.textContent = i;
+    g.appendChild(t);
+  }
+}
+
+async function saveTableCount() {
+  if (!db) { toast('Firebase not connected','error'); return; }
+  try {
+    await db.collection('settings').doc('global').set({ tableCount }, { merge: true });
+    settings.tableCount = tableCount;
+    toast('Table count saved','success');
+  } catch(e) { toast('Error saving','error'); }
+}
+
+// ── SEED MENU ──────────────────────────────────
+const SEED_DATA = [
+  {name:'2 Bite BBQ Platter (7 Kabobs)',desc:'Beef Bihari, Chicken Bihari, Malai Boti, Chicken Tikka, Beef Seekh, Chicken Seekh & Paneer Tikka.',price:22.99,cat:'bbq',img:'',avail:true},
+  {name:'3 Bite BBQ Platter (7 Kabobs)',desc:'Generous 21-piece BBQ Platter with seven 3-bite kabobs.',price:28.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken BBQ Platter',desc:'Chicken Tikka, Malai Boti, Bihari, Seekh Kabob, Leg Tikka & Paneer Tikka with chutneys.',price:27.99,cat:'bbq',img:'',avail:true},
+  {name:'Mix BBQ Platter',desc:'7 kabobs: Beef Bihari, Chicken Bihari, Chicken Tikka, Chicken Malai, Beef Seekh, Chicken Seekh & Paneer Tikka.',price:32.99,cat:'bbq',img:'',avail:true},
+  {name:'Beef Bihari',desc:'Specially cut beef slices marinated in exotic herbs and spices, BBQed to perfection.',price:12.99,cat:'bbq',img:'',avail:true},
+  {name:'Beef Seekh Kabob',desc:'Minced Beef in exotic spices and herbs, BBQed. Served with mint yogurt and tamarind chutney.',price:12.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken Bihari',desc:'Chicken cubes marinated in exotic herbs and spices, BBQed perfectly.',price:12.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken Malai Boti',desc:'Chicken cubes marinated in exotic spices and herbs. BBQed and served with chutneys.',price:11.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken Seekh Kabob',desc:'Chicken in exotic spices and herbs, BBQed. Served with mint yogurt and tamarind chutney.',price:11.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken Tikka Boti',desc:'Chicken cubes in exotic spices. BBQed and served with mint raita and tamarind chutney.',price:11.99,cat:'bbq',img:'',avail:true},
+  {name:'Chicken Leg Tikka',desc:'Chicken Leg marinated in exotic spices, BBQed. Served with mint yogurt and tamarind chutney.',price:8.99,cat:'bbq',img:'',avail:true},
+  {name:'Paneer Tikka Boti',desc:'Paneer cubes marinated in exotic spices, BBQed. Served with mint yogurt and tamarind chutney.',price:10.99,cat:'bbq',img:'',avail:true},
+  {name:'2 Chicken Leg Tikka — Double Treat',desc:'Two portions of Chicken Leg Tikka. Limited time offer!',price:17.99,cat:'bbq',img:'',avail:true},
+  {name:'Beef Bihari Roll',desc:'Beef Bihari wrapped in a soft, warm crisp fried puri with flavorful sauces.',price:13.99,cat:'rolls',img:'',avail:true},
+  {name:'Beef Seekh Kabob Roll',desc:'Ground Beef BBQed and wrapped in soft, warm crisp fried puri with sauces.',price:12.99,cat:'rolls',img:'',avail:true},
+  {name:'Chicken Bihari Roll',desc:'Chicken Bihari wrapped in soft, warm crisp fried puri with flavorful sauces.',price:12.99,cat:'rolls',img:'',avail:true},
+  {name:'Chicken Seekh Kabob Roll',desc:'Ground Chicken BBQed, wrapped in soft warm crisp fried puri with sauces.',price:12.99,cat:'rolls',img:'',avail:true},
+  {name:'Chicken Malai Boti Roll',desc:'Chicken Malai cubes BBQed, wrapped in soft warm crisp fried puri with sauces.',price:12.99,cat:'rolls',img:'',avail:true},
+  {name:'Chicken Tikka Boti Roll',desc:'Chicken Tikka BBQed, wrapped in soft warm crisp fried puri with sauces.',price:12.99,cat:'rolls',img:'',avail:true},
+  {name:'Paneer Tikka Roll',desc:'Paneer BBQed, wrapped in soft warm crisp fried puri with vegetables and sauces.',price:11.99,cat:'rolls',img:'',avail:true},
+  {name:'2 Kabob Rolls — Double Treat',desc:'Two kabob rolls of your choice. Limited time offer!',price:26.00,cat:'rolls',img:'',avail:true},
+  {name:'Aloo Tikki Bun Kabob',desc:'Spicy shallow-fried potato patty in a soft bun with onions and chutney.',price:7.99,cat:'rolls',img:'',avail:true},
+  {name:'Bun Kabab',desc:'Ground beef and lentil patty in a bun with chutney and raita.',price:7.99,cat:'rolls',img:'',avail:true},
+  {name:'Beef Kabob Rice Bowl',desc:'Juicy BBQ Beef Kabob over fluffy steamed rice with flavorful toppings.',price:12.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'Chicken Kabob Rice Bowl',desc:'BBQ Chicken Kabob over fluffy steamed rice with flavorful toppings.',price:12.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'Chicken Tikka Boti Rice Bowl',desc:'Chicken Tikka over fluffy steamed rice with flavorful toppings.',price:12.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'Tandoori Chicken Breast Rice Bowl',desc:'Juicy BBQ Bone-In Chicken Breast over fluffy steamed rice with toppings.',price:13.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'Tandoori Chicken Leg Rice Bowl',desc:'Juicy BBQ Bone-In Chicken Leg over fluffy steamed rice with toppings.',price:13.95,cat:'rice_bowls',img:'',avail:true},
+  {name:'Butter Chicken with Rice',desc:'Classic Butter Chicken served with aromatic basmati rice.',price:14.50,cat:'rice_bowls',img:'',avail:true},
+  {name:'Chicken Tikka Masala with Rice',desc:'Rich Chicken Tikka Masala curry served with basmati rice.',price:14.50,cat:'rice_bowls',img:'',avail:true},
+  {name:'Basmati Zeera Rice',desc:'Aromatic cumin-flavored basmati rice, perfect with any curry or grilled dish.',price:4.50,cat:'rice_bowls',img:'',avail:true},
+  {name:'2 Butter Chicken — Double Treat',desc:'Two portions of Butter Chicken with Rice. Limited time offer!',price:29.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'2 Chicken Biryani — Double Treat',desc:'Two portions of Chicken Biryani. Limited time offer!',price:31.99,cat:'rice_bowls',img:'',avail:true},
+  {name:'2 Chicken Kabob Rice Bowl — Double Treat',desc:'Two Rice Bowls of your choice. Limited time offer!',price:28.00,cat:'rice_bowls',img:'',avail:true},
+  {name:'Boneless Chicken Handi',desc:'Succulent chicken in a flavorful blend of spices and herbs, simmered in a tomato-based gravy.',price:14.99,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Biryani',desc:'Aromatic Chicken Biryani with tender chicken and fragrant spiced rice.',price:15.95,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Karahi — Quarter',desc:'Chicken cooked in tomato, ginger, green chilli and traditional herbs & spices.',price:14.99,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Karahi — Half',desc:'Half Chicken cooked in tomato, ginger, green chilli and traditional herbs & spices.',price:18.99,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Karahi — Full',desc:'Full Chicken cooked in tomato, ginger, green chilli and traditional herbs & spices.',price:29.99,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Kabob Karahi',desc:'BBQed Chicken Kabob Karahi cooked with tomato, ginger, garlic and herbs. Served in an iron wok.',price:14.95,cat:'karahi',img:'',avail:true},
+  {name:'Beef Kabob Karahi',desc:'BBQed Beef Kabob Karahi cooked with tomato, ginger, garlic and herbs. Served in an iron wok.',price:15.99,cat:'karahi',img:'',avail:true},
+  {name:'Chicken Makhni (Half Chicken)',desc:'Tender bone-in chicken in butter, cream and tomato-based curry with aromatic spices.',price:19.95,cat:'karahi',img:'',avail:true},
+  {name:'Goat Karahi',desc:'Approx 1 lb of Goat meat cooked in tomato, ginger, green chilli and traditional herbs & spices.',price:23.00,cat:'karahi',img:'',avail:true},
+  {name:'Lamb Karahi',desc:'Approx 1 lb of Lamb meat cooked in tomato, ginger, green chilli and traditional herbs & spices.',price:23.00,cat:'karahi',img:'',avail:true},
+  {name:'Beef Haleem',desc:'Made of cracked wheat, lentils, beef and spices, slow cooked overnight.',price:17.99,cat:'karahi',img:'',avail:true},
+  {name:'Beef Nihari',desc:'Authentic Pakistani beef stew from slow-cooked lean beef simmered overnight in mixed spices.',price:15.99,cat:'karahi',img:'',avail:true},
+  {name:'Beef Qeema Fry (Full)',desc:'Spicy and flavorful minced beef stir-fried with aromatic spices and herbs.',price:16.99,cat:'karahi',img:'',avail:true},
+  {name:'Beef Qeema Fry (Small)',desc:'Spicy and flavorful minced beef stir-fried with aromatic spices and herbs.',price:8.95,cat:'karahi',img:'',avail:true},
+  {name:'Channa Daal Fry',desc:'Split chickpeas sautéed with onions, tomatoes and aromatic spices.',price:11.95,cat:'karahi',img:'',avail:true},
+  {name:'Channa Masala',desc:'Curry made with white chickpeas, onions, tomatoes, spices and herbs.',price:11.99,cat:'karahi',img:'',avail:true},
+  {name:'Palak Paneer',desc:'Creamy dish made with paneer in a mildly spiced fresh spinach sauce.',price:14.95,cat:'karahi',img:'',avail:true},
+  {name:'Paneer Tikka Masala with Rice',desc:'Marinated Paneer in a subtly spiced tomato-cream sauce. Served with rice.',price:14.50,cat:'karahi',img:'',avail:true},
+  {name:'Aloo Samosas',desc:'Crispy fried pastry filled with spiced potatoes. Served with special chutney.',price:2.25,cat:'street',img:'',avail:true},
+  {name:'Beef Samosas',desc:'Crispy fried pastry filled with spiced ground beef. Served with special chutney.',price:3.60,cat:'street',img:'',avail:true},
+  {name:'Chicken Samosas (2 pcs)',desc:'Crispy fried pastry filled with chicken and spices. Served with special chutney.',price:3.60,cat:'street',img:'',avail:true},
+  {name:'Daal Kachori',desc:'Deep fried breads filled with ground dal and spices. Served with Aloo Bhaji.',price:6.99,cat:'street',img:'',avail:true},
+  {name:'Halwa Puri',desc:'Classic breakfast platter: puris, chole, suji halwa, aloo ki bhujia and achar pickles.',price:8.50,cat:'street',img:'',avail:true},
+  {name:'Karachi Chana Chat',desc:'Spicy, tangy, sweet chaat with boiled potatoes, chickpeas, onion, tomatoes, herbs and spices.',price:7.99,cat:'street',img:'',avail:true},
+  {name:'Samoosa Chana Chat',desc:'Crispy samosas topped with chutneys, yogurt, onions, tomatoes and chickpeas.',price:9.99,cat:'street',img:'',avail:true},
+  {name:'Nuggets (6 pcs)',desc:'6 crispy chicken nuggets served with fries.',price:6.99,cat:'street',img:'',avail:true},
+  {name:'Eggs (Omelet)',desc:'Classic egg omelet with chopped vegetables and spices.',price:6.50,cat:'street',img:'',avail:true},
+  {name:'Aloo Bhaji',desc:'Flavourful potato curry — vegan and gluten free.',price:9.99,cat:'street',img:'',avail:true},
+  {name:'Classic Beef Burger',desc:'Beef patty with cheese, lettuce, tomato, onion and condiments on a sliced bun.',price:10.99,cat:'burgers',img:'',avail:true},
+  {name:'Crispy Chicken Burger',desc:'Hand-battered crispy chicken filet with lettuce, tomato and mayo on a brioche bun.',price:10.99,cat:'burgers',img:'',avail:true},
+  {name:'Plain Tandoori Naan',desc:'Classic naan prepared in a hot clay tandoor.',price:1.99,cat:'breads',img:'',avail:true},
+  {name:'Butter Tandoori Naan',desc:'Butter naan prepared in a hot clay tandoor.',price:2.75,cat:'breads',img:'',avail:true},
+  {name:'Butter Garlic Tandoori Naan',desc:'Garlic naan prepared in a hot clay tandoor.',price:3.99,cat:'breads',img:'',avail:true},
+  {name:'Fried Puri Paratha',desc:'Traditional fried bread — delicious and crispy, pairs with any main dish.',price:3.99,cat:'breads',img:'',avail:true},
+  {name:'Lachha Paratha',desc:'Layered flat bread with flaky, buttery layers — crispy exterior, soft interior.',price:3.99,cat:'breads',img:'',avail:true},
+  {name:'Plain Paratha',desc:'Flatbread folded for flaky layers, roasted to perfection on a hot plate.',price:3.99,cat:'breads',img:'',avail:true},
+  {name:'Small Puri',desc:'Traditional small fried bread — delicious and crispy.',price:2.00,cat:'breads',img:'',avail:true},
+  {name:'Masala Fries',desc:'Crispy fries with special masala seasoning. Served with sauce and ketchup.',price:5.49,cat:'sides',img:'',avail:true},
+  {name:'Regular Fries',desc:'Crispy golden fries made to order. Served with sauce and ketchup.',price:4.95,cat:'sides',img:'',avail:true},
+  {name:'Chicken Tenders',desc:'Hand-breaded, crispy chicken tenders with fries, made to order.',price:8.99,cat:'sides',img:'',avail:true},
+  {name:'Extra Aloo Bhaji',desc:'Tender potatoes infused with warm spices and fresh curry leaves.',price:2.99,cat:'sides',img:'',avail:true},
+  {name:'Extra Chana Bhaji',desc:'Extra portion of Chana Bhaji.',price:2.99,cat:'sides',img:'',avail:true},
+  {name:'Extra Puri',desc:'Extra puri fried to order.',price:1.99,cat:'sides',img:'',avail:true},
+  {name:'Extra Pattie',desc:'Extra burger patty prepared fresh.',price:3.50,cat:'sides',img:'',avail:true},
+  {name:'Extra Halwa',desc:'Suji Ka Halwa made with fine semolina, sugar and ghee.',price:2.99,cat:'sides',img:'',avail:true},
+  {name:'Gulab Jamun (3 pcs)',desc:'Fried balls of dough made from milk solids and semolina, soaked in aromatic sugar syrup.',price:5.25,cat:'desserts',img:'',avail:true},
+  {name:'Suji Halwa',desc:'Semolina and sugar syrup dessert flavored with cardamom, garnished with chopped almonds.',price:4.95,cat:'desserts',img:'',avail:true},
+  {name:'Mango Lassi',desc:'Blended yogurt drink with fresh mango. Refreshing and creamy.',price:5.49,cat:'drinks',img:'',avail:true},
+  {name:'Sweet Lassi',desc:'Blended yogurt drink with milk. Classic and refreshing.',price:5.49,cat:'drinks',img:'',avail:true},
+  {name:'Chaas',desc:'Spiced yogurt drink blended with water and traditional spices.',price:5.49,cat:'drinks',img:'',avail:true},
+  {name:'Doodh Pati Chai',desc:'Traditional milk tea boiled several times — 100% milk proportion.',price:3.99,cat:'drinks',img:'',avail:true},
+  {name:'Regular Tea',desc:'Classic milk tea — 70% water, 30% milk.',price:1.99,cat:'drinks',img:'',avail:true},
+  {name:'Green Tea',desc:'Refreshing green tea served hot.',price:2.75,cat:'drinks',img:'',avail:true},
+  {name:'Ice Tea',desc:'Chilled iced tea.',price:3.50,cat:'drinks',img:'',avail:true},
+  {name:'Juice',desc:'Fresh juice of the day.',price:2.00,cat:'drinks',img:'',avail:true},
+  {name:'Soda',desc:'Chilled carbonated soft drink.',price:1.99,cat:'drinks',img:'',avail:true},
+  {name:'Milk',desc:'Fresh cold milk.',price:1.99,cat:'drinks',img:'',avail:true},
+  {name:'Water',desc:'Still mineral water.',price:1.45,cat:'drinks',img:'',avail:true},
+];
+
+async function seedMenu() {
+  if (!db) { toast('Firebase not connected','error'); return; }
+  const btn = document.getElementById('seed-btn');
+  btn.textContent = 'Seeding...'; btn.disabled = true;
+  document.getElementById('seed-status').innerHTML = '<div class="warning-box">Checking existing items...</div>';
+  try {
+    const snap = await db.collection('menu_items').get();
+    if (!snap.empty) {
+      document.getElementById('seed-status').innerHTML = `<div class="success-box">✓ Menu already has ${snap.size} items. Use "Delete All Menu Items" first if you want to reseed.</div>`;
+      btn.textContent='Seed Menu to Firebase'; btn.disabled=false; return;
+    }
+    const batch = db.batch();
+    SEED_DATA.forEach(item => { const ref = db.collection('menu_items').doc(); batch.set(ref, item); });
+    await db.collection('settings').doc('global').set({ tableCount: 10 }, { merge: true });
+    await batch.commit();
+    await loadMenuItems();
+    document.getElementById('seed-status').innerHTML = `<div class="success-box">✓ Successfully added ${SEED_DATA.length} menu items!</div>`;
+    toast('Menu seeded successfully!','success');
+  } catch(e) {
+    document.getElementById('seed-status').innerHTML = `<div style="background:var(--red-d);border:1px solid rgba(192,64,64,.25);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px">Error: ${e.message}</div>`;
+    toast('Seed failed','error');
+  }
+  btn.textContent='Seed Menu to Firebase'; btn.disabled=false;
+}
+
+// ── DANGER ZONE ────────────────────────────────
+async function clearAllOrders() {
+  if (!db||!confirm('DELETE ALL ORDERS? This cannot be undone.')) return;
+  const snap = await db.collection('orders').get();
+  const batch = db.batch();
+  snap.docs.forEach(d=>batch.delete(d.ref));
+  await batch.commit(); toast('All orders deleted');
+}
+async function clearAllMenu() {
+  if (!db||!confirm('DELETE ALL MENU ITEMS? This cannot be undone.')) return;
+  const snap = await db.collection('menu_items').get();
+  const batch = db.batch();
+  snap.docs.forEach(d=>batch.delete(d.ref));
+  await batch.commit(); menuItems=[]; renderMenuItems(); toast('All menu items deleted');
+}
+async function clearAllDeals() {
+  if (!db||!confirm('DELETE ALL DEALS?')) return;
+  const snap = await db.collection('deals').get();
+  const batch = db.batch();
+  snap.docs.forEach(d=>batch.delete(d.ref));
+  await batch.commit(); allDeals=[]; renderDeals(); toast('All deals deleted');
+}
+
+// ── MODALS ─────────────────────────────────────
+function closeAllModals() {
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  closeAllModals();
+}
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target.id==='modal-overlay') closeModal();
+});
+
+// ── TOAST ──────────────────────────────────────
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast${type?' '+type:''} show`;
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
