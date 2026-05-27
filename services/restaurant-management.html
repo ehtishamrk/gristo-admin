@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spice Korner — Admin Panel</title>
+  <script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -321,6 +322,25 @@ textarea.fi{resize:vertical;min-height:70px;}
       <div class="code-block">rules_version = '2';<br>service firebase.storage {<br>&nbsp;&nbsp;match /b/{bucket}/o {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu-images/{f=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
     </div>
 
+<div class="setup-card">
+      <div class="setup-title">💳 Payment Settings</div>
+      <div class="setup-desc">When enabled, customers can choose to pay by card or cash at checkout. Requires a Stripe account and a Cloudflare Worker backend. Leave keys blank until ready — the toggle alone does nothing without valid keys.</div>
+      <div class="toggle-row" style="margin-bottom:18px;">
+        <span class="toggle-label">Enable Card Payments on Customer Portal</span>
+        <label class="toggle"><input type="checkbox" id="pay-toggle"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <label class="fl">Stripe Publishable Key</label>
+        <input type="text" id="stripe-pk" class="fi" placeholder="pk_live_... — get from Stripe Dashboard → Developers → API Keys" autocomplete="off">
+      </div>
+      <div class="fg" style="margin-bottom:18px;">
+        <label class="fl">Backend URL (Cloudflare Worker)</label>
+        <input type="text" id="backend-url" class="fi" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="off">
+      </div>
+      <button class="btn btn-gold" onclick="savePaymentSettings()">Save Payment Settings</button>
+      <div id="pay-save-msg" style="margin-top:10px;font-size:12.5px;color:var(--green);display:none;">✓ Settings saved</div>
+    </div>
+    
     <div class="setup-card">
       <div class="setup-title">🗑️ Danger Zone</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -1153,7 +1173,23 @@ async function deleteDeal(id) {
     toast('Deal deleted');
   } catch(e) { toast('Error','error'); }
 }
-
+async function savePaymentSettings() {
+  const enabled = document.getElementById('pay-toggle').checked;
+  const pk      = document.getElementById('stripe-pk').value.trim();
+  const url     = document.getElementById('backend-url').value.trim();
+  try {
+    await db.collection('settings').doc('global').set(
+      { cardPaymentsEnabled: enabled, stripePK: pk, backendURL: url },
+      { merge: true }
+    );
+    settings.cardPaymentsEnabled = enabled;
+    settings.stripePK  = pk;
+    settings.backendURL = url;
+    const msg = document.getElementById('pay-save-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 2500);
+  } catch(e) { alert('Save failed: ' + e.message); }
+}
 // ── SETTINGS / TABLES ─────────────────────────
 async function loadSettings() {
   if (!db) return;
@@ -1162,6 +1198,9 @@ async function loadSettings() {
     if (snap.exists) {
       settings = {...settings, ...snap.data()};
       tableCount = settings.tableCount || 10;
+      document.getElementById('pay-toggle').checked  = !!settings.cardPaymentsEnabled;
+      document.getElementById('stripe-pk').value     = settings.stripePK    || '';
+      document.getElementById('backend-url').value   = settings.backendURL  || '';
     }
   } catch(e) {}
   document.getElementById('tc-num').textContent = tableCount;
