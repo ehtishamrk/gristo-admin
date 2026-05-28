@@ -205,7 +205,9 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div class="login-box">
     <div class="login-logo">Spice Korner</div>
     <div class="login-sub">Admin Panel</div>
-    <input type="password" id="pw-input" class="login-input" placeholder="••••••••••"
+<input type="email" id="pw-input" class="login-input" placeholder="admin@email.com"
+      style="letter-spacing:0;" onkeydown="if(event.key==='Enter')tryLogin()">
+    <input type="password" id="pw2-input" class="login-input" placeholder="••••••••••"
       onkeydown="if(event.key==='Enter')tryLogin()">
     <div class="login-err" id="login-err"></div>
     <button class="btn btn-gold" style="width:100%" onclick="tryLogin()">Sign In →</button>
@@ -549,24 +551,33 @@ const CATS = [
 
 // ── AUTH ───────────────────────────────────────
 function tryLogin() {
-  const pw = document.getElementById('pw-input').value;
-  if (pw === '123456789') {
+  const email = document.getElementById('pw-input').value.trim();
+  const pw    = document.getElementById('pw2-input').value;
+  document.getElementById('login-err').textContent = '';
+
+  firebase.auth().signInWithEmailAndPassword(email, pw)
+    .catch(e => {
+      document.getElementById('login-err').textContent = 'Incorrect email or password';
+      document.getElementById('pw2-input').value = '';
+      setTimeout(() => document.getElementById('login-err').textContent = '', 2500);
+    });
+}
+function logout() {
+  firebase.auth().signOut();
+}
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
     initAdmin();
   } else {
-    document.getElementById('login-err').textContent = 'Incorrect password';
-    document.getElementById('pw-input').value = '';
-    setTimeout(()=>document.getElementById('login-err').textContent='', 2000);
+    if (ordersListener) ordersListener();
+    document.getElementById('admin-app').style.display = 'none';
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('pw-input').value  = '';
+    document.getElementById('pw2-input').value = '';
   }
-}
-function logout() {
-  if (ordersListener) ordersListener();
-  document.getElementById('admin-app').style.display = 'none';
-  document.getElementById('login-overlay').style.display = 'flex';
-  document.getElementById('pw-input').value = '';
-}
-document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') tryLogin(); });
+});
 
 // ── INIT ───────────────────────────────────────
 async function initAdmin() {
