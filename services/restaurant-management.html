@@ -684,6 +684,10 @@ function renderOrders() {
       ? `<span class="oc-type-badge" style="background:var(--blue-d);color:var(--blue)">🍽 Table ${o.tableNumber}</span>`
       : `<span class="oc-type-badge" style="background:var(--s4);color:var(--tm)">📦 Takeaway</span>`;
 
+const payBadge = o.paymentMethod === 'card'
+      ? `<span class="oc-type-badge" style="background:var(--green-d);color:var(--green)">💳 Paid</span>`
+      : `<span class="oc-type-badge" style="background:var(--s4);color:var(--td)">💵 Cash</span>`;
+    
     const statusBtns = o.status !== 'completed' ? `
       ${o.status==='pending'   ? `<button class="sbtn sbtn-prep"  onclick="setStatus('${o._id}','preparing')">→ Preparing</button>` : ''}
       ${o.status==='preparing' ? `<button class="sbtn sbtn-ready" onclick="setStatus('${o._id}','ready')">→ Ready!</button>` : ''}
@@ -697,7 +701,8 @@ function renderOrders() {
     card.innerHTML = `
       <div class="oc-head">
         <span class="oc-num">#${o.orderNumber||'—'}</span>
-        ${typeLabel}
+ ${typeLabel}
+        ${payBadge}
         <span class="badge badge-${STATUS_COLORS[o.status]||'grey'}">${STATUS_LABELS[o.status]||o.status}</span>
         <span class="oc-time">${timeStr}</span>
       </div>
