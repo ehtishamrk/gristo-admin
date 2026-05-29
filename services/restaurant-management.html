@@ -1155,51 +1155,7 @@ ${parseFloat(tipAmt)>0?`<tr><td style="font-size:10px;color:#555">Tip</td><td st
 </table><hr>
 <div class="c" style="font-size:9px;margin-top:3px">${foot}</div>
 </body></html>`);
-  <div>
-  Order <b>#${o.orderNumber || '—'}</b>
-</div>
 
-${o.orderTypeMode === 'edit'
-? `<div style="font-size:14px;font-weight:bold;margin-top:4px">
-    ✏️ EDIT TO ORDER #${o.parentOrderNumber}
-   </div>`
-: ''}
-
-${o.orderTypeMode === 'addition'
-? `<div style="font-size:14px;font-weight:bold;margin-top:4px">
-    ➕ ADDITION TO ORDER #${o.parentOrderNumber}
-   </div>`
-: ''}
-<div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${escapeHtml(o.customerName||'—')}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings > 0.005 ? `
-<tr>
-  <td style="font-size:10px;color:#555">
-    Original Amount
-  </td>
-
-  <td style="
-    text-align:right;
-    font-size:10px;
-    color:#555
-  ">
-    $${(o.origTotal || 0).toFixed(2)}
-  </td>
-</tr>
-
-<tr>
-  <td style="font-size:10px;color:#555">
-    Discount
-  </td>
-
-  <td style="
-    text-align:right;
-    font-size:10px;
-    color:#555
-  ">
-    -$${o.savings.toFixed(2)}
-  </td>
-</tr>
-` : ''}
-<tr class="gt"><td>TOTAL</td><td style="text-align:right">$${(o.total||0).toFixed(2)}</td></tr></table><hr><div class="c" style="font-size:9px;margin-top:3px">Thank you for choosing Spice Korner!</div></body></html>`);
   doc.close();
 
 setTimeout(() => {
@@ -1336,13 +1292,12 @@ let imgUrl = document.getElementById('im-img-url').value || '';
 const file = document.getElementById('img-file').files[0];
 
 if (file) {
-  // Warn if too large. Use Firebase Storage for production.
-  const dataUrl = document.getElementById('img-preview').src;
-  if (dataUrl.length > 200000) {
+  if (file.size > 150000) {  // check actual file bytes, not base64 string
     toast('Image too large — use a smaller photo (under 150KB)', 'error');
     btn.textContent = 'Save Item'; btn.disabled = false;
     return;
   }
+  const dataUrl = document.getElementById('img-preview').src;
   imgUrl = dataUrl;
 }
   const data = { name, desc, cat, price, avail, img: imgUrl };
@@ -1578,25 +1533,6 @@ async function deleteDeal(id) {
     toast('Deal deleted');
   } catch(e) { toast('Error','error'); }
 }
-async function savePaymentSettings() {
-  const enabled = document.getElementById('pay-toggle').checked;
-  const pk      = document.getElementById('stripe-pk').value.trim();
-  const url     = document.getElementById('backend-url').value.trim();
-  const wait    = parseInt(document.getElementById('wait-minutes').value) || 15;
-  try {
-    await db.collection('settings').doc('global').set(
-      { cardPaymentsEnabled: enabled, stripePK: pk, backendURL: url, waitMinutes: wait },
-      { merge: true }
-    );
-    settings.cardPaymentsEnabled = enabled;
-    settings.stripePK   = pk;
-    settings.backendURL = url;
-    settings.waitMinutes = wait;
-    const msg = document.getElementById('pay-save-msg');
-    msg.style.display = 'block';
-    setTimeout(() => msg.style.display = 'none', 2500);
-  } catch(e) { alert('Save failed: ' + e.message); }
-}
 // ── SETTINGS / TABLES ─────────────────────────
 async function loadSettings() {
   if (!db) return;
@@ -1723,11 +1659,25 @@ function renderAnalytics() {
   if (analyticsRange !== 'today') {
     panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}<div class="spinner"></div>`;
     attachDateTabListeners();
-    db.collection('orders')
-      .where('timestamp', '>=', rangeStart)
-      .orderBy('timestamp', 'desc')
-      .limit(500)
-      .get()
+// For yesterday, you need to pass yEnd into scope. 
+// Change the case to store it, then use it in the query:
+
+// In the switch case, add:
+case 'yesterday': {
+  const y = new Date(now); y.setDate(y.getDate()-1); y.setHours(0,0,0,0);
+  rangeStart = y;
+  window._rangeEnd = new Date(y); window._rangeEnd.setHours(23,59,59,999);
+  rangeLabel = 'Yesterday';
+  break;
+}
+// For all other cases, add:
+default: { window._rangeEnd = null; /* ... rest */ }
+// (set window._rangeEnd = null in week and month cases too)
+
+// Then change the query to:
+let q = db.collection('orders').where('timestamp', '>=', rangeStart);
+if (window._rangeEnd) q = q.where('timestamp', '<=', window._rangeEnd);
+q.orderBy('timestamp', 'desc').limit(500).get().then(...)
       .then(snap => {
         const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
         renderAnalyticsData(panel, orders, rangeLabel);
