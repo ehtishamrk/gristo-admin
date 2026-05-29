@@ -196,6 +196,80 @@ textarea.fi{resize:vertical;min-height:70px;}
 .toast.show{opacity:1;transform:none;}
 .toast.success{border-color:rgba(61,155,106,.4);color:var(--green);}
 .toast.error{border-color:rgba(192,64,64,.4);color:var(--red);}
+  /* ── MOBILE NAV (bottom bar on small screens) ── */
+@media(max-width:640px) {
+  #tab-nav { 
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--s1); border-top: 1px solid var(--bd); border-bottom: none;
+    padding: 0 4px; justify-content: space-around;
+  }
+  .tab-btn { 
+    padding: 8px 6px; font-size: 11px; flex-direction: column; 
+    display: flex; align-items: center; gap: 2px; flex: 1;
+    border-bottom: none; border-top: 2px solid transparent; margin-bottom: 0; margin-top: -1px;
+  }
+  .tab-btn.active { border-top-color: var(--gold); border-bottom-color: transparent; }
+  .tab-panel { padding: 14px 14px 80px; }
+  body { padding-bottom: 60px; }
+  .page-hd { flex-direction: column; align-items: flex-start; }
+  .form-grid { grid-template-columns: 1fr; }
+  .fg.span2 { grid-column: 1; }
+  .modal { padding: 18px; border-radius: 16px; max-height: 85vh; }
+  .oc-head { gap: 6px; }
+  .order-filters { gap: 4px; }
+  .ofilter { padding: 5px 10px; font-size: 11px; }
+}
+
+/* ── TOPBAR mobile ── */
+@media(max-width:480px) {
+  .tb-brand { font-size: 16px; letter-spacing: 2px; }
+  .tb-time  { display: none; }
+  #topbar   { padding: 0 12px; }
+}
+
+/* ── SETUP CARD improvements ── */
+.setup-section-title {
+  font-size: 11px; font-weight: 700; color: var(--td); letter-spacing: 1.5px;
+  text-transform: uppercase; margin: 24px 0 12px;
+}
+.setup-section-title:first-child { margin-top: 0; }
+.color-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.color-swatch { width: 36px; height: 36px; border-radius: var(--rs); border: 1px solid var(--bd2); cursor: pointer; padding: 2px; background: none; }
+.color-swatch-inner { width: 100%; height: 100%; border-radius: 6px; }
+.pause-banner { background: var(--red-d); border: 1px solid rgba(192,64,64,.35); border-radius: var(--r); padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.pause-banner-text { font-size: 13px; color: var(--red); font-weight: 600; }
+
+/* ── LOYALTY TAB ── */
+.loyalty-tier { background: var(--s2); border: 1px solid var(--bd); border-radius: var(--r); padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 14px; }
+.lt-icon { font-size: 28px; flex-shrink: 0; }
+.lt-body { flex: 1; }
+.lt-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.lt-desc { font-size: 12.5px; color: var(--tm); }
+.members-table { width: 100%; border-collapse: collapse; }
+.members-table th { font-size: 10px; font-weight: 700; color: var(--td); letter-spacing: 1px; text-transform: uppercase; padding: 0 0 10px; text-align: left; }
+.members-table td { padding: 10px 0; border-top: 1px solid var(--bd); font-size: 12.5px; }
+.members-table td:last-child { text-align: right; }
+.pts-badge { background: var(--gold-d); color: var(--gold-l); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; border: 1px solid rgba(200,146,42,.25); }
+
+/* ── TABLE OCCUPANCY ── */
+.table-tile { cursor: default; transition: all .2s; }
+.table-tile.t-free   { background: var(--green-d); border-color: rgba(61,155,106,.35); color: var(--green); }
+.table-tile.t-active { background: var(--amber-d); border-color: rgba(200,146,42,.35); color: var(--gold); animation: tblPulse 2.5s ease infinite; }
+.table-tile.t-free .t-sub, .table-tile.t-active .t-sub { font-size: 8px; color: inherit; opacity: 0.7; display: block; }
+@keyframes tblPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+/* ── ANALYTICS date tabs ── */
+.date-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.dtab { padding: 6px 14px; border-radius: 100px; border: 1px solid var(--bd); background: var(--s2); color: var(--tm); font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.dtab.active { background: var(--gold); color: #0A0A0A; border-color: var(--gold); font-weight: 700; }
+
+/* ── CUSTOMERS TAB ── */
+.cust-card { background: var(--s2); border: 1px solid var(--bd); border-radius: var(--r); padding: 13px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.cust-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gold-d); border: 1px solid rgba(200,146,42,.3); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+.cust-info { flex: 1; min-width: 0; }
+.cust-name { font-size: 13.5px; font-weight: 600; }
+.cust-phone { font-size: 12px; color: var(--tm); }
+.cust-meta { font-size: 11px; color: var(--td); margin-top: 2px; }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -226,16 +300,18 @@ textarea.fi{resize:vertical;min-height:70px;}
     <button class="tb-logout" onclick="logout()">Sign Out</button>
   </div>
 
-  <nav id="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('orders')" id="tab-orders-btn">
-      📋 Orders <span class="notif" id="new-notif" style="display:none">0</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('menu')" id="tab-menu-btn">🍽 Menu</button>
-    <button class="tab-btn" onclick="switchTab('deals')" id="tab-deals-btn">🏷 Deals</button>
-    <button class="tab-btn" onclick="switchTab('tables')" id="tab-tables-btn">🪑 Tables</button>
-    <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Analytics</button>
-    <button class="tab-btn" onclick="switchTab('setup')" id="tab-setup-btn">⚙️ Setup</button>
-  </nav>
+<nav id="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('orders')" id="tab-orders-btn">
+    📋 Orders <span class="notif" id="new-notif" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('menu')"      id="tab-menu-btn">🍽 Menu</button>
+  <button class="tab-btn" onclick="switchTab('deals')"     id="tab-deals-btn">🏷 Deals</button>
+  <button class="tab-btn" onclick="switchTab('tables')"    id="tab-tables-btn">🪑 Tables</button>
+  <button class="tab-btn" onclick="switchTab('customers')" id="tab-customers-btn">👥 Guests</button>
+  <button class="tab-btn" onclick="switchTab('loyalty')"   id="tab-loyalty-btn">⭐ Loyalty</button>
+  <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Stats</button>
+  <button class="tab-btn" onclick="switchTab('setup')"     id="tab-setup-btn">⚙️ Setup</button>
+</nav>
 
   <!-- ORDERS TAB -->
   <div class="tab-panel active" id="panel-orders">
@@ -282,17 +358,22 @@ textarea.fi{resize:vertical;min-height:70px;}
   <!-- TABLES TAB -->
   <div class="tab-panel" id="panel-tables">
     <div class="page-hd"><div class="page-title">Table Management</div></div>
-    <div class="table-manager">
-      <p style="font-size:13px;color:var(--tm);margin-bottom:20px;">Set the number of tables available for dine-in. Customers will select from these when ordering.</p>
-      <div class="table-count-ctrl">
-        <button class="tcc-btn" onclick="changeTableCount(-1)">−</button>
-        <div class="tcc-num" id="tc-num">10</div>
-        <button class="tcc-btn" onclick="changeTableCount(1)">+</button>
-      </div>
-      <button class="btn btn-gold" onclick="saveTableCount()" style="margin-bottom:20px">Save Table Count</button>
-      <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-weight:700">Table Preview</p>
-<div class="table-display" id="table-display"></div>
+<div class="table-manager">
+  <p style="font-size:13px;color:var(--tm);margin-bottom:20px;">Set the number of tables. Green = free, Amber = has active orders.</p>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+    <div class="table-count-ctrl" style="margin-bottom:0;">
+      <button class="tcc-btn" onclick="changeTableCount(-1)">−</button>
+      <div class="tcc-num" id="tc-num">10</div>
+      <button class="tcc-btn" onclick="changeTableCount(1)">+</button>
     </div>
+    <button class="btn btn-gold btn-sm" onclick="saveTableCount()">Save</button>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tm);">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span> Free
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--gold);display:inline-block;margin-left:6px;"></span> Active orders
+    </div>
+  </div>
+  <div class="table-display" id="table-display"></div>
+</div>
 
     <div style="margin-top:32px;">
       <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📱 Table QR Codes</p>
@@ -304,71 +385,317 @@ textarea.fi{resize:vertical;min-height:70px;}
       <div id="qr-grid" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
     </div>
   </div>
+
+<!-- CUSTOMERS TAB -->
+<div class="tab-panel" id="panel-customers">
+  <div class="page-hd">
+    <div class="page-title">Guest Phone Book</div>
+    <button class="btn btn-ghost btn-sm" onclick="exportPhoneLeads()">↓ Export CSV</button>
+  </div>
+  <div class="search-bar" style="margin-bottom:14px;">
+    <span style="color:var(--td)">🔍</span>
+    <input type="text" id="cust-search" placeholder="Search by name or phone..." oninput="renderCustomers()">
+  </div>
+  <div id="customers-container"><div class="spinner"></div></div>
+</div>
+
+<!-- LOYALTY TAB -->
+<div class="tab-panel" id="panel-loyalty">
+  <div class="page-hd">
+    <div class="page-title">Loyalty Program</div>
+    <button class="btn btn-gold" onclick="saveLoyaltySettings()">Save Settings</button>
+  </div>
+
+  <!-- Program On/Off -->
+  <div class="setup-card">
+    <div class="setup-title">⭐ Program Status</div>
+    <div class="toggle-row" style="margin-bottom:14px;">
+      <span class="toggle-label">Loyalty Program Active</span>
+      <label class="toggle"><input type="checkbox" id="loyalty-enabled"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="fg span2">
+      <label class="fl">Program Display Name</label>
+      <input type="text" class="fi" id="loyalty-name" placeholder="e.g. Spice Rewards, VIP Club">
+    </div>
+    <div class="fg span2" style="margin-top:12px;">
+      <label class="fl">Tagline shown to customers</label>
+      <input type="text" class="fi" id="loyalty-desc" placeholder="e.g. Earn 1 point per dollar. Get $5 off at 100 points!">
+    </div>
+  </div>
+
+  <!-- Earning Rules -->
+  <div class="setup-card">
+    <div class="setup-title">💰 Earning Rules</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label class="fl">Points Per Dollar Spent</label>
+        <input type="number" class="fi" id="loyalty-ppd" placeholder="e.g. 1" min="0.1" step="0.1">
+      </div>
+      <div class="fg">
+        <label class="fl">Welcome Bonus Points</label>
+        <input type="number" class="fi" id="loyalty-welcome" placeholder="e.g. 10" min="0">
+      </div>
+      <div class="fg">
+        <label class="fl">Birthday Bonus Points</label>
+        <input type="number" class="fi" id="loyalty-birthday" placeholder="e.g. 50" min="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- Reward Rules -->
+  <div class="setup-card">
+    <div class="setup-title">🎁 Reward Rules</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label class="fl">Points Needed for Reward</label>
+        <input type="number" class="fi" id="loyalty-threshold" placeholder="e.g. 100" min="1">
+      </div>
+      <div class="fg">
+        <label class="fl">Reward Type</label>
+        <select class="fi" id="loyalty-reward-type" onchange="updateLoyaltyRewardForm()">
+          <option value="discount">Fixed Discount ($X off)</option>
+          <option value="percentage">Percentage Discount (%)</option>
+          <option value="free_item">Free Menu Item</option>
+        </select>
+      </div>
+      <div class="fg" id="loyalty-val-wrap">
+        <label class="fl" id="loyalty-val-label">Reward Value ($)</label>
+        <input type="number" class="fi" id="loyalty-reward-value" placeholder="e.g. 5" min="0" step="0.01">
+      </div>
+      <div class="fg" id="loyalty-item-wrap" style="display:none;">
+        <label class="fl">Free Item Name</label>
+        <input type="text" class="fi" id="loyalty-reward-item" placeholder="e.g. Regular Tea">
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Members -->
+  <div class="setup-card">
+    <div class="setup-title">👥 Members <span id="loyalty-member-count" style="font-size:12px;color:var(--tm);font-weight:400;margin-left:6px;"></span></div>
+    <div style="overflow-x:auto;">
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Phone</th><th>Visits</th><th>Points</th><th>Redeemed</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="loyalty-members-body">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--td)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="exportLoyaltyCSV()">↓ Export CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadLoyaltyMembers()">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+  
 <!-- ANALYTICS TAB -->
   <div class="tab-panel" id="panel-analytics">
     <!-- populated by renderAnalytics() on tab switch -->
   </div>
   <!-- SETUP TAB -->
   <div class="tab-panel" id="panel-setup">
-    <div class="page-hd"><div class="page-title">Setup & Configuration</div></div>
+<div class="page-hd"><div class="page-title">Setup & Configuration</div></div>
 
-    <div class="setup-card">
-      <div class="setup-title">🔥 Firebase Configuration</div>
-      <div class="setup-desc">Replace the config in both HTML files with your Firebase project config. Get it from: <b>Firebase Console → Project Settings → Your apps → Web app → SDK setup</b></div>
-      <div class="code-block">const FB_CONFIG = {<br>&nbsp;&nbsp;apiKey: "YOUR_API_KEY",<br>&nbsp;&nbsp;authDomain: "YOUR_PROJECT.firebaseapp.com",<br>&nbsp;&nbsp;projectId: "YOUR_PROJECT_ID",<br>&nbsp;&nbsp;storageBucket: "YOUR_PROJECT.appspot.com",<br>&nbsp;&nbsp;messagingSenderId: "YOUR_SENDER_ID",<br>&nbsp;&nbsp;appId: "YOUR_APP_ID"<br>};</div>
-    </div>
-
-    <div class="setup-card">
-      <div class="setup-title">🌱 Initialize Menu (First Time)</div>
-      <div class="setup-desc">Populate your Firestore database with the full Spice Korner menu. Run this once when setting up — it will not overwrite existing items.</div>
-      <div id="seed-status"></div>
-      <button class="btn btn-gold" onclick="seedMenu()" id="seed-btn">Seed Menu to Firebase</button>
-    </div>
-
-    <div class="setup-card">
-      <div class="setup-title">🖨️ Printer Setup</div>
-      <div class="setup-desc">The system prints using the browser's built-in print dialog. For thermal printers (80mm receipt):<br><br>1. Go to your OS printer settings<br>2. Set paper size to <b>80mm × Auto</b> (or "Receipt" size)<br>3. Disable headers/footers in browser print settings<br>4. Set margins to None<br>5. Test print from the customer app by placing an order</div>
-    </div>
-
-    <div class="setup-card">
-      <div class="setup-title">🔒 Firebase Security Rules</div>
-      <div class="setup-desc">Set these rules in Firebase Console → Firestore Database → Rules:</div>
-      <div class="code-block">rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{database}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu_items/{item} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /deals/{deal} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /settings/{doc} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /orders/{order} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow create: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, update, delete: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
-      <div class="setup-desc">And for Storage rules:<br></div>
-      <div class="code-block">rules_version = '2';<br>service firebase.storage {<br>&nbsp;&nbsp;match /b/{bucket}/o {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu-images/{f=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
-    </div>
-
+<!-- RESTAURANT BRANDING -->
 <div class="setup-card">
-      <div class="setup-title">💳 Payment Settings</div>
-      <div class="setup-desc">When enabled, customers can choose to pay by card or cash at checkout. Requires a Stripe account and a Cloudflare Worker backend. Leave keys blank until ready — the toggle alone does nothing without valid keys.</div>
-      <div class="toggle-row" style="margin-bottom:18px;">
-        <span class="toggle-label">Enable Card Payments on Customer Portal</span>
-        <label class="toggle"><input type="checkbox" id="pay-toggle"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="fg" style="margin-bottom:12px;">
-        <label class="fl">Stripe Publishable Key</label>
-        <input type="text" id="stripe-pk" class="fi" placeholder="pk_live_... — get from Stripe Dashboard → Developers → API Keys" autocomplete="off">
-      </div>
-      <div class="fg" style="margin-bottom:18px;">
-        <label class="fl">Backend URL (Cloudflare Worker)</label>
-        <input type="text" id="backend-url" class="fi" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="off">
-      </div>
+  <div class="setup-title">🏪 Restaurant Branding</div>
+  <div class="setup-desc">These replace all hardcoded names across both portals and receipts.</div>
+  <div class="form-grid">
+    <div class="fg">
+      <label class="fl">Restaurant Name</label>
+      <input type="text" class="fi" id="s-rest-name" placeholder="e.g. Spice Korner">
+    </div>
+    <div class="fg">
+      <label class="fl">Tagline / Subtitle</label>
+      <input type="text" class="fi" id="s-tagline" placeholder="e.g. Self Checkout">
+    </div>
+    <div class="fg span2">
+      <label class="fl">Receipt Footer</label>
+      <input type="text" class="fi" id="s-footer" placeholder="e.g. Thank you for dining with us!">
+    </div>
+  </div>
+  <button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveBrandingSettings()">Save Branding</button>
+  <div id="brand-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
+</div>
+
+<!-- TAX & CURRENCY -->
+<div class="setup-card">
+  <div class="setup-title">💵 Tax & Currency</div>
+  <div class="setup-desc">Tax rate is displayed as a line item and included in totals and Stripe charges. Required by US law.</div>
+  <div class="form-grid">
+    <div class="fg">
+      <label class="fl">Sales Tax Rate (%)</label>
+      <input type="number" class="fi" id="s-tax-rate" placeholder="e.g. 8.5" min="0" max="30" step="0.01" style="max-width:130px;">
+    </div>
+    <div class="fg">
+      <label class="fl">Service Charge (%)</label>
+      <input type="number" class="fi" id="s-service-charge" placeholder="e.g. 0 or 3" min="0" max="20" step="0.01" style="max-width:130px;">
+    </div>
+    <div class="fg">
+      <label class="fl">Currency Symbol</label>
+      <input type="text" class="fi" id="s-currency-symbol" placeholder="$" maxlength="3" style="max-width:80px;">
+    </div>
+    <div class="fg">
+      <label class="fl">Currency Code</label>
+      <input type="text" class="fi" id="s-currency-code" placeholder="USD" maxlength="4" style="max-width:80px;" oninput="this.value=this.value.toUpperCase()">
+    </div>
+  </div>
+  <button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveTaxSettings()">Save Tax & Currency</button>
+  <div id="tax-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
+</div>
+
+<!-- ORDERING PAUSE -->
+<div class="setup-card">
+  <div class="setup-title">🚦 Ordering Control</div>
+  <div class="setup-desc">Pause ordering instantly — closes the kitchen to new orders. Customers see a message instead of the menu.</div>
+  <div id="pause-status-banner" style="display:none;" class="pause-banner">
+    <span style="font-size:20px;">⏸</span>
+    <span class="pause-banner-text">Orders are currently PAUSED</span>
+  </div>
+  <div class="toggle-row" style="margin-bottom:14px;">
+    <span class="toggle-label">Pause All Ordering</span>
+    <label class="toggle"><input type="checkbox" id="ordering-paused" onchange="saveOrderingPause()"><span class="toggle-slider"></span></label>
+  </div>
+  <div class="fg">
+    <label class="fl">Message shown to customers</label>
+    <input type="text" class="fi" id="s-pause-msg" placeholder="We're not taking orders right now. Please see staff." onchange="saveOrderingPause()">
+  </div>
+</div>
+
+<!-- BRAND COLORS -->
+<div class="setup-card">
+  <div class="setup-title">🎨 Brand Colors</div>
+  <div class="setup-desc">Set your brand's color palette. Changes apply in real-time across the portals you select.</div>
+  <div class="fg" style="margin-bottom:14px;">
+    <label class="fl">Apply colors to</label>
+    <select class="fi" id="s-apply-brand-to" style="max-width:200px;">
+      <option value="both">Both portals</option>
+      <option value="customer">Customer portal only</option>
+      <option value="admin">Admin panel only</option>
+    </select>
+  </div>
+  <div class="color-input-row">
+    <input type="color" class="color-swatch" id="bc-primary" value="#C8922A" oninput="previewBrandColor()">
+    <div>
+      <div style="font-size:13px;font-weight:600;">Primary Accent</div>
+      <div style="font-size:11.5px;color:var(--tm)">Buttons, prices, highlights</div>
+    </div>
+  </div>
+  <div class="color-input-row">
+    <input type="color" class="color-swatch" id="bc-bg" value="#080808" oninput="previewBrandColor()">
+    <div>
+      <div style="font-size:13px;font-weight:600;">Background</div>
+      <div style="font-size:11.5px;color:var(--tm)">Main app background</div>
+    </div>
+  </div>
+  <div class="color-input-row">
+    <input type="color" class="color-swatch" id="bc-surface" value="#141414" oninput="previewBrandColor()">
+    <div>
+      <div style="font-size:13px;font-weight:600;">Card Surface</div>
+      <div style="font-size:11.5px;color:var(--tm)">Cards, panels</div>
+    </div>
+  </div>
+  <div class="color-input-row">
+    <input type="color" class="color-swatch" id="bc-text" value="#F5F0E8" oninput="previewBrandColor()">
+    <div>
+      <div style="font-size:13px;font-weight:600;">Text Color</div>
+      <div style="font-size:11.5px;color:var(--tm)">Primary readable text</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+    <button class="btn btn-gold btn-sm" onclick="saveBrandColors()">Save & Apply</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetBrandColors()">Reset to Default</button>
+  </div>
+  <div id="color-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Colors saved & applied</div>
+</div>
+
+<!-- PAYMENT SETTINGS -->
+<div class="setup-card">
+  <div class="setup-title">💳 Payment Settings</div>
+  <div class="setup-desc">Enable card payments via Stripe. Requires a Stripe account and a Cloudflare Worker backend.</div>
+  <div class="toggle-row" style="margin-bottom:18px;">
+    <span class="toggle-label">Enable Card Payments on Customer Portal</span>
+    <label class="toggle"><input type="checkbox" id="pay-toggle"><span class="toggle-slider"></span></label>
+  </div>
+  <div class="toggle-row" style="margin-bottom:18px;">
+    <span class="toggle-label">Enable Tip Prompt (Card payments)</span>
+    <label class="toggle"><input type="checkbox" id="tip-toggle"><span class="toggle-slider"></span></label>
+  </div>
+  <div class="fg" style="margin-bottom:12px;">
+    <label class="fl">Stripe Publishable Key</label>
+    <input type="text" class="fi" id="stripe-pk" placeholder="pk_live_..." autocomplete="off">
+  </div>
+  <div class="fg" style="margin-bottom:12px;">
+    <label class="fl">Backend URL (Cloudflare Worker)</label>
+    <input type="text" class="fi" id="backend-url" placeholder="https://your-worker.workers.dev" autocomplete="off">
+  </div>
   <div class="fg" style="margin-bottom:18px;">
-        <label class="fl">Estimated Wait Time (minutes)</label>
-        <input type="number" id="wait-minutes" class="fi" placeholder="e.g. 15" min="1" max="120" style="max-width:130px;">
-      </div>
-      <button class="btn btn-gold" onclick="savePaymentSettings()">Save Payment Settings</button>
-      <div id="pay-save-msg" style="margin-top:10px;font-size:12.5px;color:var(--green);display:none;">✓ Settings saved</div>
+    <label class="fl">Estimated Wait Time (minutes)</label>
+    <input type="number" class="fi" id="wait-minutes" placeholder="e.g. 15" min="1" max="120" style="max-width:130px;">
+  </div>
+  <button class="btn btn-gold" onclick="savePaymentSettings()">Save Payment Settings</button>
+  <div id="pay-save-msg" style="margin-top:10px;font-size:12.5px;color:var(--green);display:none;">✓ Settings saved</div>
+</div>
+
+<!-- CUSTOM CATEGORIES -->
+<div class="setup-card">
+  <div class="setup-title">🗂 Menu Categories</div>
+  <div class="setup-desc">Add or remove menu categories. Both portals read these dynamically. Drag to reorder (coming soon).</div>
+  <div id="cats-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+  <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">
+    <div class="fg" style="flex:0 0 60px;margin-bottom:0;">
+      <label class="fl">Icon</label>
+      <input type="text" class="fi" id="new-cat-emoji" placeholder="🍕" maxlength="4" style="text-align:center;font-size:18px;">
     </div>
-    
-    <div class="setup-card">
-      <div class="setup-title">🗑️ Danger Zone</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn-red" onclick="clearAllOrders()">Delete All Orders</button>
-        <button class="btn btn-red" onclick="clearAllMenu()">Delete All Menu Items</button>
-        <button class="btn btn-red" onclick="clearAllDeals()">Delete All Deals</button>
-      </div>
+    <div class="fg" style="flex:1;margin-bottom:0;">
+      <label class="fl">Category Name</label>
+      <input type="text" class="fi" id="new-cat-name" placeholder="e.g. Salads">
     </div>
+    <button class="btn btn-gold btn-sm" onclick="addCategory()" style="flex-shrink:0;">+ Add</button>
+  </div>
+  <button class="btn btn-gold btn-sm" onclick="saveCategories()">Save Categories</button>
+  <div id="cats-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
+</div>
+
+<!-- FIREBASE -->
+<div class="setup-card">
+  <div class="setup-title">🔥 Firebase Configuration</div>
+  <div class="setup-desc">Replace the config in both HTML files. Get it from: <b>Firebase Console → Project Settings → Your apps → SDK setup</b></div>
+  <div class="code-block">const firebaseConfig = {<br>&nbsp;&nbsp;apiKey: "YOUR_API_KEY",<br>&nbsp;&nbsp;authDomain: "YOUR_PROJECT.firebaseapp.com",<br>&nbsp;&nbsp;projectId: "YOUR_PROJECT_ID",<br>&nbsp;&nbsp;storageBucket: "YOUR_PROJECT.appspot.com",<br>&nbsp;&nbsp;messagingSenderId: "YOUR_SENDER_ID",<br>&nbsp;&nbsp;appId: "YOUR_APP_ID"<br>};</div>
+</div>
+
+<!-- FIRST TIME SETUP -->
+<div class="setup-card">
+  <div class="setup-title">🌱 Initialize Menu</div>
+  <div class="setup-desc">Populate Firestore with the full Spice Korner menu. Run once — will not overwrite existing items.</div>
+  <div id="seed-status"></div>
+  <button class="btn btn-gold" onclick="seedMenu()" id="seed-btn">Seed Menu to Firebase</button>
+</div>
+
+<!-- PRINTER -->
+<div class="setup-card">
+  <div class="setup-title">🖨️ Printer Setup</div>
+  <div class="setup-desc">The system prints using the browser's built-in print dialog. For thermal printers (80mm receipt):<br><br>1. Set paper size to <b>80mm × Auto</b> (or "Receipt")<br>2. Disable headers/footers in browser print settings<br>3. Set margins to None<br>4. Test print from the customer app</div>
+</div>
+
+<!-- SECURITY RULES -->
+<div class="setup-card">
+  <div class="setup-title">🔒 Firebase Security Rules</div>
+  <div class="setup-desc">Updated rules are in the upgrade guide. Always update rules when adding new collections.</div>
+</div>
+
+<!-- DANGER ZONE -->
+<div class="setup-card">
+  <div class="setup-title">🗑️ Danger Zone</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn btn-red" onclick="clearAllOrders()">Delete All Orders</button>
+    <button class="btn btn-red" onclick="clearAllMenu()">Delete All Menu Items</button>
+    <button class="btn btn-red" onclick="clearAllDeals()">Delete All Deals</button>
+  </div>
+</div>
   </div>
 </div>
 
@@ -618,20 +945,15 @@ function switchTab(t) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(`panel-${t}`).classList.add('active');
   document.getElementById(`tab-${t}-btn`).classList.add('active');
-  if (t==='orders')  renderOrders();
-  if (t==='menu')    renderMenuItems();
-  if (t==='deals')   renderDeals();
-if (t==='tables') {
-    renderTablePreview();
-    const saved = localStorage.getItem('hx_portal_url');
-    if (saved && document.getElementById('qr-portal-url')) {
-      document.getElementById('qr-portal-url').value = saved;
-    }
-  }
-  if (t==='setup')     {}
+  if (t==='orders')    renderOrders();
+  if (t==='menu')      renderMenuItems();
+  if (t==='deals')     renderDeals();
+  if (t==='customers') loadCustomers();
+  if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
   if (t==='analytics') renderAnalytics();
+  if (t==='tables')    { renderTablePreview(); loadTableOccupancy(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
+  if (t==='setup')     {}
 }
-
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
   if (!db) { renderOrders(); return; }
@@ -803,7 +1125,36 @@ document.body.appendChild(printFrame);
 const doc = printFrame.contentWindow.document;
   const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${escapeHtml(i.name)}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${escapeHtml(i.note)}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
   const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
-  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">Spice Korner</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+const cur  = settings.currencySymbol || '$';
+const name = settings.restaurantName  || 'Spice Korner';
+const foot = settings.receiptFooter   || 'Thank you for choosing us!';
+const taxAmt  = (o.taxAmount  || 0).toFixed(2);
+const tipAmt  = (o.tipAmount  || 0).toFixed(2);
+const svcAmt  = (o.serviceCharge || 0).toFixed(2);
+doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body>
+<div class="c b" style="font-size:20px;letter-spacing:5px">${name}</div>
+<div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div>
+<hr>
+<div style="font-size:10px;line-height:1.6">
+<div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+<div>Order <b>#${o.orderNumber||'—'}</b></div>
+${o.orderTypeMode==='edit'?`<div style="font-size:14px;font-weight:bold;margin-top:4px">✏️ EDIT TO ORDER #${o.parentOrderNumber}</div>`:o.orderTypeMode==='addition'?`<div style="font-size:14px;font-weight:bold;margin-top:4px">➕ ADDITION TO ORDER #${o.parentOrderNumber}</div>`:''}
+<div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div>
+<div>Customer: <b>${escapeHtml(o.customerName||'—')}</b></div>
+</div>
+<hr>
+<table><tbody>${rows}</tbody></table>
+<hr>
+<table>
+${o.savings>0.005?`<tr><td style="font-size:10px;color:#555">Original</td><td style="text-align:right;font-size:10px;color:#555">${cur}${(o.origTotal||0).toFixed(2)}</td></tr><tr><td style="font-size:10px;color:#555">Discount</td><td style="text-align:right;font-size:10px;color:#555">-${cur}${o.savings.toFixed(2)}</td></tr>`:''}
+<tr><td style="font-size:10px;color:#555">Subtotal</td><td style="text-align:right;font-size:10px;color:#555">${cur}${(o.origTotal&&o.savings>0.005?o.origTotal-o.savings:o.origTotal||o.total||0).toFixed(2)}</td></tr>
+${parseFloat(taxAmt)>0?`<tr><td style="font-size:10px;color:#555">Tax (${(o.taxRate||settings.taxRate||0).toFixed(2)}%)</td><td style="text-align:right;font-size:10px;color:#555">${cur}${taxAmt}</td></tr>`:''}
+${parseFloat(svcAmt)>0?`<tr><td style="font-size:10px;color:#555">Service Charge</td><td style="text-align:right;font-size:10px;color:#555">${cur}${svcAmt}</td></tr>`:''}
+${parseFloat(tipAmt)>0?`<tr><td style="font-size:10px;color:#555">Tip</td><td style="text-align:right;font-size:10px;color:#555">${cur}${tipAmt}</td></tr>`:''}
+<tr class="gt"><td>TOTAL</td><td style="text-align:right">${cur}${(o.total||0).toFixed(2)}</td></tr>
+</table><hr>
+<div class="c" style="font-size:9px;margin-top:3px">${foot}</div>
+</body></html>`);
   <div>
   Order <b>#${o.orderNumber || '—'}</b>
 </div>
@@ -1254,12 +1605,71 @@ async function loadSettings() {
     if (snap.exists) {
       settings = {...settings, ...snap.data()};
       tableCount = settings.tableCount || 10;
-      document.getElementById('pay-toggle').checked  = !!settings.cardPaymentsEnabled;
-      document.getElementById('stripe-pk').value     = settings.stripePK    || '';
-      document.getElementById('backend-url').value   = settings.backendURL  || '';
-      document.getElementById('wait-minutes').value  = settings.waitMinutes || 15;
+
+      // Payment
+      document.getElementById('pay-toggle').checked    = !!settings.cardPaymentsEnabled;
+      document.getElementById('tip-toggle').checked    = !!settings.tipEnabled;
+      document.getElementById('stripe-pk').value       = settings.stripePK    || '';
+      document.getElementById('backend-url').value     = settings.backendURL  || '';
+      document.getElementById('wait-minutes').value    = settings.waitMinutes || 15;
+
+      // Branding
+      document.getElementById('s-rest-name').value = settings.restaurantName || 'Spice Korner';
+      document.getElementById('s-tagline').value   = settings.tagline        || 'Self Checkout';
+      document.getElementById('s-footer').value    = settings.receiptFooter  || 'Thank you for dining with us!';
+      // Update live admin topbar
+      const restName = settings.restaurantName || 'Spice Korner';
+      document.querySelector('.tb-brand').textContent = restName;
+      document.querySelector('.login-logo')?.textContent && (document.querySelector('.login-logo').textContent = restName);
+
+      // Tax
+      document.getElementById('s-tax-rate').value        = settings.taxRate        ?? 8.5;
+      document.getElementById('s-service-charge').value  = settings.serviceCharge  ?? 0;
+      document.getElementById('s-currency-symbol').value = settings.currencySymbol || '$';
+      document.getElementById('s-currency-code').value   = settings.currencyCode   || 'USD';
+
+      // Ordering pause
+      const paused = !!settings.orderingPaused;
+      document.getElementById('ordering-paused').checked = paused;
+      document.getElementById('s-pause-msg').value = settings.pauseMessage || "We're not taking orders right now.";
+      document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
+
+      // Brand colors
+      if (settings.brandColors) {
+        const bc = settings.brandColors;
+        document.getElementById('bc-primary').value  = bc.primary  || '#C8922A';
+        document.getElementById('bc-bg').value        = bc.bg       || '#080808';
+        document.getElementById('bc-surface').value   = bc.surface  || '#141414';
+        document.getElementById('bc-text').value      = bc.text     || '#F5F0E8';
+        document.getElementById('s-apply-brand-to').value = settings.applyBrandTo || 'both';
+        // Apply to admin if applicable
+        const applyTo = settings.applyBrandTo || 'both';
+        if (applyTo === 'admin' || applyTo === 'both') applyBrandColorsToDOM(bc);
+      }
+
+      // Loyalty
+      if (settings.loyaltyProgram) {
+        const lp = settings.loyaltyProgram;
+        document.getElementById('loyalty-enabled').checked   = !!settings.loyaltyEnabled;
+        document.getElementById('loyalty-name').value        = lp.name          || '';
+        document.getElementById('loyalty-desc').value        = lp.description   || '';
+        document.getElementById('loyalty-ppd').value         = lp.pointsPerDollar ?? 1;
+        document.getElementById('loyalty-welcome').value     = lp.welcomeBonus  ?? 10;
+        document.getElementById('loyalty-birthday').value    = lp.birthdayBonus ?? 50;
+        document.getElementById('loyalty-threshold').value   = lp.rewardThreshold ?? 100;
+        document.getElementById('loyalty-reward-type').value = lp.rewardType    || 'discount';
+        document.getElementById('loyalty-reward-value').value= lp.rewardValue   ?? 5;
+        document.getElementById('loyalty-reward-item').value = lp.rewardItemName || '';
+        updateLoyaltyRewardForm();
+      }
+
+      // Categories
+      if (settings.categories && settings.categories.length) {
+        window._customCats = settings.categories;
+      }
+      renderCategoriesList();
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadSettings:', e); }
   document.getElementById('tc-num').textContent = tableCount;
   renderTablePreview();
 }
@@ -1277,33 +1687,91 @@ function statCard(label, value, color) {
   </div>`;
 }
 
+let analyticsRange = 'today';
+
 function renderAnalytics() {
   const panel = document.getElementById('panel-analytics');
   const now   = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let rangeStart, rangeLabel;
+  switch(analyticsRange) {
+    case 'yesterday': {
+      const y = new Date(now); y.setDate(y.getDate()-1); y.setHours(0,0,0,0);
+      rangeStart = y;
+      const yEnd = new Date(y); yEnd.setHours(23,59,59,999);
+      rangeLabel = 'Yesterday';
+      break;
+    }
+    case 'week': {
+      rangeStart = new Date(now); rangeStart.setDate(rangeStart.getDate() - 7); rangeStart.setHours(0,0,0,0);
+      rangeLabel = 'Last 7 Days';
+      break;
+    }
+    case 'month': {
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      rangeLabel = 'This Month';
+      break;
+    }
+    default: {
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      rangeLabel = 'Today';
+    }
+  }
+
+  // Filter from in-memory orders (limited to 100 from Firestore listener)
+  // For historical queries we fire a separate Firestore query
+  if (analyticsRange !== 'today') {
+    panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}<div class="spinner"></div>`;
+    attachDateTabListeners();
+    db.collection('orders')
+      .where('timestamp', '>=', rangeStart)
+      .orderBy('timestamp', 'desc')
+      .limit(500)
+      .get()
+      .then(snap => {
+        const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
+        renderAnalyticsData(panel, orders, rangeLabel);
+      })
+      .catch(e => panel.innerHTML += `<p style="color:var(--red);padding:20px;">Error: ${e.message}</p>`);
+    return;
+  }
 
   const todayOrders = allOrders.filter(o => {
     const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp || 0);
-    return ts >= todayStart;
+    return ts >= rangeStart;
   });
+  panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}`;
+  attachDateTabListeners();
+  renderAnalyticsData(panel, todayOrders, rangeLabel);
+}
 
-  const revenue  = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const cardPaid = todayOrders.filter(o => o.paymentMethod === 'card' && o.paymentStatus === 'paid').length;
-  const cash     = todayOrders.filter(o => o.paymentMethod !== 'card').length;
+function buildDateTabs() {
+  const tabs = ['today','yesterday','week','month'];
+  const labels = {today:'Today',yesterday:'Yesterday',week:'7 Days',month:'This Month'};
+  return `<div class="date-tabs">${tabs.map(t=>`<button class="dtab${analyticsRange===t?' active':''}" data-range="${t}">${labels[t]}</button>`).join('')}</div>`;
+}
 
-  // Top items
+function attachDateTabListeners() {
+  document.querySelectorAll('.dtab').forEach(btn => {
+    btn.onclick = () => { analyticsRange = btn.dataset.range; renderAnalytics(); };
+  });
+}
+
+function renderAnalyticsData(panel, orders, rangeLabel) {
+  const revenue  = orders.reduce((s,o) => s+(o.total||0), 0);
+  const cardPaid = orders.filter(o => o.paymentMethod==='card' && o.paymentStatus==='paid').length;
+  const cash     = orders.filter(o => o.paymentMethod!=='card').length;
+  const avgOrder = orders.length ? revenue / orders.length : 0;
+
   const counts = {};
-  todayOrders.forEach(o => (o.items || []).forEach(i => {
-    counts[i.name] = (counts[i.name] || 0) + (i.qty || 1);
-  }));
-  const topItems = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 6);
+  orders.forEach(o => (o.items||[]).forEach(i => { counts[i.name]=(counts[i.name]||0)+(i.qty||1); }));
+  const topItems = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxQty   = topItems[0]?.[1] || 1;
 
-  // Live queue
-  const pending   = allOrders.filter(o => o.status === 'pending').length;
-  const preparing = allOrders.filter(o => o.status === 'preparing').length;
-  const ready     = allOrders.filter(o => o.status === 'ready').length;
-  const done      = todayOrders.filter(o => o.status === 'completed').length;
+  const pending   = allOrders.filter(o=>o.status==='pending').length;
+  const preparing = allOrders.filter(o=>o.status==='preparing').length;
+  const ready     = allOrders.filter(o=>o.status==='ready').length;
+  const done      = orders.filter(o=>o.status==='completed').length;
 
   const queueItem = (label, val, color) =>
     `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;text-align:center;min-width:80px;">
@@ -1311,43 +1779,38 @@ function renderAnalytics() {
       <div style="font-size:11px;color:var(--td);margin-top:2px;">${label}</div>
     </div>`;
 
+  const cur = settings.currencySymbol || '$';
+  const existingHeader = panel.querySelector('.page-hd')?.outerHTML || '';
+  const existingTabs   = panel.querySelector('.date-tabs')?.outerHTML || '';
+
   panel.innerHTML = `
-    <div class="page-hd">
-      <div class="page-title">Analytics</div>
-      <div style="font-size:12px;color:var(--td)">
-        ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}
-      </div>
-    </div>
-
+    ${existingHeader}
+    ${existingTabs}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:28px;">
-      ${statCard("Today's Orders",  todayOrders.length,    'var(--blue)')}
-      ${statCard("Today's Revenue", '$'+revenue.toFixed(2),'var(--gold)')}
-      ${statCard("💳 Card Paid",    cardPaid,              'var(--green)')}
-      ${statCard("💵 Cash",         cash,                  'var(--tm)')}
+      ${statCard(rangeLabel+' Orders', orders.length, 'var(--blue)')}
+      ${statCard(rangeLabel+' Revenue', cur+revenue.toFixed(2), 'var(--gold)')}
+      ${statCard('Avg Order', cur+avgOrder.toFixed(2), 'var(--purple)')}
+      ${statCard('💳 Card', cardPaid, 'var(--green)')}
     </div>
-
     <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:10px;">Live Queue</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
-      ${queueItem('Pending',   pending,   'var(--gold)')}
-      ${queueItem('Preparing', preparing, 'var(--blue)')}
-      ${queueItem('Ready',     ready,     'var(--green)')}
-      ${queueItem('Done Today',done,      'var(--td)')}
+      ${queueItem('Pending',pending,'var(--gold)')}${queueItem('Preparing',preparing,'var(--blue)')}${queueItem('Ready',ready,'var(--green)')}${queueItem('Done',done,'var(--td)')}
     </div>
-
-    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:12px;">Top Items Today</div>
-    ${topItems.length === 0
-      ? `<div style="color:var(--td);font-size:13px;">No orders yet today.</div>`
-      : `<div style="display:flex;flex-direction:column;gap:10px;max-width:480px;">
-          ${topItems.map(([name, qty]) => `
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="font-size:13px;color:var(--tm);width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${name}</div>
-              <div style="flex:1;background:var(--s3);border-radius:4px;height:7px;overflow:hidden;">
-                <div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round((qty/maxQty)*100)}%;"></div>
-              </div>
-              <div style="font-size:12px;font-weight:700;color:var(--gold);width:22px;text-align:right;">${qty}</div>
-            </div>`).join('')}
-        </div>`}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);">Top Items</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportOrdersCSV()">↓ Export CSV</button>
+    </div>
+    ${topItems.length===0
+      ? `<div style="color:var(--td);font-size:13px;">No orders in this period.</div>`
+      : `<div style="display:flex;flex-direction:column;gap:10px;max-width:480px;">${topItems.map(([name,qty])=>`
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:13px;color:var(--tm);width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${name}</div>
+            <div style="flex:1;background:var(--s3);border-radius:4px;height:7px;overflow:hidden;"><div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round(qty/maxQty*100)}%;"></div></div>
+            <div style="font-size:12px;font-weight:700;color:var(--gold);width:22px;text-align:right;">${qty}</div>
+          </div>`).join('')}</div>`}
     <div style="height:32px;"></div>`;
+
+  attachDateTabListeners();
 }
 
 function generateQRCodes() {
@@ -1412,6 +1875,402 @@ async function saveTableCount() {
   } catch(e) { toast('Error saving','error'); }
 }
 
+// ── SAVE BRANDING ──────────────────────────────
+async function saveBrandingSettings() {
+  const name    = document.getElementById('s-rest-name').value.trim();
+  const tagline = document.getElementById('s-tagline').value.trim();
+  const footer  = document.getElementById('s-footer').value.trim();
+  if (!name) { toast('Enter a restaurant name','error'); return; }
+  try {
+    await db.collection('settings').doc('global').set(
+      { restaurantName: name, tagline, receiptFooter: footer }, { merge: true }
+    );
+    settings.restaurantName = name; settings.tagline = tagline; settings.receiptFooter = footer;
+    document.querySelector('.tb-brand').textContent = name;
+    const msg = document.getElementById('brand-save-msg');
+    msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
+    toast('Branding saved','success');
+  } catch(e) { toast('Save failed','error'); }
+}
+
+// ── SAVE TAX ────────────────────────────────────
+async function saveTaxSettings() {
+  const tax     = parseFloat(document.getElementById('s-tax-rate').value) || 0;
+  const service = parseFloat(document.getElementById('s-service-charge').value) || 0;
+  const symbol  = document.getElementById('s-currency-symbol').value.trim() || '$';
+  const code    = document.getElementById('s-currency-code').value.trim()   || 'USD';
+  try {
+    await db.collection('settings').doc('global').set(
+      { taxRate: tax, serviceCharge: service, currencySymbol: symbol, currencyCode: code }, { merge: true }
+    );
+    Object.assign(settings, { taxRate: tax, serviceCharge: service, currencySymbol: symbol, currencyCode: code });
+    const msg = document.getElementById('tax-save-msg');
+    msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
+    toast('Tax settings saved','success');
+  } catch(e) { toast('Save failed','error'); }
+}
+
+// ── ORDERING PAUSE ─────────────────────────────
+async function saveOrderingPause() {
+  const paused = document.getElementById('ordering-paused').checked;
+  const msg    = document.getElementById('s-pause-msg').value.trim() || "We're not taking orders right now.";
+  try {
+    await db.collection('settings').doc('global').set({ orderingPaused: paused, pauseMessage: msg }, { merge: true });
+    document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
+    toast(paused ? '⏸ Orders paused — customers see a hold message' : '▶ Orders resumed','success');
+  } catch(e) { toast('Failed to save','error'); }
+}
+
+// ── BRAND COLORS ───────────────────────────────
+function applyBrandColorsToDOM(bc) {
+  const root = document.documentElement;
+  if (bc.primary) {
+    root.style.setProperty('--gold',   bc.primary);
+    root.style.setProperty('--gold-l', lightenHex(bc.primary, 30));
+    root.style.setProperty('--gold-d', hexToRgba(bc.primary, 0.13));
+    root.style.setProperty('--amber',  bc.primary);
+    root.style.setProperty('--amber-d',hexToRgba(bc.primary, 0.14));
+  }
+  if (bc.bg)      root.style.setProperty('--bg',      bc.bg);
+  if (bc.surface) { root.style.setProperty('--s1', bc.surface); root.style.setProperty('--s2', bc.surface); }
+  if (bc.text)    root.style.setProperty('--text', bc.text);
+}
+
+function previewBrandColor() {
+  applyBrandColorsToDOM({
+    primary: document.getElementById('bc-primary').value,
+    bg:      document.getElementById('bc-bg').value,
+    surface: document.getElementById('bc-surface').value,
+    text:    document.getElementById('bc-text').value,
+  });
+}
+
+async function saveBrandColors() {
+  const bc = {
+    primary: document.getElementById('bc-primary').value,
+    bg:      document.getElementById('bc-bg').value,
+    surface: document.getElementById('bc-surface').value,
+    text:    document.getElementById('bc-text').value,
+  };
+  const applyTo = document.getElementById('s-apply-brand-to').value;
+  try {
+    await db.collection('settings').doc('global').set({ brandColors: bc, applyBrandTo: applyTo }, { merge: true });
+    if (applyTo === 'admin' || applyTo === 'both') applyBrandColorsToDOM(bc);
+    const msg = document.getElementById('color-save-msg');
+    msg.style.display='block'; setTimeout(()=>msg.style.display='none', 2500);
+    toast('Colors saved — customer portal will refresh automatically','success');
+  } catch(e) { toast('Save failed','error'); }
+}
+
+async function resetBrandColors() {
+  const defaults = { primary:'#C8922A', bg:'#080808', surface:'#141414', text:'#F5F0E8' };
+  document.getElementById('bc-primary').value = defaults.primary;
+  document.getElementById('bc-bg').value       = defaults.bg;
+  document.getElementById('bc-surface').value  = defaults.surface;
+  document.getElementById('bc-text').value     = defaults.text;
+  applyBrandColorsToDOM(defaults);
+  await saveBrandColors();
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function lightenHex(hex, pct) {
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.min(255, Math.round(r + (255-r)*pct/100));
+  g = Math.min(255, Math.round(g + (255-g)*pct/100));
+  b = Math.min(255, Math.round(b + (255-b)*pct/100));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── SAVE PAYMENT SETTINGS (updated for tip toggle) ─
+async function savePaymentSettings() {
+  const enabled = document.getElementById('pay-toggle').checked;
+  const tipEn   = document.getElementById('tip-toggle').checked;
+  const pk      = document.getElementById('stripe-pk').value.trim();
+  const url     = document.getElementById('backend-url').value.trim();
+  const wait    = parseInt(document.getElementById('wait-minutes').value) || 15;
+  try {
+    await db.collection('settings').doc('global').set(
+      { cardPaymentsEnabled: enabled, tipEnabled: tipEn, stripePK: pk, backendURL: url, waitMinutes: wait },
+      { merge: true }
+    );
+    Object.assign(settings, { cardPaymentsEnabled: enabled, tipEnabled: tipEn, stripePK: pk, backendURL: url, waitMinutes: wait });
+    const msg = document.getElementById('pay-save-msg');
+    msg.style.display='block'; setTimeout(()=>msg.style.display='none', 2500);
+  } catch(e) { alert('Save failed: '+e.message); }
+}
+
+// ── TABLE OCCUPANCY ────────────────────────────
+async function loadTableOccupancy() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('orders')
+      .where('status', 'in', ['pending','preparing','ready'])
+      .where('orderType', '==', 'dine_in').get();
+    const activeTables = new Set(snap.docs.map(d=>d.data().tableNumber).filter(Boolean));
+    renderTablePreviewWithOccupancy(activeTables);
+  } catch(e) { console.warn('occupancy:', e); }
+}
+
+function renderTablePreviewWithOccupancy(activeTables = new Set()) {
+  const g = document.getElementById('table-display');
+  if (!g) return;
+  g.innerHTML = '';
+  const n = tableCount || settings.tableCount || 10;
+  for (let i=1; i<=n; i++) {
+    const t = document.createElement('div');
+    const active = activeTables.has(i);
+    t.className = `table-tile ${active ? 't-active' : 't-free'}`;
+    t.innerHTML = `${i}<span class="t-sub">${active ? 'Active' : 'Free'}</span>`;
+    t.title = active ? `Table ${i} — has active orders` : `Table ${i} — free`;
+    g.appendChild(t);
+  }
+}
+
+function renderTablePreview() {
+  // Override to use occupancy version
+  renderTablePreviewWithOccupancy(new Set());
+}
+
+// ── CUSTOM CATEGORIES ──────────────────────────
+let _editCats = null;
+
+function getCats() {
+  return _editCats || window._customCats || CATS;
+}
+
+function renderCategoriesList() {
+  const list = document.getElementById('cats-list');
+  if (!list) return;
+  const cats = getCats();
+  list.innerHTML = '';
+  cats.forEach((cat, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);';
+    row.innerHTML = `<span style="font-size:18px;width:24px;text-align:center;">${cat.e||'🍽'}</span>
+      <span style="flex:1;font-size:13px;">${cat.name}</span>
+      <span style="font-size:11px;color:var(--td);">${cat.id}</span>
+      <button class="btn btn-red btn-sm btn-icon" onclick="removeCat(${idx})" title="Remove">×</button>`;
+    list.appendChild(row);
+  });
+}
+
+function addCategory() {
+  const emoji = document.getElementById('new-cat-emoji').value.trim() || '🍽';
+  const name  = document.getElementById('new-cat-name').value.trim();
+  if (!name) { toast('Enter a category name','error'); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  const cats = [...getCats()];
+  if (cats.find(c=>c.id===id)) { toast('Category ID already exists','error'); return; }
+  cats.push({id, name, e: emoji});
+  _editCats = cats;
+  renderCategoriesList();
+  document.getElementById('new-cat-emoji').value = '';
+  document.getElementById('new-cat-name').value = '';
+}
+
+function removeCat(idx) {
+  const cats = [...getCats()];
+  cats.splice(idx, 1);
+  _editCats = cats;
+  renderCategoriesList();
+}
+
+async function saveCategories() {
+  const cats = getCats();
+  try {
+    await db.collection('settings').doc('global').set({ categories: cats }, { merge: true });
+    window._customCats = cats; _editCats = null;
+    const msg = document.getElementById('cats-save-msg');
+    msg.style.display='block'; setTimeout(()=>msg.style.display='none', 2500);
+    toast('Categories saved — reload both portals to see changes','success');
+  } catch(e) { toast('Save failed','error'); }
+}
+
+// ── CSV EXPORT ─────────────────────────────────
+async function exportOrdersCSV() {
+  if (!db) { toast('Firebase not connected','error'); return; }
+  const range = analyticsRange;
+  const now   = new Date();
+  let start;
+  if (range==='yesterday') { start=new Date(now); start.setDate(start.getDate()-1); start.setHours(0,0,0,0); }
+  else if (range==='week') { start=new Date(now); start.setDate(start.getDate()-7); start.setHours(0,0,0,0); }
+  else if (range==='month') { start=new Date(now.getFullYear(),now.getMonth(),1); }
+  else { start=new Date(now.getFullYear(),now.getMonth(),now.getDate()); }
+
+  try {
+    const snap = await db.collection('orders').where('timestamp','>=',start).orderBy('timestamp','desc').limit(1000).get();
+    const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
+    if (!orders.length) { toast('No orders in this period','error'); return; }
+
+    const cur = settings.currencySymbol || '$';
+    const rows = [['Order#','Date','Time','Type','Table','Customer','Items','Subtotal','Tax','Tip','Total','Payment','Status']];
+    orders.forEach(o => {
+      const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
+      const items = (o.items||[]).map(i=>`${i.qty}x ${i.name}`).join(' | ');
+      rows.push([
+        o.orderNumber, ts.toLocaleDateString(), ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+        o.orderType==='dine_in'?'Dine In':'Takeaway', o.tableNumber||'',
+        o.customerName||'', `"${items}"`,
+        (o.origTotal||o.total||0).toFixed(2),
+        (o.taxAmount||0).toFixed(2),
+        (o.tipAmount||0).toFixed(2),
+        (o.total||0).toFixed(2),
+        o.paymentMethod||'cash', o.status||''
+      ]);
+    });
+
+    const csv = rows.map(r=>r.join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `orders-${range}-${now.toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast(`Exported ${orders.length} orders`,'success');
+  } catch(e) { toast('Export failed: '+e.message,'error'); }
+}
+
+// ── CUSTOMERS (PHONE LEADS) ────────────────────
+let allCustomers = [];
+
+async function loadCustomers() {
+  if (!db) return;
+  const con = document.getElementById('customers-container');
+  con.innerHTML = '<div class="spinner"></div>';
+  try {
+    const snap = await db.collection('phone_leads').orderBy('createdAt','desc').limit(500).get();
+    allCustomers = snap.docs.map(d=>({...d.data(),_id:d.id}));
+    renderCustomers();
+  } catch(e) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">📵</div><h3>No guests yet</h3><p>Phone numbers will appear here once customers start sharing them at checkout.</p></div>`;
+  }
+}
+
+function renderCustomers() {
+  const con = document.getElementById('customers-container');
+  const q   = (document.getElementById('cust-search')?.value||'').toLowerCase();
+  const list = q ? allCustomers.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(q)) : allCustomers;
+  if (!list.length) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">📵</div><h3>No guests yet</h3><p>Phone numbers will appear here after customers check out.</p></div>`;
+    return;
+  }
+  con.innerHTML = '';
+  list.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'cust-card';
+    const initials = (c.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const ts = c.createdAt?.toDate ? c.createdAt.toDate() : new Date();
+    card.innerHTML = `
+      <div class="cust-avatar">${initials}</div>
+      <div class="cust-info">
+        <div class="cust-name">${escapeHtml(c.name||'—')}</div>
+        <div class="cust-phone">📱 ${escapeHtml(c.phone||'—')}</div>
+        <div class="cust-meta">${ts.toLocaleDateString()} · Order #${c.orderNumber||'—'} · ${c.orderType==='dine_in'?'Dine In':'Takeaway'}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <a href="tel:${c.phone}" class="btn btn-ghost btn-sm btn-icon" title="Call">📞</a>
+        <a href="sms:${c.phone}" class="btn btn-ghost btn-sm btn-icon" title="SMS">💬</a>
+      </div>`;
+    con.appendChild(card);
+  });
+}
+
+async function exportPhoneLeads() {
+  if (!db) return;
+  const snap = await db.collection('phone_leads').orderBy('createdAt','desc').get();
+  const rows = [['Name','Phone','Order#','Type','Date']];
+  snap.docs.forEach(d=>{
+    const c=d.data(); const ts=c.createdAt?.toDate?c.createdAt.toDate():new Date();
+    rows.push([c.name||'',c.phone||'',c.orderNumber||'',c.orderType||'',ts.toLocaleDateString()]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `guest-phones-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+
+// ── LOYALTY ─────────────────────────────────────
+async function saveLoyaltySettings() {
+  const lp = {
+    name:           document.getElementById('loyalty-name').value.trim(),
+    description:    document.getElementById('loyalty-desc').value.trim(),
+    pointsPerDollar:parseFloat(document.getElementById('loyalty-ppd').value)||1,
+    welcomeBonus:   parseInt(document.getElementById('loyalty-welcome').value)||10,
+    birthdayBonus:  parseInt(document.getElementById('loyalty-birthday').value)||50,
+    rewardThreshold:parseInt(document.getElementById('loyalty-threshold').value)||100,
+    rewardType:     document.getElementById('loyalty-reward-type').value,
+    rewardValue:    parseFloat(document.getElementById('loyalty-reward-value').value)||5,
+    rewardItemName: document.getElementById('loyalty-reward-item').value.trim(),
+  };
+  const enabled = document.getElementById('loyalty-enabled').checked;
+  try {
+    await db.collection('settings').doc('global').set({ loyaltyEnabled: enabled, loyaltyProgram: lp }, { merge: true });
+    settings.loyaltyEnabled = enabled; settings.loyaltyProgram = lp;
+    toast('Loyalty settings saved','success');
+  } catch(e) { toast('Save failed','error'); }
+}
+
+function loadLoyaltySettings() {
+  // Already loaded by loadSettings(), just re-render form
+  updateLoyaltyRewardForm();
+}
+
+function updateLoyaltyRewardForm() {
+  const t = document.getElementById('loyalty-reward-type')?.value;
+  if (!t) return;
+  const valWrap  = document.getElementById('loyalty-val-wrap');
+  const itemWrap = document.getElementById('loyalty-item-wrap');
+  const label    = document.getElementById('loyalty-val-label');
+  if (t==='free_item') { valWrap.style.display='none'; itemWrap.style.display='block'; }
+  else { valWrap.style.display='block'; itemWrap.style.display='none'; label.textContent = t==='percentage' ? 'Reward (%)' : 'Reward ($)'; }
+}
+
+async function loadLoyaltyMembers() {
+  if (!db) return;
+  const tbody = document.getElementById('loyalty-members-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--td)">Loading...</td></tr>';
+  try {
+    const snap = await db.collection('loyalty_members').orderBy('points','desc').limit(200).get();
+    const members = snap.docs.map(d=>({...d.data(),_id:d.id}));
+    document.getElementById('loyalty-member-count').textContent = `(${members.length} members)`;
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--td)">No members yet.</td></tr>'; return; }
+    tbody.innerHTML = members.map(m=>`
+      <tr>
+        <td>${escapeHtml(m.name||'—')}</td>
+        <td style="color:var(--tm)">${escapeHtml(m.phone||'—')}</td>
+        <td style="color:var(--blue)">${m.visits||0}</td>
+        <td><span class="pts-badge">${m.points||0} pts</span></td>
+        <td style="color:var(--td)">${m.totalRedeemed||0} pts</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="adjustPoints('${m._id}','${escapeHtml(m.name||'')}',${m.points||0})">Adjust</button></td>
+      </tr>`).join('');
+  } catch(e) { tbody.innerHTML=`<tr><td colspan="6" style="color:var(--red);padding:20px;">${e.message}</td></tr>`; }
+}
+
+async function adjustPoints(id, name, current) {
+  const delta = parseInt(prompt(`Adjust points for ${name}\nCurrent: ${current}\nEnter change (e.g. +50 or -20):`));
+  if (isNaN(delta)) return;
+  const newPts = Math.max(0, current + delta);
+  try {
+    await db.collection('loyalty_members').doc(id).update({ points: newPts });
+    toast(`Points updated to ${newPts}`,'success');
+    loadLoyaltyMembers();
+  } catch(e) { toast('Failed','error'); }
+}
+
+async function exportLoyaltyCSV() {
+  if (!db) return;
+  const snap = await db.collection('loyalty_members').orderBy('points','desc').get();
+  const rows = [['Name','Phone','Visits','Points','Redeemed','Joined']];
+  snap.docs.forEach(d=>{
+    const m=d.data(); const ts=m.joinedAt?.toDate?m.joinedAt.toDate():new Date();
+    rows.push([m.name||'',m.phone||'',m.visits||0,m.points||0,m.totalRedeemed||0,ts.toLocaleDateString()]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`loyalty-members-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+  
 // ── SEED MENU ──────────────────────────────────
 const SEED_DATA = [
   {name:'2 Bite BBQ Platter (7 Kabobs)',desc:'Beef Bihari, Chicken Bihari, Malai Boti, Chicken Tikka, Beef Seekh, Chicken Seekh & Paneer Tikka.',price:22.99,cat:'bbq',img:'',avail:true},
