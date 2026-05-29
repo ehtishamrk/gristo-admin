@@ -285,6 +285,7 @@ textarea.fi{resize:vertical;min-height:70px;}
     <input type="password" id="pw2-input" class="login-input" placeholder="••••••••••"
       onkeydown="if(event.key==='Enter')tryLogin()">
     <div class="login-err" id="login-err"></div>
+    <div style="margin-top:8px;"><span onclick="sendPasswordReset()" style="font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:1px;">Forgot password?</span></div>
     <button class="btn btn-gold" style="width:100%" onclick="tryLogin()">Sign In →</button>
   </div>
 </div>
@@ -911,6 +912,13 @@ function tryLogin() {
 }
 function logout() {
   firebase.auth().signOut();
+  function sendPasswordReset() {
+  const email = document.getElementById('pw-input').value.trim();
+  if (!email) { document.getElementById('login-err').textContent = 'Enter your email first'; return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => { document.getElementById('login-err').style.color = 'var(--gold)'; document.getElementById('login-err').textContent = 'Reset link sent to ' + email; })
+    .catch(e => { document.getElementById('login-err').style.color = 'var(--red)'; document.getElementById('login-err').textContent = e.message; });
+}
 }
 firebase.auth().onAuthStateChanged(async user => {
   if (user) {
