@@ -333,7 +333,7 @@ textarea.fi{resize:vertical;min-height:70px;}
     <div class="setup-card">
       <div class="setup-title">🔒 Firebase Security Rules</div>
       <div class="setup-desc">Set these rules in Firebase Console → Firestore Database → Rules:</div>
-      <div class="code-block">rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{db}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /{document=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if true; // Demo only<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
+      <div class="code-block">rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{database}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu_items/{item} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /deals/{deal} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /settings/{doc} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;match /orders/{order} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow create: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, update, delete: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
       <div class="setup-desc">And for Storage rules:<br></div>
       <div class="code-block">rules_version = '2';<br>service firebase.storage {<br>&nbsp;&nbsp;match /b/{bucket}/o {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /menu-images/{f=**} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</div>
     </div>
@@ -739,7 +739,7 @@ const payBadge = o.paymentMethod === 'card'
         <span class="badge badge-${STATUS_COLORS[o.status]||'grey'}">${STATUS_LABELS[o.status]||o.status}</span>
         <span class="oc-time">${timeStr}</span>
       </div>
-      <div class="oc-cust" style="margin-bottom:8px">👤 ${o.customerName||'—'}</div>
+      <div class="oc-cust" style="margin-bottom:8px">👤 ${escapeHtml(o.customerName||'—')}</div>
       <div class="oc-items">${itemsHTML}</div>
       <div class="oc-foot">
         <div>
@@ -801,7 +801,7 @@ printFrame.style.border = '0';
 document.body.appendChild(printFrame);
 
 const doc = printFrame.contentWindow.document;
-  const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${i.name}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${i.note}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
+  const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${escapeHtml(i.name)}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${escapeHtml(i.note)}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
   const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
   doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body><div class="c b" style="font-size:20px;letter-spacing:5px">Spice Korner</div><div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div><hr><div style="font-size:10px;line-height:1.6"><div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
   <div>
@@ -819,7 +819,7 @@ ${o.orderTypeMode === 'addition'
     ➕ ADDITION TO ORDER #${o.parentOrderNumber}
    </div>`
 : ''}
-<div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${o.customerName||'—'}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings > 0.005 ? `
+<div>Type: <b>${o.orderType==='dine_in'?`Dine In — Table ${o.tableNumber}`:'Takeaway'}</b></div><div>Customer: <b>${escapeHtml(o.customerName||'—')}</b></div></div><hr><table><tbody>${rows}</tbody></table><hr><table>${o.savings > 0.005 ? `
 <tr>
   <td style="font-size:10px;color:#555">
     Original Amount
