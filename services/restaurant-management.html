@@ -1659,25 +1659,12 @@ function renderAnalytics() {
   if (analyticsRange !== 'today') {
     panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}<div class="spinner"></div>`;
     attachDateTabListeners();
-// For yesterday, you need to pass yEnd into scope. 
-// Change the case to store it, then use it in the query:
-
-// In the switch case, add:
-case 'yesterday': {
-  const y = new Date(now); y.setDate(y.getDate()-1); y.setHours(0,0,0,0);
-  rangeStart = y;
-  window._rangeEnd = new Date(y); window._rangeEnd.setHours(23,59,59,999);
-  rangeLabel = 'Yesterday';
-  break;
-}
-// For all other cases, add:
-default: { window._rangeEnd = null; /* ... rest */ }
-// (set window._rangeEnd = null in week and month cases too)
-
-// Then change the query to:
-let q = db.collection('orders').where('timestamp', '>=', rangeStart);
-if (window._rangeEnd) q = q.where('timestamp', '<=', window._rangeEnd);
-q.orderBy('timestamp', 'desc').limit(500).get().then(...)
+    let q = db.collection('orders').where('timestamp', '>=', rangeStart);
+    if (analyticsRange === 'yesterday') {
+      const yEnd = new Date(rangeStart); yEnd.setHours(23,59,59,999);
+      q = q.where('timestamp', '<=', yEnd);
+    }
+    q.orderBy('timestamp', 'desc').limit(500).get()
       .then(snap => {
         const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
         renderAnalyticsData(panel, orders, rangeLabel);
