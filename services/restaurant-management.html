@@ -1194,7 +1194,7 @@ function renderMenuItems() {
   filtered.forEach(i=>{ const c=i.cat||i.category||'other'; if(!grouped[c]) grouped[c]=[]; grouped[c].push(i); });
 
   con.innerHTML = '';
-  CATS.forEach(cat => {
+  getCats().forEach(cat => {
     const items = grouped[cat.id];
     if (!items) return;
     const gl = document.createElement('div');
@@ -1213,7 +1213,7 @@ function renderMenuItems() {
         ${photo}
         <div class="mi-info">
           <div class="mi-name">${item.name}</div>
-          <div class="mi-meta">${CATS.find(c=>c.id===(item.cat||item.category))?.name||item.cat} · ${item.avail===false?'<span style="color:var(--red)">Unavailable</span>':'<span style="color:var(--green)">Available</span>'}</div>
+          <div class="mi-meta">${getCats().find(c=>c.id===(item.cat||item.category))?.name||item.cat} · ${item.avail===false?'<span style="color:var(--red)">Unavailable</span>':'<span style="color:var(--green)">Available</span>'}</div>
         </div>
         <div class="mi-price">$${(item.price||0).toFixed(2)}</div>
         <div class="mi-actions">
@@ -1232,6 +1232,9 @@ function openItemModal(id) {
   document.getElementById('item-modal').style.display = 'block';
   document.getElementById('modal-overlay').classList.add('show');
   document.getElementById('item-modal-title').textContent = id ? 'Edit Item' : 'Add Item';
+  // Rebuild category dropdown from live categories
+  const sel = document.getElementById('im-cat');
+  sel.innerHTML = getCats().map(c => `<option value="${c.id}">${c.e} ${c.name}</option>`).join('');
   if (id) {
     const item = menuItems.find(i=>i._id===id);
     if (item) {
@@ -2063,9 +2066,10 @@ async function saveCategories() {
   try {
     await db.collection('settings').doc('global').set({ categories: cats }, { merge: true });
     window._customCats = cats; _editCats = null;
+    renderMenuItems(); // refresh admin menu list with new category order
     const msg = document.getElementById('cats-save-msg');
     msg.style.display='block'; setTimeout(()=>msg.style.display='none', 2500);
-    toast('Categories saved — reload both portals to see changes','success');
+    toast('Categories saved','success');
   } catch(e) { toast('Save failed','error'); }
 }
 
