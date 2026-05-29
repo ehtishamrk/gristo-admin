@@ -527,6 +527,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 // ════════════════════════════════════════════════
 // ★ FIREBASE CONFIG — replace with your config ★
@@ -645,7 +646,6 @@ function startOrdersListener() {
 if (!prevIds.has(o._id) && prevIds.size > 0 && o.status === 'pending') { 
   newCount++; 
   playBeep(); 
-  reprintOrder(o._id); // This triggers the print popup automatically 
 }
         knownOrderIds.add(o._id);
       });
@@ -985,9 +985,15 @@ let imgUrl = document.getElementById('im-img-url').value || '';
 const file = document.getElementById('img-file').files[0];
 
 if (file) {
-  imgUrl = document.getElementById('img-preview').src;
+  // Warn if too large. Use Firebase Storage for production.
+  const dataUrl = document.getElementById('img-preview').src;
+  if (dataUrl.length > 200000) {
+    toast('Image too large — use a smaller photo (under 150KB)', 'error');
+    btn.textContent = 'Save Item'; btn.disabled = false;
+    return;
+  }
+  imgUrl = dataUrl;
 }
-
   const data = { name, desc, cat, price, avail, img: imgUrl };
   try {
     if (!db) throw new Error('No DB');
