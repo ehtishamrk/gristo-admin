@@ -232,6 +232,7 @@ textarea.fi{resize:vertical;min-height:70px;}
     <button class="tab-btn" onclick="switchTab('menu')" id="tab-menu-btn">🍽 Menu</button>
     <button class="tab-btn" onclick="switchTab('deals')" id="tab-deals-btn">🏷 Deals</button>
     <button class="tab-btn" onclick="switchTab('tables')" id="tab-tables-btn">🪑 Tables</button>
+    <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Analytics</button>
     <button class="tab-btn" onclick="switchTab('setup')" id="tab-setup-btn">⚙️ Setup</button>
   </nav>
 
@@ -289,10 +290,23 @@ textarea.fi{resize:vertical;min-height:70px;}
       </div>
       <button class="btn btn-gold" onclick="saveTableCount()" style="margin-bottom:20px">Save Table Count</button>
       <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-weight:700">Table Preview</p>
-      <div class="table-display" id="table-display"></div>
+<div class="table-display" id="table-display"></div>
+    </div>
+
+    <div style="margin-top:32px;">
+      <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📱 Table QR Codes</p>
+      <div class="fg" style="max-width:440px;margin-bottom:12px;">
+        <label class="fl">Customer Portal URL</label>
+        <input type="text" id="qr-portal-url" class="fi" placeholder="https://your-portal-url.com/services/restaurant-management.html">
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="generateQRCodes()" style="margin-bottom:20px;">Generate QR Codes</button>
+      <div id="qr-grid" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
     </div>
   </div>
-
+<!-- ANALYTICS TAB -->
+  <div class="tab-panel" id="panel-analytics">
+    <!-- populated by renderAnalytics() on tab switch -->
+  </div>
   <!-- SETUP TAB -->
   <div class="tab-panel" id="panel-setup">
     <div class="page-hd"><div class="page-title">Setup & Configuration</div></div>
@@ -337,6 +351,10 @@ textarea.fi{resize:vertical;min-height:70px;}
       <div class="fg" style="margin-bottom:18px;">
         <label class="fl">Backend URL (Cloudflare Worker)</label>
         <input type="text" id="backend-url" class="fi" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="off">
+      </div>
+  <div class="fg" style="margin-bottom:18px;">
+        <label class="fl">Estimated Wait Time (minutes)</label>
+        <input type="number" id="wait-minutes" class="fi" placeholder="e.g. 15" min="1" max="120" style="max-width:130px;">
       </div>
       <button class="btn btn-gold" onclick="savePaymentSettings()">Save Payment Settings</button>
       <div id="pay-save-msg" style="margin-top:10px;font-size:12.5px;color:var(--green);display:none;">✓ Settings saved</div>
@@ -601,8 +619,15 @@ function switchTab(t) {
   if (t==='orders')  renderOrders();
   if (t==='menu')    renderMenuItems();
   if (t==='deals')   renderDeals();
-  if (t==='tables')  renderTablePreview();
-  if (t==='setup')   {};
+if (t==='tables') {
+    renderTablePreview();
+    const saved = localStorage.getItem('hx_portal_url');
+    if (saved && document.getElementById('qr-portal-url')) {
+      document.getElementById('qr-portal-url').value = saved;
+    }
+  }
+  if (t==='setup')     {}
+  if (t==='analytics') renderAnalytics();
 }
 
 // ── ORDERS ─────────────────────────────────────
@@ -1192,14 +1217,16 @@ async function savePaymentSettings() {
   const enabled = document.getElementById('pay-toggle').checked;
   const pk      = document.getElementById('stripe-pk').value.trim();
   const url     = document.getElementById('backend-url').value.trim();
+  const wait    = parseInt(document.getElementById('wait-minutes').value) || 15;
   try {
     await db.collection('settings').doc('global').set(
-      { cardPaymentsEnabled: enabled, stripePK: pk, backendURL: url },
+      { cardPaymentsEnabled: enabled, stripePK: pk, backendURL: url, waitMinutes: wait },
       { merge: true }
     );
     settings.cardPaymentsEnabled = enabled;
-    settings.stripePK  = pk;
+    settings.stripePK   = pk;
     settings.backendURL = url;
+    settings.waitMinutes = wait;
     const msg = document.getElementById('pay-save-msg');
     msg.style.display = 'block';
     setTimeout(() => msg.style.display = 'none', 2500);
@@ -1216,6 +1243,7 @@ async function loadSettings() {
       document.getElementById('pay-toggle').checked  = !!settings.cardPaymentsEnabled;
       document.getElementById('stripe-pk').value     = settings.stripePK    || '';
       document.getElementById('backend-url').value   = settings.backendURL  || '';
+      document.getElementById('wait-minutes').value  = settings.waitMinutes || 15;
     }
   } catch(e) {}
   document.getElementById('tc-num').textContent = tableCount;
@@ -1228,6 +1256,126 @@ function changeTableCount(delta) {
   renderTablePreview();
 }
 
+function statCard(label, value, color) {
+  return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;">
+    <div style="font-size:11px;color:var(--td);margin-bottom:6px;letter-spacing:.3px;">${label}</div>
+    <div style="font-size:26px;font-weight:700;color:${color};">${value}</div>
+  </div>`;
+}
+
+function renderAnalytics() {
+  const panel = document.getElementById('panel-analytics');
+  const now   = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const todayOrders = allOrders.filter(o => {
+    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp || 0);
+    return ts >= todayStart;
+  });
+
+  const revenue  = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const cardPaid = todayOrders.filter(o => o.paymentMethod === 'card' && o.paymentStatus === 'paid').length;
+  const cash     = todayOrders.filter(o => o.paymentMethod !== 'card').length;
+
+  // Top items
+  const counts = {};
+  todayOrders.forEach(o => (o.items || []).forEach(i => {
+    counts[i.name] = (counts[i.name] || 0) + (i.qty || 1);
+  }));
+  const topItems = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 6);
+  const maxQty   = topItems[0]?.[1] || 1;
+
+  // Live queue
+  const pending   = allOrders.filter(o => o.status === 'pending').length;
+  const preparing = allOrders.filter(o => o.status === 'preparing').length;
+  const ready     = allOrders.filter(o => o.status === 'ready').length;
+  const done      = todayOrders.filter(o => o.status === 'completed').length;
+
+  const queueItem = (label, val, color) =>
+    `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;text-align:center;min-width:80px;">
+      <div style="font-size:24px;font-weight:700;color:${color}">${val}</div>
+      <div style="font-size:11px;color:var(--td);margin-top:2px;">${label}</div>
+    </div>`;
+
+  panel.innerHTML = `
+    <div class="page-hd">
+      <div class="page-title">Analytics</div>
+      <div style="font-size:12px;color:var(--td)">
+        ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:28px;">
+      ${statCard("Today's Orders",  todayOrders.length,    'var(--blue)')}
+      ${statCard("Today's Revenue", '$'+revenue.toFixed(2),'var(--gold)')}
+      ${statCard("💳 Card Paid",    cardPaid,              'var(--green)')}
+      ${statCard("💵 Cash",         cash,                  'var(--tm)')}
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:10px;">Live Queue</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
+      ${queueItem('Pending',   pending,   'var(--gold)')}
+      ${queueItem('Preparing', preparing, 'var(--blue)')}
+      ${queueItem('Ready',     ready,     'var(--green)')}
+      ${queueItem('Done Today',done,      'var(--td)')}
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:12px;">Top Items Today</div>
+    ${topItems.length === 0
+      ? `<div style="color:var(--td);font-size:13px;">No orders yet today.</div>`
+      : `<div style="display:flex;flex-direction:column;gap:10px;max-width:480px;">
+          ${topItems.map(([name, qty]) => `
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:13px;color:var(--tm);width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${name}</div>
+              <div style="flex:1;background:var(--s3);border-radius:4px;height:7px;overflow:hidden;">
+                <div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round((qty/maxQty)*100)}%;"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--gold);width:22px;text-align:right;">${qty}</div>
+            </div>`).join('')}
+        </div>`}
+    <div style="height:32px;"></div>`;
+}
+
+function generateQRCodes() {
+  const url = document.getElementById('qr-portal-url').value.trim();
+  if (!url) { toast('Enter the customer portal URL first', 'error'); return; }
+  localStorage.setItem('hx_portal_url', url);
+
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML = '';
+  const n = tableCount || settings.tableCount || 10;
+
+  for (let i = 1; i <= n; i++) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'text-align:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;width:148px;';
+    wrap.innerHTML = `
+      <div style="font-size:10px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Table ${i}</div>
+      <div id="qr-t-${i}"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;font-size:11px;padding:5px 12px;" onclick="downloadQR(${i})">↓ Save</button>`;
+    grid.appendChild(wrap);
+
+    new QRCode(document.getElementById(`qr-t-${i}`), {
+      text:       `${url}?table=${i}`,
+      width:      120,
+      height:     120,
+      colorDark:  '#0D1929',
+      colorLight: '#ffffff',
+    });
+  }
+  toast('QR codes generated', 'success');
+}
+
+function downloadQR(n) {
+  const el     = document.getElementById(`qr-t-${n}`);
+  const canvas = el?.querySelector('canvas');
+  const img    = el?.querySelector('img');
+  if (!canvas && !img) { toast('Generate QR codes first', 'error'); return; }
+  const a = document.createElement('a');
+  a.download = `table-${n}-qr.png`;
+  a.href     = canvas ? canvas.toDataURL('image/png') : img.src;
+  a.click();
+}
+  
 function renderTablePreview() {
   const g = document.getElementById('table-display');
   if (!g) return;
