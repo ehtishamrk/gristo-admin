@@ -682,7 +682,14 @@ function filterOrders(f) {
   document.querySelectorAll('.ofilter').forEach(b=>b.classList.toggle('active', b.dataset.f===f));
   renderOrders();
 }
-
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 function renderOrders() {
   const con = document.getElementById('orders-container');
   if (!db) { con.innerHTML = `<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3><p>Configure Firebase to see live orders</p></div>`; return; }
@@ -702,8 +709,8 @@ function renderOrders() {
   filtered.forEach(o => {
     const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
     const timeStr = ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const itemsHTML = (o.items||[]).map(i =>
-      `<div class="oc-item-row"><span style="color:var(--tm)">${i.qty}×</span> ${i.name}${i.note?` <span style="font-size:11px;color:var(--td)">(${i.note})</span>`:''}</div>`
+const itemsHTML = (o.items||[]).map(i =>
+      `<div class="oc-item-row"><span style="color:var(--tm)">${i.qty}×</span> ${escapeHtml(i.name)}${i.note?` <span style="font-size:11px;color:var(--td)">(${escapeHtml(i.note)})</span>`:''}</div>`
     ).join('');
 
     const typeLabel = o.orderType==='dine_in'
