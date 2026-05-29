@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spice Korner — Admin Panel</title>
+<title>Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -691,9 +691,9 @@ textarea.fi{resize:vertical;min-height:70px;}
 <div class="setup-card">
   <div class="setup-title">🗑️ Danger Zone</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;">
-    <button class="btn btn-red" onclick="clearAllOrders()">Delete All Orders</button>
-    <button class="btn btn-red" onclick="clearAllMenu()">Delete All Menu Items</button>
-    <button class="btn btn-red" onclick="clearAllDeals()">Delete All Deals</button>
+<button class="btn btn-red" onclick="dangerAction('clearAllOrders','DELETE ALL ORDERS? Type DELETE to confirm.')">Delete All Orders</button>
+<button class="btn btn-red" onclick="dangerAction('clearAllMenu','DELETE ALL MENU ITEMS? Type DELETE to confirm.')">Delete All Menu Items</button>
+<button class="btn btn-red" onclick="dangerAction('clearAllDeals','DELETE ALL DEALS? Type DELETE to confirm.')">Delete All Deals</button>
   </div>
 </div>
   </div>
@@ -2384,6 +2384,15 @@ async function seedMenu() {
   btn.textContent='Seed Menu to Firebase'; btn.disabled=false;
 }
 
+function dangerAction(fnName, message) {
+  const input = prompt(message);
+  if (input && input.trim().toUpperCase() === 'DELETE') {
+    window[fnName]();
+  } else {
+    toast('Action cancelled — you must type DELETE to confirm', 'error');
+  }
+}
+  
 // ── DANGER ZONE ────────────────────────────────
 async function clearAllOrders() {
   if (!db||!confirm('DELETE ALL ORDERS? This cannot be undone.')) return;
