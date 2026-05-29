@@ -912,7 +912,7 @@ function tryLogin() {
 function logout() {
   firebase.auth().signOut();
 }
-firebase.auth().onAuthStateChanged(user => {
+firebase.auth().onAuthStateChanged(async user => {
   if (user) {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
@@ -921,6 +921,14 @@ firebase.auth().onAuthStateChanged(user => {
     if (ordersListener) ordersListener();
     document.getElementById('admin-app').style.display = 'none';
     document.getElementById('login-overlay').style.display = 'flex';
+    try {
+      const snap = await db.collection('settings').doc('global').get();
+      if (snap.exists && snap.data().restaurantName) {
+        const n = snap.data().restaurantName;
+        document.querySelector('.login-logo').textContent = n;
+        document.title = n + ' — Admin Panel';
+      }
+    } catch(e) {}
     document.getElementById('pw-input').value  = '';
     document.getElementById('pw2-input').value = '';
   }
