@@ -1986,13 +1986,53 @@ function renderCategoriesList() {
   if (!list) return;
   const cats = getCats();
   list.innerHTML = '';
+  let dragSrcIdx = null;
+
   cats.forEach((cat, idx) => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);';
-    row.innerHTML = `<span style="font-size:18px;width:24px;text-align:center;">${cat.e||'🍽'}</span>
+    row.draggable = true;
+    row.dataset.idx = idx;
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);cursor:grab;transition:opacity .15s,border-color .15s;';
+    row.innerHTML = `
+      <span style="font-size:16px;color:var(--td);padding-right:2px;cursor:grab;" title="Drag to reorder">⠿</span>
+      <span style="font-size:18px;width:24px;text-align:center;">${cat.e||'🍽'}</span>
       <span style="flex:1;font-size:13px;">${cat.name}</span>
       <span style="font-size:11px;color:var(--td);">${cat.id}</span>
       <button class="btn btn-red btn-sm btn-icon" onclick="removeCat(${idx})" title="Remove">×</button>`;
+
+    // drag events
+    row.addEventListener('dragstart', e => {
+      dragSrcIdx = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.style.opacity = '0.4', 0);
+    });
+
+    row.addEventListener('dragend', () => {
+      row.style.opacity = '1';
+      list.querySelectorAll('[data-idx]').forEach(r => {
+        r.style.borderColor = 'var(--bd)';
+        r.style.borderStyle = 'solid';
+      });
+    });
+
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      // highlight the row being dragged over
+      list.querySelectorAll('[data-idx]').forEach(r => r.style.borderColor = 'var(--bd)');
+      if (idx !== dragSrcIdx) row.style.borderColor = 'var(--gold)';
+    });
+
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIdx === null || dragSrcIdx === idx) return;
+      const newCats = [...getCats()];
+      const [moved] = newCats.splice(dragSrcIdx, 1);
+      newCats.splice(idx, 0, moved);
+      _editCats = newCats;
+      renderCategoriesList();
+    });
+
     list.appendChild(row);
   });
 }
