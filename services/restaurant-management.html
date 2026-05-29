@@ -1823,10 +1823,13 @@ async function saveBrandingSettings() {
       { restaurantName: name, tagline, receiptFooter: footer }, { merge: true }
     );
     settings.restaurantName = name; settings.tagline = tagline; settings.receiptFooter = footer;
+    // Update admin topbar immediately
     document.querySelector('.tb-brand').textContent = name;
+    const loginLogo = document.querySelector('.login-logo');
+    if (loginLogo) loginLogo.textContent = name;
     const msg = document.getElementById('brand-save-msg');
     msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
-    toast('Branding saved','success');
+    toast('Branding saved — customer portal will update in real time','success');
   } catch(e) { toast('Save failed','error'); }
 }
 
