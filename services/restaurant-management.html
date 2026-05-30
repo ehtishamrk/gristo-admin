@@ -71,6 +71,17 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .badge-green{background:var(--green-d);color:var(--green);}
 .badge-grey{background:var(--s4);color:var(--tm);}
 .badge-red{background:var(--red-d);color:var(--red);}
+  /* ── RESERVATION CARDS ── */
+.resv-card { background:var(--s2); border:1px solid var(--bd); border-radius:var(--r); padding:14px 16px; margin-bottom:10px; }
+.resv-card.r-confirmed { border-left:3px solid var(--green); }
+.resv-card.r-pending   { border-left:3px solid var(--gold); }
+.resv-card.r-cancelled { border-left:3px solid var(--red); opacity:.55; }
+.resv-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.resv-name { font-weight:700; font-size:14px; }
+.resv-time { font-size:12px; color:var(--tm); margin-left:auto; }
+.resv-meta { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--tm); margin-bottom:10px; }
+.resv-meta span b { color:var(--text); }
+.resv-actions { display:flex; gap:8px; flex-wrap:wrap; }
 .divider{border:none;border-top:1px solid var(--bd);margin:16px 0;}
 .spinner{width:30px;height:30px;border:2px solid var(--s4);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;margin:40px auto;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -321,6 +332,7 @@ textarea.fi{resize:vertical;min-height:70px;}
   <button class="tab-btn" onclick="switchTab('customers')" id="tab-customers-btn">👥 Guests</button>
   <button class="tab-btn" onclick="switchTab('loyalty')"   id="tab-loyalty-btn">⭐ Loyalty</button>
   <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Stats</button>
+  <button class="tab-btn" onclick="switchTab('reservations')" id="tab-reservations-btn">📅 Reservations <span class="notif" id="reserv-notif" style="display:none">0</span></button>
   <button class="tab-btn" onclick="switchTab('setup')"     id="tab-setup-btn">⚙️ Setup</button>
 </nav>
 
@@ -510,6 +522,25 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div class="tab-panel" id="panel-analytics">
     <!-- populated by renderAnalytics() on tab switch -->
   </div>
+
+  <!-- RESERVATIONS TAB -->
+  <div class="tab-panel" id="panel-reservations">
+    <div class="page-hd">
+      <div class="page-title">Table Reservations</div>
+      <button class="btn btn-sm btn-outline" onclick="clearOldReservations()" style="margin-left:auto;">🗑 Clear Past</button>
+    </div>
+
+    <!-- filter bar -->
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <button class="fbtn active" id="rf-all"      onclick="setRFilter('all')">All</button>
+      <button class="fbtn"        id="rf-upcoming" onclick="setRFilter('upcoming')">Upcoming</button>
+      <button class="fbtn"        id="rf-confirmed" onclick="setRFilter('confirmed')">Confirmed</button>
+      <button class="fbtn"        id="rf-cancelled" onclick="setRFilter('cancelled')">Cancelled</button>
+    </div>
+
+    <div id="reservations-container"><div class="spinner"></div></div>
+  </div>
+  
   <!-- SETUP TAB -->
   <div class="tab-panel" id="panel-setup">
 <div class="page-hd"><div class="page-title">Setup & Configuration</div></div>
@@ -580,6 +611,73 @@ textarea.fi{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+<!-- RESERVATION SETTINGS -->
+<div class="setup-card">
+  <div class="setup-title">📅 Reservation Settings</div>
+  <div class="setup-desc">Control when reservations are open, operating hours, slot intervals, and table duration.</div>
+
+  <!-- Master toggle -->
+  <div class="setup-row" style="margin-bottom:18px;">
+    <div>
+      <div style="font-size:13.5px;font-weight:600;">Accept Reservations</div>
+      <div style="font-size:12px;color:var(--tm);">Turn off to stop all new reservations instantly</div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="s-resv-enabled" onchange="saveResvSettings()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <!-- Pause message -->
+  <div class="fg" id="resv-pause-msg-wrap">
+    <label class="fl">Message shown when reservations are off</label>
+    <input type="text" class="fi" id="s-resv-pause-msg"
+      placeholder="Reservations are currently unavailable."
+      maxlength="120" onchange="saveResvSettings()">
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;">
+    <!-- Opening time -->
+    <div class="fg">
+      <label class="fl">Reservations Open From</label>
+      <input type="time" class="fi" id="s-resv-open" value="15:00" onchange="saveResvSettings()">
+    </div>
+    <!-- Closing time -->
+    <div class="fg">
+      <label class="fl">Reservations Close At</label>
+      <input type="time" class="fi" id="s-resv-close" value="22:00" onchange="saveResvSettings()">
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <!-- Slot interval -->
+    <div class="fg">
+      <label class="fl">Slot Interval (minutes)</label>
+      <select class="fi" id="s-resv-interval" onchange="saveResvSettings()">
+        <option value="15">Every 15 min</option>
+        <option value="30" selected>Every 30 min</option>
+        <option value="45">Every 45 min</option>
+        <option value="60">Every 1 hour</option>
+      </select>
+    </div>
+    <!-- Table duration -->
+    <div class="fg">
+      <label class="fl">Table Duration (minutes)</label>
+      <select class="fi" id="s-resv-duration" onchange="saveResvSettings()">
+        <option value="60">60 min</option>
+        <option value="90" selected>90 min (recommended)</option>
+        <option value="105">105 min</option>
+        <option value="120">120 min</option>
+        <option value="150">150 min</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="font-size:11.5px;color:var(--td);margin-top:2px;">
+    ℹ️ If duration is 90 min and interval is 30 min, a 3:00 PM booking blocks that table until 4:30 PM. Next slot available at 4:30 PM.
+  </div>
+</div>
+    
 <!-- BRAND COLORS -->
 <div class="setup-card">
   <div class="setup-title">🎨 Brand Colors</div>
@@ -903,7 +1001,7 @@ let menuItems = [], allDeals = [], allOrders = [], settings = {tableCount:10};
 let editItemId = null, editDealId = null, selectedItemIds = [];
 let orderFilter = 'all', knownOrderIds = new Set(), ordersListener = null;
 let tableCount = 10;
-
+let allReservations = [], reservFilter = 'all', reservListener = null;
 const CATS = [
   {id:'bbq',name:'BBQ & Platters',e:'🔥'},
   {id:'rolls',name:'Rolls',e:'🫓'},
@@ -989,7 +1087,8 @@ function switchTab(t) {
   if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
   if (t==='analytics') renderAnalytics();
   if (t==='tables')    { renderTablePreview(); loadTableOccupancy(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
-  if (t==='setup')     {}
+  if (t==='setup')        {}
+  if (t==='reservations') { loadReservations(); }
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -1652,7 +1751,7 @@ async function loadSettings() {
       document.getElementById('ordering-paused').checked = paused;
       document.getElementById('s-pause-msg').value = settings.pauseMessage || "We're not taking orders right now.";
       document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
-
+loadResvSettings(settings);
       // Brand colors
       if (settings.brandColors) {
         const bc = settings.brandColors;
@@ -2671,6 +2770,131 @@ function toast(msg, type='') {
   t.textContent = msg;
   t.className = `toast${type?' '+type:''} show`;
   setTimeout(()=>t.classList.remove('show'), 3000);
+}
+  // ══════════════════════════════════════════
+// ★ RESERVATIONS
+// ══════════════════════════════════════════
+
+function loadReservations() {
+  if (!db) { document.getElementById('reservations-container').innerHTML = `<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase not connected</h3></div>`; return; }
+  if (reservListener) reservListener(); // detach previous
+  reservListener = db.collection('reservations')
+    .orderBy('reservationTs', 'asc')
+    .limit(200)
+    .onSnapshot(snap => {
+      allReservations = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+      renderReservations();
+      updateReservBadge();
+    }, e => console.warn('reservations listener:', e));
+}
+
+function setRFilter(f) {
+  reservFilter = f;
+  document.querySelectorAll('#panel-reservations .fbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`rf-${f}`).classList.add('active');
+  renderReservations();
+}
+
+function renderReservations() {
+  const con = document.getElementById('reservations-container');
+  const now = new Date();
+
+  let list = allReservations;
+  if (reservFilter === 'upcoming')  list = list.filter(r => r.status !== 'cancelled' && new Date(r.reservationTs?.seconds ? r.reservationTs.seconds * 1000 : r.reservationTs) >= now);
+  if (reservFilter === 'confirmed') list = list.filter(r => r.status === 'confirmed');
+  if (reservFilter === 'cancelled') list = list.filter(r => r.status === 'cancelled');
+
+  if (!list.length) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">📅</div><h3>No reservations</h3><p>They'll appear here in real-time</p></div>`;
+    return;
+  }
+
+  con.innerHTML = '';
+  list.forEach(r => {
+    const ts = r.reservationTs?.seconds ? new Date(r.reservationTs.seconds * 1000) : new Date(r.reservationTs);
+    const dateStr = ts.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const bookedAt = r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : '—';
+    const isPast = ts < now;
+
+    const card = document.createElement('div');
+    card.className = `resv-card r-${r.status || 'pending'}`;
+    card.innerHTML = `
+      <div class="resv-head">
+        <span class="resv-name">👤 ${escapeHtml(r.customerName || '—')}</span>
+        <span class="badge badge-${r.status === 'confirmed' ? 'green' : r.status === 'cancelled' ? 'grey' : 'amber'}">${r.status || 'pending'}</span>
+        ${isPast ? `<span class="badge badge-grey">Past</span>` : ''}
+        <span class="resv-time">📅 ${dateStr} · ⏰ ${timeStr}</span>
+      </div>
+      <div class="resv-meta">
+        <span>📞 <b>${escapeHtml(r.phone || '—')}</b></span>
+        <span>🪑 Table <b>${r.tableNumber || '—'}</b></span>
+        <span>👥 Guests: <b>${r.guestCount || '—'}</b></span>
+        <span style="font-size:11px;color:var(--td)">Booked: ${bookedAt}</span>
+      </div>
+      ${r.notes ? `<div style="font-size:12px;color:var(--tm);margin-bottom:10px;">📝 ${escapeHtml(r.notes)}</div>` : ''}
+      <div class="resv-actions">
+        ${r.status !== 'confirmed' && r.status !== 'cancelled' ? `<button class="sbtn sbtn-ready" onclick="setResvStatus('${r._id}','confirmed')">✓ Confirm</button>` : ''}
+        ${r.status !== 'cancelled' ? `<button class="sbtn" style="background:var(--red-d);color:var(--red);" onclick="setResvStatus('${r._id}','cancelled')">✕ Cancel</button>` : ''}
+      </div>`;
+    con.appendChild(card);
+  });
+}
+
+async function setResvStatus(id, status) {
+  if (!db) return;
+  try {
+    await db.collection('reservations').doc(id).update({ status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    toast(`Reservation ${status}`, 'success');
+  } catch(e) { toast('Error updating reservation', 'error'); }
+}
+
+async function clearOldReservations() {
+  if (!db || !confirm('Delete all past/cancelled reservations?')) return;
+  const now = new Date();
+  const batch = db.batch();
+  let count = 0;
+  allReservations.forEach(r => {
+    const ts = r.reservationTs?.seconds ? new Date(r.reservationTs.seconds * 1000) : new Date(r.reservationTs);
+    if (ts < now || r.status === 'cancelled') { batch.delete(db.collection('reservations').doc(r._id)); count++; }
+  });
+  if (!count) { toast('Nothing to clear'); return; }
+  await batch.commit().catch(e => console.warn(e));
+  toast(`Cleared ${count} reservation(s)`, 'success');
+}
+
+function updateReservBadge() {
+  const now = new Date();
+  const pending = allReservations.filter(r => r.status !== 'cancelled' && r.status !== 'confirmed' && new Date(r.reservationTs?.seconds ? r.reservationTs.seconds * 1000 : r.reservationTs) >= now).length;
+  const badge = document.getElementById('reserv-notif');
+  if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline-flex' : 'none'; }
+}
+  // ── RESERVATION SETTINGS ────────────────────────
+async function saveResvSettings() {
+  if (!db) return;
+  const data = {
+    reservationsEnabled: document.getElementById('s-resv-enabled').checked,
+    reservationPauseMsg: document.getElementById('s-resv-pause-msg').value.trim() || 'Reservations are currently unavailable.',
+    reservationOpenTime: document.getElementById('s-resv-open').value,   // "15:00"
+    reservationCloseTime: document.getElementById('s-resv-close').value, // "22:00"
+    reservationSlotInterval: parseInt(document.getElementById('s-resv-interval').value),   // minutes
+    reservationDuration: parseInt(document.getElementById('s-resv-duration').value),        // minutes
+  };
+  try {
+    await db.collection('settings').doc('global').set(data, { merge: true });
+    toast('Reservation settings saved', 'success');
+  } catch(e) { toast('Error saving settings', 'error'); }
+}
+
+function loadResvSettings(s) {
+  // Called from your existing settings loader — pass the settings object
+  const el = (id) => document.getElementById(id);
+  if (el('s-resv-enabled'))   el('s-resv-enabled').checked   = s.reservationsEnabled !== false; // default true
+  if (el('s-resv-pause-msg')) el('s-resv-pause-msg').value   = s.reservationPauseMsg  || '';
+  if (el('s-resv-open'))      el('s-resv-open').value        = s.reservationOpenTime   || '15:00';
+  if (el('s-resv-close'))     el('s-resv-close').value       = s.reservationCloseTime  || '22:00';
+  if (el('s-resv-interval'))  el('s-resv-interval').value    = s.reservationSlotInterval || 30;
+  if (el('s-resv-duration'))  el('s-resv-duration').value    = s.reservationDuration    || 90;
 }
 </script>
 </body>
