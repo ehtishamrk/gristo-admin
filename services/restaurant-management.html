@@ -276,7 +276,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 .cust-phone { font-size: 12px; color: var(--tm); }
 .cust-meta { font-size: 11px; color: var(--td); margin-top: 2px; }
 </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
 <body>
 
@@ -382,12 +382,15 @@ textarea.fi{resize:vertical;min-height:70px;}
 </div>
 
     <div style="margin-top:32px;">
-      <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📱 Table QR Codes</p>
+<p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📱 QR Codes</p>
       <div class="fg" style="max-width:440px;margin-bottom:12px;">
         <label class="fl">Customer Portal URL</label>
         <input type="text" id="qr-portal-url" class="fi" placeholder="https://your-portal-url.com/services/restaurant-management.html">
       </div>
-      <button class="btn btn-gold btn-sm" onclick="generateQRCodes()" style="margin-bottom:20px;">Generate QR Codes</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn btn-gold btn-sm" onclick="generateQRCodes()">Generate Table QR Codes</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateGeneralQR()">Generate General QR</button>
+      </div>
       <div id="qr-grid" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
     </div>
   </div>
@@ -1781,6 +1784,43 @@ function renderAnalyticsData(panel, orders, rangeLabel) {
   attachDateTabListeners();
 }
 
+function _makeQRCanvas(text, size) {
+  const canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  new QRious({ element: canvas, value: text, size: size, background: '#ffffff', foreground: '#0D1929', padding: 28 });
+  return canvas;
+}
+
+function _makeQRCard(label, sublabel, canvas) {
+  const CARD = 900, QR = 640, PAD = 40, FONT_LABEL = 52, FONT_SUB = 36;
+  const out = document.createElement('canvas');
+  out.width  = CARD;
+  out.height = CARD + 120;
+  const ctx = out.getContext('2d');
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.roundRect(0, 0, out.width, out.height, 24);
+  ctx.fill();
+  // Gold top bar
+  ctx.fillStyle = '#C8922A';
+  ctx.fillRect(0, 0, CARD, 10);
+  // QR code centered
+  const qrX = (CARD - QR) / 2;
+  const qrY = PAD + 20;
+  ctx.drawImage(canvas, qrX, qrY, QR, QR);
+  // Label
+  ctx.fillStyle = '#0D1929';
+  ctx.font = `bold ${FONT_LABEL}px "DM Sans", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, CARD / 2, qrY + QR + 60);
+  // Sublabel
+  ctx.fillStyle = '#888';
+  ctx.font = `${FONT_SUB}px "DM Sans", Arial, sans-serif`;
+  ctx.fillText(sublabel, CARD / 2, qrY + QR + 108);
+  return out;
+}
+
 function generateQRCodes() {
   const url = document.getElementById('qr-portal-url').value.trim();
   if (!url) { toast('Enter the customer portal URL first', 'error'); return; }
@@ -1789,36 +1829,78 @@ function generateQRCodes() {
   const grid = document.getElementById('qr-grid');
   grid.innerHTML = '';
   const n = tableCount || settings.tableCount || 10;
+  const restName = settings.restaurantName || '';
 
   for (let i = 1; i <= n; i++) {
+    const qrCanvas  = _makeQRCanvas(`${url}?table=${i}`, 800);
+    const cardCanvas = _makeQRCard(`TABLE ${i}`, restName || 'Scan to Order', qrCanvas);
+
     const wrap = document.createElement('div');
     wrap.style.cssText = 'text-align:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;width:148px;';
-    wrap.innerHTML = `
-      <div style="font-size:10px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Table ${i}</div>
-      <div id="qr-t-${i}"></div>
-      <button class="btn btn-ghost btn-sm" style="margin-top:10px;font-size:11px;padding:5px 12px;" onclick="downloadQR(${i})">↓ Save</button>`;
-    grid.appendChild(wrap);
+    // Preview at small size
+    const preview = document.createElement('canvas');
+    preview.width  = 120;
+    preview.height = 120;
+    preview.getContext('2d').drawImage(qrCanvas, 0, 0, 120, 120);
+    preview.style.borderRadius = '6px';
 
-    new QRCode(document.getElementById(`qr-t-${i}`), {
-      text:       `${url}?table=${i}`,
-      width:      120,
-      height:     120,
-      colorDark:  '#0D1929',
-      colorLight: '#ffffff',
-    });
+    wrap.innerHTML = `<div style="font-size:10px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Table ${i}</div>`;
+    wrap.appendChild(preview);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-ghost btn-sm';
+    btn.style.cssText = 'margin-top:10px;font-size:11px;padding:5px 12px;';
+    btn.textContent = '↓ Save';
+    btn.onclick = () => {
+      const a = document.createElement('a');
+      a.download = `table-${i}-qr.png`;
+      a.href = cardCanvas.toDataURL('image/png');
+      a.click();
+    };
+    wrap.appendChild(btn);
+    grid.appendChild(wrap);
   }
   toast('QR codes generated', 'success');
 }
 
-function downloadQR(n) {
-  const el     = document.getElementById(`qr-t-${n}`);
-  const canvas = el?.querySelector('canvas');
-  const img    = el?.querySelector('img');
-  if (!canvas && !img) { toast('Generate QR codes first', 'error'); return; }
-  const a = document.createElement('a');
-  a.download = `table-${n}-qr.png`;
-  a.href     = canvas ? canvas.toDataURL('image/png') : img.src;
-  a.click();
+function generateGeneralQR() {
+  const url = document.getElementById('qr-portal-url').value.trim();
+  if (!url) { toast('Enter the customer portal URL first', 'error'); return; }
+  localStorage.setItem('hx_portal_url', url);
+
+  const restName   = settings.restaurantName || '';
+  const qrCanvas   = _makeQRCanvas(url, 800);
+  const cardCanvas = _makeQRCard('SCAN TO ORDER', restName || 'Self Checkout', qrCanvas);
+
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'text-align:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;width:148px;';
+
+  const preview = document.createElement('canvas');
+  preview.width  = 120;
+  preview.height = 120;
+  preview.getContext('2d').drawImage(qrCanvas, 0, 0, 120, 120);
+  preview.style.borderRadius = '6px';
+
+  wrap.innerHTML = `<div style="font-size:10px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">General QR</div>`;
+  wrap.appendChild(preview);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-ghost btn-sm';
+  btn.style.cssText = 'margin-top:10px;font-size:11px;padding:5px 12px;';
+  btn.textContent = '↓ Save';
+  btn.onclick = () => {
+    const a = document.createElement('a');
+    a.download = `general-qr.png`;
+    a.href = cardCanvas.toDataURL('image/png');
+    a.click();
+  };
+  wrap.appendChild(btn);
+  grid.appendChild(wrap);
+
+  toast('General QR code generated', 'success');
 }
   
 function renderTablePreview() {
