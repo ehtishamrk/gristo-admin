@@ -1115,7 +1115,8 @@ const payBadge = o.paymentMethod === 'card'
       ${o.status==='pending'   ? `<button class="sbtn sbtn-prep"  onclick="setStatus('${o._id}','preparing')">→ Preparing</button>` : ''}
       ${o.status==='preparing' ? `<button class="sbtn sbtn-ready" onclick="setStatus('${o._id}','ready')">→ Ready!</button>` : ''}
       ${o.status==='ready'     ? `<button class="sbtn sbtn-done"  onclick="setStatus('${o._id}','completed')">✓ Done</button>` : ''}
-      <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
+<button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
+      <button class="sbtn" style="background:var(--red-d);color:var(--red);" onclick="quick86('${o._id}',${JSON.stringify(o.items||[]).replace(/'/g,'&#39;')})">86</button>
     ` : `<span style="font-size:11px;color:var(--td)">Completed ${timeStr}</span>
          <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>`;
 
@@ -1168,6 +1169,17 @@ async function clearDoneOrders() {
   toast('Completed orders cleared','success');
 }
 
+function quick86(orderId, items) {
+  const names = items.map(i => i.name);
+  const pick  = prompt(`Type item name to mark sold out:\n${names.join('\n')}`);
+  if (!pick) return;
+  const match = menuItems.find(m => m.name.toLowerCase() === pick.trim().toLowerCase());
+  if (!match) { toast('Item not found — check spelling', 'error'); return; }
+  db.collection('menu_items').doc(match._id).update({ avail: false })
+    .then(() => toast(`"${match.name}" marked sold out`, 'success'))
+    .catch(() => toast('Error — try from Menu tab', 'error'));
+}
+  
 async function reprintOrder(id) {
 
   const snap = await db
