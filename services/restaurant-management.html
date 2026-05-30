@@ -648,7 +648,7 @@ textarea.fi{resize:vertical;min-height:70px;}
       <div style="font-size:12px;color:var(--tm);">Turn off to stop all new reservations instantly</div>
     </div>
     <label class="toggle">
-      <input type="checkbox" id="s-resv-enabled" onchange="saveResvSettings()">
+      <input type="checkbox" id="s-resv-enabled" onchange="saveResvSettings(); document.getElementById('resv-pause-msg-wrap').style.display = this.checked ? 'none' : 'block';">
       <span class="slider"></span>
     </label>
   </div>
@@ -2034,6 +2034,7 @@ async function loadSettings() {
     const snap = await db.collection('settings').doc('global').get();
     if (snap.exists) {
       settings = {...settings, ...snap.data()};
+      loadResvSettings(settings);
       tableCount = settings.tableCount || 10;
 
       // Payment
@@ -3300,7 +3301,11 @@ async function saveResvSettings() {
 function loadResvSettings(s) {
   // Called from your existing settings loader — pass the settings object
   const el = (id) => document.getElementById(id);
-  if (el('s-resv-enabled'))   el('s-resv-enabled').checked   = s.reservationsEnabled !== false; // default true
+  if (el('s-resv-enabled')) {
+  el('s-resv-enabled').checked = s.reservationsEnabled !== false;
+  const wrap = el('resv-pause-msg-wrap');
+  if (wrap) wrap.style.display = s.reservationsEnabled !== false ? 'none' : 'block';
+}
   if (el('s-resv-pause-msg')) el('s-resv-pause-msg').value   = s.reservationPauseMsg  || '';
   if (el('s-resv-open'))      el('s-resv-open').value        = s.reservationOpenTime   || '15:00';
   if (el('s-resv-close'))     el('s-resv-close').value       = s.reservationCloseTime  || '22:00';
