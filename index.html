@@ -180,6 +180,33 @@ textarea.fi{resize:vertical;min-height:70px;}
 .dc-desc{font-size:12.5px;color:var(--tm);margin-bottom:10px;}
 .dc-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .active-now{font-size:11px;font-weight:700;background:var(--green-d);color:var(--green);border-radius:100px;padding:3px 9px;border:1px solid rgba(61,155,106,.25);}
+/* ── ANALYTICS ── */
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px;}
+.an-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;}
+.an-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--gold);margin-bottom:2px;}
+.an-label{font-size:11px;color:var(--td);letter-spacing:.8px;text-transform:uppercase;}
+.an-sub{font-size:12px;color:var(--tm);margin-top:4px;}
+.chart-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:14px;}
+.chart-title{font-size:12px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;background:var(--gold-d);border-radius:4px 4px 0 0;border:1px solid rgba(200,146,42,.25);transition:height .4s ease;min-height:4px;}
+.bar-col:hover .bar{background:var(--gold);border-color:var(--gold);}
+.bar-label{font-size:9px;color:var(--td);text-align:center;white-space:nowrap;}
+.bar-val{font-size:9px;color:var(--tm);text-align:center;}
+.top-items-list{display:flex;flex-direction:column;gap:6px;}
+.ti-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s3);border-radius:var(--rs);}
+.ti-rank{font-size:11px;font-weight:700;color:var(--td);min-width:18px;}
+.ti-name{flex:1;font-size:13px;}
+.ti-bar-wrap{width:80px;height:6px;background:var(--s4);border-radius:3px;overflow:hidden;}
+.ti-bar{height:100%;background:var(--gold);border-radius:3px;}
+.ti-count{font-size:12px;color:var(--tm);min-width:40px;text-align:right;}
+.tax-section{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;}
+.tax-title{font-size:14px;font-weight:700;margin-bottom:6px;}
+.tax-desc{font-size:12.5px;color:var(--tm);margin-bottom:14px;line-height:1.6;}
+.tax-period-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.period-btn{padding:12px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--s3);color:var(--tm);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;text-align:center;font-family:'DM Sans',sans-serif;}
+.period-btn.sel{background:var(--gold-d);border-color:rgba(200,146,42,.4);color:var(--gold-l);}
 .deal-preview{background:var(--gold-d);border:1px solid rgba(200,146,42,.2);border-radius:var(--r);padding:14px;margin-bottom:16px;}
 .dp-title{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
 .dp-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--text);margin-bottom:4px;}
@@ -544,8 +571,49 @@ textarea.fi{resize:vertical;min-height:70px;}
 </div>
   
 <!-- ANALYTICS TAB -->
-  <div class="tab-panel" id="panel-analytics">
-    <!-- populated by renderAnalytics() on tab switch -->
+<div class="tab-panel" id="panel-analytics">
+    <div class="page-hd">
+      <div class="page-title">Analytics</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select class="fi" id="an-period" onchange="renderAnalytics()" style="width:auto;font-size:12px;padding:6px 10px;">
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month" selected>This Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year">This Year</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        <div id="an-custom-range" style="display:none;gap:6px;display:none;align-items:center;">
+          <input type="date" id="an-date-from" class="fi" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderAnalytics()">
+          <span style="color:var(--td);">→</span>
+          <input type="date" id="an-date-to" class="fi" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderAnalytics()">
+        </div>
+      </div>
+    </div>
+    <div id="analytics-body"><div class="spinner"></div></div>
+
+    <!-- TAX EXPORT SECTION -->
+    <div class="tax-section" style="margin-top:24px;">
+      <div class="tax-title">🧾 Tax & Financial Export</div>
+      <div class="tax-desc">Download sales data formatted for IRS Schedule C (Form 1040) or to share with your tax professional. Includes gross sales, discounts, taxes collected, tips, payment method breakdown, and refunds.</div>
+      <div class="tax-period-grid">
+        <button class="period-btn sel" id="tax-q1" onclick="selectTaxPeriod('q1')">Q1 — Jan–Mar</button>
+        <button class="period-btn"    id="tax-q2" onclick="selectTaxPeriod('q2')">Q2 — Apr–Jun</button>
+        <button class="period-btn"    id="tax-q3" onclick="selectTaxPeriod('q3')">Q3 — Jul–Sep</button>
+        <button class="period-btn"    id="tax-q4" onclick="selectTaxPeriod('q4')">Q4 — Oct–Dec</button>
+        <button class="period-btn"    id="tax-annual" onclick="selectTaxPeriod('annual')" style="grid-column:1/-1;">Full Year</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+        <label class="fl" style="margin:0;">Tax Year:</label>
+        <select class="fi" id="tax-year" style="width:auto;font-size:12px;padding:6px 10px;">
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="downloadTaxCSV()">⬇ Download CSV</button>
+        <button class="btn btn-ghost" onclick="previewTaxSummary()">👁 Preview Summary</button>
+      </div>
+      <div id="tax-preview" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;font-size:12.5px;line-height:1.8;"></div>
+    </div>
   </div>
 
   <!-- RESERVATIONS TAB -->
@@ -1178,6 +1246,7 @@ function switchTab(t) {
   if (t==='tables')    { renderTablePreview(); loadTableOccupancy(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
   if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
+  if (t==='analytics') { initTaxYearDropdown(); renderAnalytics(); }
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -2120,61 +2189,394 @@ function statCard(label, value, color) {
 
 let analyticsRange = 'today';
 
-function renderAnalytics() {
-  const panel = document.getElementById('panel-analytics');
-  const now   = new Date();
+// ══════════════════════════════════════════
+// ★ ANALYTICS
+// ══════════════════════════════════════════
 
-  let rangeStart, rangeLabel;
-  switch(analyticsRange) {
-    case 'yesterday': {
-      const y = new Date(now); y.setDate(y.getDate()-1); y.setHours(0,0,0,0);
-      rangeStart = y;
-      const yEnd = new Date(y); yEnd.setHours(23,59,59,999);
-      rangeLabel = 'Yesterday';
-      break;
-    }
-    case 'week': {
-      rangeStart = new Date(now); rangeStart.setDate(rangeStart.getDate() - 7); rangeStart.setHours(0,0,0,0);
-      rangeLabel = 'Last 7 Days';
-      break;
-    }
-    case 'month': {
-      rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      rangeLabel = 'This Month';
-      break;
-    }
-    default: {
-      rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      rangeLabel = 'Today';
-    }
+function getAnalyticsPeriod() {
+  const p = document.getElementById('an-period')?.value || 'month';
+  const now = new Date();
+  let from, to;
+  to = new Date(now); to.setHours(23,59,59,999);
+
+  if (p === 'today') {
+    from = new Date(now); from.setHours(0,0,0,0);
+  } else if (p === 'week') {
+    from = new Date(now);
+    from.setDate(now.getDate() - now.getDay());
+    from.setHours(0,0,0,0);
+  } else if (p === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (p === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    from = new Date(now.getFullYear(), q * 3, 1);
+  } else if (p === 'year') {
+    from = new Date(now.getFullYear(), 0, 1);
+  } else if (p === 'custom') {
+    const f = document.getElementById('an-date-from')?.value;
+    const t = document.getElementById('an-date-to')?.value;
+    from = f ? new Date(f + 'T00:00:00') : new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = t ? new Date(t + 'T23:59:59') : to;
   }
+  return { from, to };
+}
 
-  // Filter from in-memory orders (limited to 100 from Firestore listener)
-  // For historical queries we fire a separate Firestore query
-  if (analyticsRange !== 'today') {
-    panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}<div class="spinner"></div>`;
-    attachDateTabListeners();
-    let q = db.collection('orders').where('timestamp', '>=', rangeStart);
-    if (analyticsRange === 'yesterday') {
-      const yEnd = new Date(rangeStart); yEnd.setHours(23,59,59,999);
-      q = q.where('timestamp', '<=', yEnd);
+async function renderAnalytics() {
+  const body = document.getElementById('analytics-body');
+  if (!body) return;
+  body.innerHTML = '<div class="spinner"></div>';
+
+  // Show/hide custom range
+  const period = document.getElementById('an-period')?.value;
+  const cr = document.getElementById('an-custom-range');
+  if (cr) cr.style.display = period === 'custom' ? 'flex' : 'none';
+
+  if (!db) { body.innerHTML = '<div class="empty-state"><div class="emoji">📊</div><h3>Firebase not connected</h3></div>'; return; }
+
+  const { from, to } = getAnalyticsPeriod();
+
+  try {
+    const snap = await db.collection('orders')
+      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(from))
+      .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(to))
+      .get();
+
+    const orders = snap.docs.map(d => ({ ...d.data(), _id: d.id }))
+      .filter(o => o.status !== 'cancelled');
+
+    if (!orders.length) {
+      body.innerHTML = '<div class="empty-state"><div class="emoji">📊</div><h3>No orders in this period</h3></div>';
+      return;
     }
-    q.orderBy('timestamp', 'desc').limit(500).get()
-      .then(snap => {
-        const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
-        renderAnalyticsData(panel, orders, rangeLabel);
-      })
-      .catch(e => panel.innerHTML += `<p style="color:var(--red);padding:20px;">Error: ${e.message}</p>`);
-    return;
-  }
 
-  const todayOrders = allOrders.filter(o => {
-    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp || 0);
-    return ts >= rangeStart;
-  });
-  panel.innerHTML = `<div class="page-hd"><div class="page-title">Analytics</div></div>${buildDateTabs()}`;
-  attachDateTabListeners();
-  renderAnalyticsData(panel, todayOrders, rangeLabel);
+    // ── CORE METRICS ────────────────────────────
+    const totalRevenue   = orders.reduce((s, o) => s + (o.total || 0), 0);
+    const totalOrders    = orders.length;
+    const avgOrderVal    = totalRevenue / totalOrders;
+    const totalTax       = orders.reduce((s, o) => s + (o.taxAmount || 0), 0);
+    const totalTips      = orders.reduce((s, o) => s + (o.tipAmount || 0), 0);
+    const totalDiscounts = orders.reduce((s, o) => s + (o.savings || 0), 0);
+    const dineInOrders   = orders.filter(o => o.orderType === 'dine_in').length;
+    const takeawayOrders = orders.filter(o => o.orderType === 'takeaway').length;
+    const cardOrders     = orders.filter(o => o.paymentMethod === 'card').length;
+    const cashOrders     = orders.filter(o => o.paymentMethod === 'cash').length;
+
+    // ── TOP ITEMS ────────────────────────────────
+    const itemMap = {};
+    orders.forEach(o => (o.items || []).forEach(it => {
+      if (!itemMap[it.name]) itemMap[it.name] = { name: it.name, qty: 0, revenue: 0 };
+      itemMap[it.name].qty     += it.qty || 1;
+      itemMap[it.name].revenue += (it.unitPrice || 0) * (it.qty || 1);
+    }));
+    const topItems = Object.values(itemMap).sort((a, b) => b.qty - a.qty).slice(0, 8);
+
+    // ── HOURLY BREAKDOWN ─────────────────────────
+    const hourMap = Array(24).fill(0);
+    orders.forEach(o => {
+      const ts = o.timestamp?.seconds ? new Date(o.timestamp.seconds * 1000) : new Date(o.timestamp);
+      hourMap[ts.getHours()]++;
+    });
+    const peakHour = hourMap.indexOf(Math.max(...hourMap));
+    const formatHour = h => h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`;
+
+    // ── DAILY REVENUE (last 7 or by period) ─────
+    const dayMap = {};
+    orders.forEach(o => {
+      const ts = o.timestamp?.seconds ? new Date(o.timestamp.seconds * 1000) : new Date(o.timestamp);
+      const key = ts.toLocaleDateString([], { month:'short', day:'numeric' });
+      if (!dayMap[key]) dayMap[key] = 0;
+      dayMap[key] += o.total || 0;
+    });
+    const dayEntries = Object.entries(dayMap).slice(-14); // last 14 days max
+    const maxDayRev  = Math.max(...dayEntries.map(([,v]) => v), 1);
+
+    // ── PEAK HOURS CHART (business hours) ───────
+    const peakHours = [11,12,13,14,17,18,19,20,21];
+    const maxHour   = Math.max(...peakHours.map(h => hourMap[h]), 1);
+
+    const cur = settings.currencySymbol || '$';
+
+    body.innerHTML = `
+      <!-- KPI CARDS -->
+      <div class="analytics-grid">
+        <div class="an-card">
+          <div class="an-val">${cur}${totalRevenue.toFixed(2)}</div>
+          <div class="an-label">Gross Revenue</div>
+          <div class="an-sub">${totalOrders} orders</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${cur}${avgOrderVal.toFixed(2)}</div>
+          <div class="an-label">Avg Order Value</div>
+          <div class="an-sub">per transaction</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${cur}${totalTax.toFixed(2)}</div>
+          <div class="an-label">Tax Collected</div>
+          <div class="an-sub">to remit to IRS</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${cur}${totalTips.toFixed(2)}</div>
+          <div class="an-label">Tips</div>
+          <div class="an-sub">card payments only</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${cur}${totalDiscounts.toFixed(2)}</div>
+          <div class="an-label">Discounts Given</div>
+          <div class="an-sub">deals applied</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${formatHour(peakHour)}</div>
+          <div class="an-label">Peak Hour</div>
+          <div class="an-sub">${hourMap[peakHour]} orders</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${dineInOrders}</div>
+          <div class="an-label">Dine-In</div>
+          <div class="an-sub">${takeawayOrders} takeaway</div>
+        </div>
+        <div class="an-card">
+          <div class="an-val">${cardOrders}</div>
+          <div class="an-label">Card Payments</div>
+          <div class="an-sub">${cashOrders} cash</div>
+        </div>
+      </div>
+
+      <!-- DAILY REVENUE CHART -->
+      ${dayEntries.length > 1 ? `
+      <div class="chart-wrap">
+        <div class="chart-title">Daily Revenue</div>
+        <div class="bar-chart">
+          ${dayEntries.map(([day, val]) => `
+            <div class="bar-col">
+              <div class="bar-val">${cur}${val < 1000 ? val.toFixed(0) : (val/1000).toFixed(1)+'k'}</div>
+              <div class="bar" style="height:${Math.round((val/maxDayRev)*100)}px;" title="${day}: ${cur}${val.toFixed(2)}"></div>
+              <div class="bar-label">${day}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- PEAK HOURS CHART -->
+      <div class="chart-wrap">
+        <div class="chart-title">Orders by Hour</div>
+        <div class="bar-chart">
+          ${peakHours.map(h => `
+            <div class="bar-col">
+              <div class="bar-val">${hourMap[h]||0}</div>
+              <div class="bar" style="height:${Math.round((hourMap[h]||0)/maxHour*100)}px;${h===peakHour?'background:var(--gold);border-color:var(--gold);':''}" title="${formatHour(h)}: ${hourMap[h]} orders"></div>
+              <div class="bar-label">${formatHour(h)}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- TOP SELLING ITEMS -->
+      <div class="chart-wrap">
+        <div class="chart-title">Top Selling Items</div>
+        <div class="top-items-list">
+          ${topItems.map((item, i) => `
+            <div class="ti-row">
+              <span class="ti-rank">#${i+1}</span>
+              <span class="ti-name">${escapeHtml(item.name)}</span>
+              <div class="ti-bar-wrap"><div class="ti-bar" style="width:${Math.round(item.qty/topItems[0].qty*100)}%"></div></div>
+              <span class="ti-count">${item.qty} sold</span>
+              <span class="ti-count" style="color:var(--gold)">${cur}${item.revenue.toFixed(2)}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- PAYMENT BREAKDOWN -->
+      <div class="chart-wrap">
+        <div class="chart-title">Payment Breakdown</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="an-card">
+            <div class="an-val">${Math.round(cashOrders/totalOrders*100)}%</div>
+            <div class="an-label">Cash</div>
+            <div class="an-sub">${cashOrders} orders</div>
+          </div>
+          <div class="an-card">
+            <div class="an-val">${Math.round(cardOrders/totalOrders*100)}%</div>
+            <div class="an-label">Card</div>
+            <div class="an-sub">${cardOrders} orders</div>
+          </div>
+        </div>
+      </div>`;
+
+  } catch(e) {
+    console.warn('analytics:', e);
+    body.innerHTML = '<div class="empty-state"><div class="emoji">⚠️</div><h3>Could not load analytics</h3><p>' + e.message + '</p></div>';
+  }
+}
+
+// ══════════════════════════════════════════
+// ★ TAX EXPORT
+// ══════════════════════════════════════════
+
+let selectedTaxPeriod = 'q1';
+
+function selectTaxPeriod(p) {
+  selectedTaxPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('tax-' + p)?.classList.add('sel');
+}
+
+function initTaxYearDropdown() {
+  const sel = document.getElementById('tax-year');
+  if (!sel) return;
+  const thisYear = new Date().getFullYear();
+  sel.innerHTML = '';
+  for (let y = thisYear; y >= thisYear - 5; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    sel.appendChild(opt);
+  }
+}
+
+function getTaxDateRange() {
+  const year = parseInt(document.getElementById('tax-year')?.value || new Date().getFullYear());
+  const ranges = {
+    q1:     { from: new Date(year, 0,  1), to: new Date(year, 2,  31, 23, 59, 59) },
+    q2:     { from: new Date(year, 3,  1), to: new Date(year, 5,  30, 23, 59, 59) },
+    q3:     { from: new Date(year, 6,  1), to: new Date(year, 8,  30, 23, 59, 59) },
+    q4:     { from: new Date(year, 9,  1), to: new Date(year, 11, 31, 23, 59, 59) },
+    annual: { from: new Date(year, 0,  1), to: new Date(year, 11, 31, 23, 59, 59) },
+  };
+  return ranges[selectedTaxPeriod];
+}
+
+async function fetchTaxOrders() {
+  const { from, to } = getTaxDateRange();
+  const snap = await db.collection('orders')
+    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(from))
+    .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(to))
+    .get();
+  return snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+}
+
+function buildTaxSummary(orders) {
+  const year = parseInt(document.getElementById('tax-year')?.value || new Date().getFullYear());
+  const periodLabels = { q1:'Q1 (Jan-Mar)', q2:'Q2 (Apr-Jun)', q3:'Q3 (Jul-Sep)', q4:'Q4 (Oct-Dec)', annual:'Full Year' };
+  const cur = settings.currencySymbol || '$';
+
+  const completed = orders.filter(o => o.status !== 'cancelled');
+  const cancelled = orders.filter(o => o.status === 'cancelled');
+
+  const grossRevenue   = completed.reduce((s,o) => s + (o.total || 0), 0);
+  const subtotal       = completed.reduce((s,o) => s + (o.subtotal || o.total || 0), 0);
+  const taxCollected   = completed.reduce((s,o) => s + (o.taxAmount || 0), 0);
+  const tipsCollected  = completed.reduce((s,o) => s + (o.tipAmount || 0), 0);
+  const serviceCharges = completed.reduce((s,o) => s + (o.serviceCharge || 0), 0);
+  const discounts      = completed.reduce((s,o) => s + (o.savings || 0), 0);
+  const loyaltyDisc    = completed.reduce((s,o) => s + (o.loyaltyDiscount || 0), 0);
+  const cardSales      = completed.filter(o=>o.paymentMethod==='card').reduce((s,o) => s + (o.total||0), 0);
+  const cashSales      = completed.filter(o=>o.paymentMethod==='cash').reduce((s,o) => s + (o.total||0), 0);
+  const netSales       = subtotal - discounts - loyaltyDisc;
+
+  return {
+    year, period: periodLabels[selectedTaxPeriod],
+    totalOrders: completed.length,
+    cancelledOrders: cancelled.length,
+    grossRevenue, subtotal, netSales,
+    taxCollected, tipsCollected, serviceCharges,
+    discounts, loyaltyDisc,
+    cardSales, cashSales,
+    cur
+  };
+}
+
+async function previewTaxSummary() {
+  const preview = document.getElementById('tax-preview');
+  preview.style.display = 'block';
+  preview.innerHTML = '<div class="spinner"></div>';
+  try {
+    const orders = await fetchTaxOrders();
+    const s = buildTaxSummary(orders);
+    preview.innerHTML = `
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);">
+        ${settings.restaurantName || 'Restaurant'} — Tax Summary ${s.year} ${s.period}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Total Orders Completed</td><td style="text-align:right;font-weight:600;">${s.totalOrders}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Cancelled Orders</td><td style="text-align:right;">${s.cancelledOrders}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Gross Sales (before discounts)</td><td style="text-align:right;font-weight:600;">${s.cur}${s.subtotal.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Discounts / Promotions Given</td><td style="text-align:right;color:var(--red);">-${s.cur}${s.discounts.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Loyalty Redemptions</td><td style="text-align:right;color:var(--red);">-${s.cur}${s.loyaltyDisc.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);font-weight:700;"><td style="padding:5px 0;">Net Sales</td><td style="text-align:right;color:var(--gold);">${s.cur}${s.netSales.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Sales Tax Collected (to remit)</td><td style="text-align:right;">${s.cur}${s.taxCollected.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Service Charges</td><td style="text-align:right;">${s.cur}${s.serviceCharges.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Tips Collected</td><td style="text-align:right;">${s.cur}${s.tipsCollected.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);font-weight:700;"><td style="padding:5px 0;">Gross Revenue (total collected)</td><td style="text-align:right;color:var(--gold);">${s.cur}${s.grossRevenue.toFixed(2)}</td></tr>
+        <tr style="border-bottom:1px solid var(--bd);"><td style="padding:5px 0;color:var(--tm);">Card Sales</td><td style="text-align:right;">${s.cur}${s.cardSales.toFixed(2)}</td></tr>
+        <tr><td style="padding:5px 0;color:var(--tm);">Cash Sales</td><td style="text-align:right;">${s.cur}${s.cashSales.toFixed(2)}</td></tr>
+      </table>
+      <div style="margin-top:10px;font-size:11px;color:var(--td);line-height:1.6;">
+        ⚠️ This summary is for reference only. Net Sales figure maps to IRS Schedule C Line 1 (Gross receipts). 
+        Tax Collected is a liability — do not report as income. Consult your tax professional for final filing.
+      </div>`;
+  } catch(e) {
+    preview.innerHTML = '<div style="color:var(--red);">Error loading data: ' + e.message + '</div>';
+  }
+}
+
+async function downloadTaxCSV() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  try {
+    const orders = await fetchTaxOrders();
+    const s = buildTaxSummary(orders);
+    const restName = settings.restaurantName || 'Restaurant';
+
+    // ── SUMMARY SHEET ────────────────────────────
+    let csv = `"${restName} — Tax Summary"\n`;
+    csv += `"Period","${s.period} ${s.year}"\n`;
+    csv += `"Generated","${new Date().toLocaleDateString()}"\n\n`;
+
+    csv += `"INCOME SUMMARY (IRS Schedule C Reference)"\n`;
+    csv += `"Line","Description","Amount"\n`;
+    csv += `"Line 1","Gross receipts or sales (net sales)","${s.netSales.toFixed(2)}"\n`;
+    csv += `"","Gross sales before discounts","${s.subtotal.toFixed(2)}"\n`;
+    csv += `"","Less: Discounts and promotions","-${s.discounts.toFixed(2)}"\n`;
+    csv += `"","Less: Loyalty redemptions","-${s.loyaltyDisc.toFixed(2)}"\n\n`;
+
+    csv += `"TAX LIABILITY (Do not report as income)"\n`;
+    csv += `"Description","Amount"\n`;
+    csv += `"Sales tax collected (to remit to state)","${s.taxCollected.toFixed(2)}"\n`;
+    csv += `"Service charges collected","${s.serviceCharges.toFixed(2)}"\n`;
+    csv += `"Tips collected (card payments)","${s.tipsCollected.toFixed(2)}"\n\n`;
+
+    csv += `"PAYMENT METHOD BREAKDOWN"\n`;
+    csv += `"Method","Amount"\n`;
+    csv += `"Card sales","${s.cardSales.toFixed(2)}"\n`;
+    csv += `"Cash sales","${s.cashSales.toFixed(2)}"\n`;
+    csv += `"Gross revenue total","${s.grossRevenue.toFixed(2)}"\n\n`;
+
+    csv += `"ORDER COUNTS"\n`;
+    csv += `"Completed orders","${s.totalOrders}"\n`;
+    csv += `"Cancelled orders","${s.cancelledOrders}"\n\n`;
+
+    // ── TRANSACTION DETAIL ───────────────────────
+    csv += `"TRANSACTION DETAIL"\n`;
+    csv += `"Date","Time","Order #","Type","Customer","Items","Subtotal","Discount","Tax","Service Charge","Tip","Total","Payment Method","Payment Status","Status"\n`;
+
+    const completed = orders.filter(o => o.status !== 'cancelled');
+    completed.forEach(o => {
+      const ts = o.timestamp?.seconds ? new Date(o.timestamp.seconds * 1000) : new Date(o.timestamp || Date.now());
+      const dateStr = ts.toLocaleDateString();
+      const timeStr = ts.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const itemsStr = (o.items || []).map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/"/g, '""');
+      csv += `"${dateStr}","${timeStr}","${o.orderNumber || ''}","${o.orderType || ''}","${(o.customerName||'').replace(/"/g,'""')}","${itemsStr}","${(o.subtotal||o.total||0).toFixed(2)}","${(o.savings||0).toFixed(2)}","${(o.taxAmount||0).toFixed(2)}","${(o.serviceCharge||0).toFixed(2)}","${(o.tipAmount||0).toFixed(2)}","${(o.total||0).toFixed(2)}","${o.paymentMethod||'cash'}","${o.paymentStatus||''}","${o.status||''}"\n`;
+    });
+
+    // ── DOWNLOAD ────────────────────────────────
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `${restName.replace(/\s+/g,'-')}-Tax-${s.period.replace(/[^a-zA-Z0-9]/g,'-')}-${s.year}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Tax CSV downloaded', 'success');
+  } catch(e) {
+    console.warn('tax export:', e);
+    toast('Export failed: ' + e.message, 'error');
+  }
 }
 
 function buildDateTabs() {
