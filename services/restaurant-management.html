@@ -204,7 +204,17 @@ textarea.fi{resize:vertical;min-height:70px;}
   .modal{border-radius:24px 24px 0 0;max-height:88vh;padding-bottom:calc(24px + env(safe-area-inset-bottom));}
 }
 .modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
-.modal-close{width:30px;height:30px;border-radius:50%;background:var(--s3);border:none;color:var(--tm);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.oe-items{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.oe-row{display:flex;align-items:center;gap:10px;background:var(--s3);border-radius:var(--rs);padding:10px 12px;}
+.oe-name{flex:1;font-size:13px;font-weight:600;color:var(--text);}
+.oe-price{font-size:12px;color:var(--td);white-space:nowrap;}
+.oe-qty{display:flex;align-items:center;gap:8px;}
+.oe-qty-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--bd);background:var(--s2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.oe-qty-val{min-width:20px;text-align:center;font-size:14px;font-weight:700;}
+.oe-del{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;}
+.oe-paid-warn{background:rgba(201,64,64,.08);border:1px solid var(--red);border-radius:var(--rs);padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:14px;line-height:1.5;}
+.oe-audit{font-size:11px;color:var(--td);margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);}
+  .modal-close{width:30px;height:30px;border-radius:50%;background:var(--s3);border:none;color:var(--tm);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
 .modal-close:hover{background:var(--s4);}
 .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--bd);}
 .img-upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;}
@@ -899,6 +909,27 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
   </div>
 
+<!-- ORDER EDIT MODAL -->
+  <div class="modal" id="order-edit-modal" style="display:none">
+    <div class="modal-title">
+      <span id="oe-title">Edit Order</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="oe-paid-warn" class="oe-paid-warn" style="display:none;">
+      ⚠ This order was <b>paid by card</b>. You can only add items or adjust quantities upward. Removing items or reducing quantities on a paid order is not permitted — any refund must be processed manually through Stripe.
+    </div>
+    <div class="oe-items" id="oe-items"></div>
+    <div class="fg" style="margin-bottom:12px;">
+      <label class="fl">Reason for edit</label>
+      <input type="text" class="fi" id="oe-reason" placeholder="e.g. Customer changed mind, item unavailable...">
+    </div>
+    <div class="oe-audit" id="oe-audit"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveOrderEdit()" id="oe-save-btn">Save Changes</button>
+    </div>
+  </div>
+  
   <!-- DEAL MODAL -->
   <div class="modal" id="deal-modal" style="display:none">
     <div class="modal-title">
@@ -1333,6 +1364,7 @@ const payBadge = o.paymentMethod === 'card'
       ${o.status==='ready'     ? `<button class="sbtn sbtn-done"  onclick="setStatus('${o._id}','completed')">✓ Done</button>` : ''}
 <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
       <button class="sbtn" style="background:var(--red-d);color:var(--red);" onclick="quick86('${o._id}',${JSON.stringify(o.items||[]).replace(/'/g,'&#39;')})">86</button>
+      <button class="sbtn" style="background:var(--s3);color:var(--gold);" onclick="openOrderEdit('${o._id}')">✏️</button>
     ` : `<span style="font-size:11px;color:var(--td)">Completed ${timeStr}</span>
          <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>`;
 
@@ -1385,6 +1417,130 @@ async function clearDoneOrders() {
   toast('Completed orders cleared','success');
 }
 
+// ── ORDER EDITING ────────────────────────────────
+let _editingOrderId   = null;
+let _editingOrderData = null;
+let _editingItems     = [];
+
+function openOrderEdit(orderId) {
+  const order = allOrders.find(o => o._id === orderId);
+  if (!order) return;
+
+  _editingOrderId   = orderId;
+  _editingOrderData = order;
+  _editingItems     = order.items.map(i => ({ ...i })); // deep copy
+
+  const isPaid = order.paymentStatus === 'paid' && order.paymentMethod === 'card';
+
+  document.getElementById('oe-title').textContent   = `Edit Order #${order.orderNumber || '—'}`;
+  document.getElementById('oe-paid-warn').style.display = isPaid ? 'block' : 'none';
+  document.getElementById('oe-reason').value         = '';
+
+  // Audit trail
+  const auditEl = document.getElementById('oe-audit');
+  if (order.editLog && order.editLog.length) {
+    auditEl.innerHTML = '<b>Edit history:</b><br>' +
+      order.editLog.map(e => `${e.time} — ${escapeHtml(e.reason)} (${escapeHtml(e.by)})`).join('<br>');
+    auditEl.style.display = 'block';
+  } else {
+    auditEl.style.display = 'none';
+  }
+
+  _renderOeItems(isPaid);
+
+  document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+  document.getElementById('order-edit-modal').style.display = 'block';
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function _renderOeItems(isPaid) {
+  const con = document.getElementById('oe-items');
+  con.innerHTML = '';
+  _editingItems.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'oe-row';
+    const origQty = (_editingOrderData.items[idx]?.qty) || item.qty;
+    // Paid card order — can only increase qty, cannot delete
+    const canDecrease = !isPaid || item.qty > origQty;
+    const canDelete   = !isPaid;
+    row.innerHTML = `
+      <div class="oe-name">${escapeHtml(item.name)}</div>
+      <div class="oe-price">$${((item.unitPrice||0) * item.qty).toFixed(2)}</div>
+      <div class="oe-qty">
+        <button class="oe-qty-btn" onclick="_oeQty(${idx},-1)" ${canDecrease ? '' : 'disabled style="opacity:.3;"'}>−</button>
+        <div class="oe-qty-val" id="oe-qty-${idx}">${item.qty}</div>
+        <button class="oe-qty-btn" onclick="_oeQty(${idx},1)">+</button>
+      </div>
+      ${canDelete ? `<button class="oe-del" onclick="_oeDel(${idx})">🗑</button>` : ''}`;
+    con.appendChild(row);
+  });
+}
+
+function _oeQty(idx, delta) {
+  const isPaid   = _editingOrderData.paymentStatus === 'paid' && _editingOrderData.paymentMethod === 'card';
+  const origQty  = _editingOrderData.items[idx]?.qty || 1;
+  const newQty   = _editingItems[idx].qty + delta;
+  if (isPaid && newQty < origQty) { toast('Cannot reduce quantity on a paid order', 'error'); return; }
+  if (newQty < 1) { _oeDel(idx); return; }
+  _editingItems[idx].qty = newQty;
+  document.getElementById(`oe-qty-${idx}`).textContent = newQty;
+}
+
+function _oeDel(idx) {
+  _editingItems.splice(idx, 1);
+  _editingOrderData.items.splice(idx, 1);
+  const isPaid = _editingOrderData.paymentStatus === 'paid' && _editingOrderData.paymentMethod === 'card';
+  _renderOeItems(isPaid);
+}
+
+async function saveOrderEdit() {
+  const reason = document.getElementById('oe-reason').value.trim();
+  if (!reason) { toast('Enter a reason for the edit', 'error'); return; }
+  if (_editingItems.length === 0) { toast('Order must have at least one item', 'error'); return; }
+
+  const isPaid = _editingOrderData.paymentStatus === 'paid' && _editingOrderData.paymentMethod === 'card';
+
+  // Final safety check — on paid orders, no item qty can be lower than original
+  if (isPaid) {
+    for (let i = 0; i < _editingItems.length; i++) {
+      const orig = _editingOrderData.items[i]?.qty || 1;
+      if (_editingItems[i].qty < orig) {
+        toast('Cannot reduce quantities on a paid card order', 'error'); return;
+      }
+    }
+  }
+
+  // Recalculate total
+  const sub      = _editingItems.reduce((s, i) => s + (i.unitPrice||0) * i.qty, 0);
+  const taxRate  = (_editingOrderData.taxRate || 0) / 100;
+  const svcAmt   = _editingOrderData.serviceCharge || 0;
+  const newTotal = parseFloat((sub + sub * taxRate + svcAmt + (_editingOrderData.tipAmount||0)).toFixed(2));
+
+  const logEntry = {
+    time:   new Date().toLocaleString(),
+    reason: reason,
+    by:     'admin',
+  };
+
+  const btn = document.getElementById('oe-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    await db.collection('orders').doc(_editingOrderId).update({
+      items:    _editingItems,
+      subtotal: parseFloat(sub.toFixed(2)),
+      total:    newTotal,
+      editLog:  firebase.firestore.FieldValue.arrayUnion(logEntry),
+    });
+    toast('Order updated', 'success');
+    closeModal();
+  } catch(e) {
+    toast('Error saving — try again', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+  }
+}
+  
 function quick86(orderId, items) {
   const names = items.map(i => i.name);
   const pick  = prompt(`Type item name to mark sold out:\n${names.join('\n')}`);
@@ -1994,16 +2150,46 @@ function attachDateTabListeners() {
 }
 
 function renderAnalyticsData(panel, orders, rangeLabel) {
+  const cur      = settings.currencySymbol || '$';
   const revenue  = orders.reduce((s,o) => s+(o.total||0), 0);
   const cardPaid = orders.filter(o => o.paymentMethod==='card' && o.paymentStatus==='paid').length;
   const cash     = orders.filter(o => o.paymentMethod!=='card').length;
   const avgOrder = orders.length ? revenue / orders.length : 0;
 
-  const counts = {};
-  orders.forEach(o => (o.items||[]).forEach(i => { counts[i.name]=(counts[i.name]||0)+(i.qty||1); }));
-  const topItems = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // ── BEST SELLERS ───────────────────────────────
+  const itemCounts = {}, itemRevenue = {};
+  orders.forEach(o => (o.items||[]).forEach(i => {
+    itemCounts[i.name]  = (itemCounts[i.name]  || 0) + (i.qty||1);
+    itemRevenue[i.name] = (itemRevenue[i.name] || 0) + (i.unitPrice||0) * (i.qty||1);
+  }));
+  const topItems = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxQty   = topItems[0]?.[1] || 1;
 
+  // ── CATEGORY BREAKDOWN ─────────────────────────
+  const catRevenue = {};
+  orders.forEach(o => (o.items||[]).forEach(i => {
+    const menuItem = menuItems.find(m => m.name === i.name);
+    const cat = menuItem ? (menuItem.cat || menuItem.category || 'other') : 'other';
+    const catName = (settings.categories||[]).find(c=>c.id===cat)?.name || cat;
+    catRevenue[catName] = (catRevenue[catName]||0) + (i.unitPrice||0)*(i.qty||1);
+  }));
+  const catEntries = Object.entries(catRevenue).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxCatRev  = catEntries[0]?.[1] || 1;
+  const totalCatRev = catEntries.reduce((s,[,v])=>s+v,0);
+
+  // ── PEAK HOURS ─────────────────────────────────
+  const hourCounts = Array(24).fill(0);
+  orders.forEach(o => {
+    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp||0);
+    if (ts) hourCounts[ts.getHours()]++;
+  });
+  const maxHour    = Math.max(...hourCounts, 1);
+  const peakHour   = hourCounts.indexOf(Math.max(...hourCounts));
+  const peakLabel  = peakHour === 0 ? '12am' : peakHour < 12 ? peakHour+'am' : peakHour===12 ? '12pm' : (peakHour-12)+'pm';
+  // Show hours 8am–11pm (indices 8–23)
+  const visibleHours = Array.from({length:16},(_,i)=>i+8);
+
+  // ── QUEUE ──────────────────────────────────────
   const pending   = allOrders.filter(o=>o.status==='pending').length;
   const preparing = allOrders.filter(o=>o.status==='preparing').length;
   const ready     = allOrders.filter(o=>o.status==='ready').length;
@@ -2015,40 +2201,109 @@ function renderAnalyticsData(panel, orders, rangeLabel) {
       <div style="font-size:11px;color:var(--td);margin-top:2px;">${label}</div>
     </div>`;
 
-  const cur = settings.currencySymbol || '$';
+  const sectionHead = (title, sub='') =>
+    `<div style="margin-bottom:12px;margin-top:28px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);">${title}</div>
+      ${sub ? `<div style="font-size:11px;color:var(--tm);margin-top:2px;">${sub}</div>` : ''}
+    </div>`;
+
   const existingHeader = panel.querySelector('.page-hd')?.outerHTML || '';
   const existingTabs   = panel.querySelector('.date-tabs')?.outerHTML || '';
 
   panel.innerHTML = `
     ${existingHeader}
     ${existingTabs}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:28px;">
+
+    <!-- KPI CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:0;">
       ${statCard(rangeLabel+' Orders', orders.length, 'var(--blue)')}
       ${statCard(rangeLabel+' Revenue', cur+revenue.toFixed(2), 'var(--gold)')}
       ${statCard('Avg Order', cur+avgOrder.toFixed(2), 'var(--purple)')}
       ${statCard('💳 Card', cardPaid, 'var(--green)')}
     </div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);margin-bottom:10px;">Live Queue</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;">
-      ${queueItem('Pending',pending,'var(--gold)')}${queueItem('Preparing',preparing,'var(--blue)')}${queueItem('Ready',ready,'var(--green)')}${queueItem('Done',done,'var(--td)')}
+
+    <!-- LIVE QUEUE -->
+    ${sectionHead('Live Queue')}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;">
+      ${queueItem('Pending',pending,'var(--gold)')}
+      ${queueItem('Preparing',preparing,'var(--blue)')}
+      ${queueItem('Ready',ready,'var(--green)')}
+      ${queueItem('Done',done,'var(--td)')}
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);">Top Items</div>
-      <button class="btn btn-ghost btn-sm" onclick="exportOrdersCSV()">↓ Export CSV</button>
+
+    <!-- PEAK HOURS CHART -->
+    ${sectionHead('Peak Hours', orders.length ? `Busiest hour: ${peakLabel} (${hourCounts[peakHour]} orders)` : 'No data')}
+    <div style="display:flex;align-items:flex-end;gap:3px;height:72px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:10px 10px 0;overflow-x:auto;">
+      ${visibleHours.map(h => {
+        const pct  = Math.round(hourCounts[h] / maxHour * 100);
+        const isPeak = h === peakHour && hourCounts[h] > 0;
+        const lbl  = h === 0 ? '12a' : h < 12 ? h+'a' : h===12 ? '12p' : (h-12)+'p';
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:22px;">
+          <div style="width:100%;background:${isPeak?'var(--gold)':'var(--s4)'};border-radius:3px 3px 0 0;height:${Math.max(pct*0.52,2)}px;transition:height .3s;"></div>
+          <div style="font-size:9px;color:var(--td);padding-bottom:6px;">${lbl}</div>
+        </div>`;
+      }).join('')}
     </div>
+
+    <!-- CATEGORY BREAKDOWN -->
+    ${sectionHead('Revenue by Category', catEntries.length ? '' : 'No data')}
+    ${catEntries.length === 0
+      ? `<div style="color:var(--td);font-size:13px;">No category data.</div>`
+      : `<div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+          ${catEntries.map(([name, rev]) => {
+            const pct = Math.round(rev / totalCatRev * 100);
+            return `<div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:12px;color:var(--tm);">${name}</span>
+                <span style="font-size:12px;font-weight:700;color:var(--gold);">${cur}${rev.toFixed(2)} <span style="color:var(--td);font-weight:400;">(${pct}%)</span></span>
+              </div>
+              <div style="background:var(--s3);border-radius:4px;height:6px;overflow:hidden;">
+                <div style="height:100%;background:var(--gold);border-radius:4px;width:${pct}%;"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`}
+
+    <!-- BEST SELLERS -->
+    ${sectionHead('Best Sellers')}
     ${topItems.length===0
       ? `<div style="color:var(--td);font-size:13px;">No orders in this period.</div>`
-      : `<div style="display:flex;flex-direction:column;gap:10px;max-width:480px;">${topItems.map(([name,qty])=>`
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="font-size:13px;color:var(--tm);width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${name}</div>
-            <div style="flex:1;background:var(--s3);border-radius:4px;height:7px;overflow:hidden;"><div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round(qty/maxQty*100)}%;"></div></div>
-            <div style="font-size:12px;font-weight:700;color:var(--gold);width:22px;text-align:right;">${qty}</div>
-          </div>`).join('')}</div>`}
-    <div style="height:32px;"></div>`;
+      : `<div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+          ${topItems.map(([name,qty],i)=>`
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:11px;font-weight:700;color:${i===0?'var(--gold)':'var(--td)'};width:18px;text-align:right;">${i+1}</div>
+              <div style="font-size:13px;color:var(--tm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</div>
+              <div style="flex:0 0 100px;background:var(--s3);border-radius:4px;height:6px;overflow:hidden;">
+                <div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round(qty/maxQty*100)}%;"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--gold);width:28px;text-align:right;">${qty}</div>
+              <div style="font-size:11px;color:var(--td);width:54px;text-align:right;">${cur}${(itemRevenue[name]||0).toFixed(2)}</div>
+            </div>`).join('')}
+        </div>`}
+
+    <!-- PAYMENT SPLIT -->
+    ${sectionHead('Payment Split')}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;">
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
+        <div style="font-size:20px;font-weight:700;color:var(--green)">${cash}</div>
+        <div style="font-size:11px;color:var(--td);margin-top:2px;">💵 Cash</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
+        <div style="font-size:20px;font-weight:700;color:var(--blue)">${cardPaid}</div>
+        <div style="font-size:11px;color:var(--td);margin-top:2px;">💳 Card</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
+        <div style="font-size:20px;font-weight:700;color:var(--gold)">${orders.length ? Math.round(cash/orders.length*100) : 0}%</div>
+        <div style="font-size:11px;color:var(--td);margin-top:2px;">Cash Rate</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:-16px;margin-bottom:32px;">
+      <button class="btn btn-ghost btn-sm" onclick="exportOrdersCSV()">↓ Export CSV</button>
+    </div>`;
 
   attachDateTabListeners();
 }
-
 function _makeQRCanvas(text, size) {
   const canvas = document.createElement('canvas');
   canvas.width  = size;
