@@ -670,12 +670,18 @@ textarea.fi{resize:vertical;min-height:70px;}
 
 <!-- FIRST TIME SETUP -->
 <div class="setup-card">
-  <div class="setup-title">🌱 Initialize Menu</div>
-  <div class="setup-desc">Populate Firestore with the full Spice Korner menu. Run once — will not overwrite existing items.</div>
-  <div id="seed-status"></div>
-  <button class="btn btn-gold" onclick="seedMenu()" id="seed-btn">Seed Menu to Firebase</button>
+  <div class="setup-title">🌱 Menu Import</div>
+  <div class="setup-desc">Import your menu from a CSV file. Existing items with the same name will be skipped — only new items will be added.</div>
+  <div class="setup-desc" style="margin-top:-6px;">CSV columns (in order): <b>name, category, price, description, available</b><br>Category must match one of your category IDs. Available must be <b>true</b> or <b>false</b>.</div>
+  <div id="csv-status"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+    <button class="btn btn-ghost" onclick="downloadCsvTemplate()">⬇ Download CSV Template</button>
+    <label class="btn btn-gold" style="cursor:pointer;">
+      ⬆ Import CSV
+      <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="importMenuCsv(this)">
+    </label>
+  </div>
 </div>
-
 <!-- PRINTER -->
 <div class="setup-card">
   <div class="setup-title">🖨️ Printer Setup</div>
@@ -947,6 +953,7 @@ async function initAdmin() {
   tickTime();
   setInterval(tickTime, 30000);
   await Promise.all([loadMenuItems(), loadDeals(), loadSettings()]);
+  await initDefaultCategories();
   startOrdersListener();
   renderTablePreview();
 }
@@ -1202,7 +1209,7 @@ function renderMenuItems() {
   const con = document.getElementById('menu-items-container');
   const q   = (document.getElementById('menu-search')?.value||'').toLowerCase();
   if (!db) { con.innerHTML=`<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3></div>`; return; }
-  if (!menuItems.length) { con.innerHTML=`<div class="empty-state"><div class="emoji">🍽</div><h3>No items yet</h3><p>Add items or go to Setup → Seed Menu</p></div>`; return; }
+  if (!menuItems.length) { con.innerHTML=`<div class="empty-state"><div class="emoji">🍽</div><h3>No items yet</h3><p>Add items manually or import a CSV from Setup</p></div>`; return; }
 
   const filtered = q ? menuItems.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q)) : menuItems;
   const CE = {bbq:'🔥',rolls:'🫓',rice_bowls:'🍚',karahi:'🥘',street:'🥙',burgers:'🍔',breads:'🫓',sides:'🍟',desserts:'🍮',drinks:'🥤'};
@@ -2367,29 +2374,115 @@ const SEED_DATA = [
   {name:'Water',desc:'Still mineral water.',price:1.45,cat:'drinks',img:'',avail:true},
 ];
 
-async function seedMenu() {
-  if (!db) { toast('Firebase not connected','error'); return; }
-  const btn = document.getElementById('seed-btn');
-  btn.textContent = 'Seeding...'; btn.disabled = true;
-  document.getElementById('seed-status').innerHTML = '<div class="warning-box">Checking existing items...</div>';
+async function initDefaultCategories() {
+  if (!db) return;
   try {
-    const snap = await db.collection('menu_items').get();
-    if (!snap.empty) {
-      document.getElementById('seed-status').innerHTML = `<div class="success-box">✓ Menu already has ${snap.size} items. Use "Delete All Menu Items" first if you want to reseed.</div>`;
-      btn.textContent='Seed Menu to Firebase'; btn.disabled=false; return;
+    const snap = await db.collection('settings').doc('global').get();
+    const existing = (snap.exists && snap.data().categories) ? snap.data().categories : [];
+    if (existing.length > 0) return; // already set up, don't touch
+    const defaults = [
+      {id:'burgers',   name:'Burgers',      e:'🍔'},
+      {id:'pizza',     name:'Pizza',        e:'🍕'},
+      {id:'rolls',     name:'Rolls & Wraps',e:'🌯'},
+      {id:'sides',     name:'Sides',        e:'🍟'},
+      {id:'drinks',    name:'Drinks',       e:'🥤'},
+      {id:'sauces',    name:'Sauces',       e:'🫙'},
+      {id:'extras',    name:'Extras',       e:'➕'},
+      {id:'desserts',  name:'Desserts',     e:'🍰'},
+    ];
+    await db.collection('settings').doc('global').set({ categories: defaults }, { merge: true });
+    settings.categories = defaults;
+  } catch(e) { console.warn('initDefaultCategories:', e); }
+}
+
+function downloadCsvTemplate() {
+  const cats = (settings.categories && settings.categories.length) ? settings.categories : CATS;
+  const catIds = cats.map(c => c.id).join(' | ');
+  const rows = [
+    ['name', 'category', 'price', 'description', 'available'],
+    ['# Category IDs available: ' + catIds, '', '', '', ''],
+    ['Example Item', cats[0]?.id || 'burgers', '9.99', 'A delicious item', 'true'],
+  ];
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'menu-template.csv';
+  a.click();
+}
+
+async function importMenuCsv(input) {
+  const file = input.files[0];
+  const statusEl = document.getElementById('csv-status');
+  if (!file) return;
+  input.value = '';
+
+  const validCats = ((settings.categories && settings.categories.length) ? settings.categories : CATS).map(c => c.id);
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
+    if (lines.length < 2) {
+      statusEl.innerHTML = `<div style="color:var(--red);font-size:12.5px;margin-bottom:10px;">❌ File is empty or missing data rows.</div>`; return;
     }
-    const batch = db.batch();
-    SEED_DATA.forEach(item => { const ref = db.collection('menu_items').doc(); batch.set(ref, item); });
-    await db.collection('settings').doc('global').set({ tableCount: 10 }, { merge: true });
-    await batch.commit();
-    await loadMenuItems();
-    document.getElementById('seed-status').innerHTML = `<div class="success-box">✓ Successfully added ${SEED_DATA.length} menu items!</div>`;
-    toast('Menu seeded successfully!','success');
-  } catch(e) {
-    document.getElementById('seed-status').innerHTML = `<div style="background:var(--red-d);border:1px solid rgba(192,64,64,.25);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px">Error: ${e.message}</div>`;
-    toast('Seed failed','error');
-  }
-  btn.textContent='Seed Menu to Firebase'; btn.disabled=false;
+
+    const header = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+    const required = ['name','category','price','description','available'];
+    const missing = required.filter(r => !header.includes(r));
+    if (missing.length) {
+      statusEl.innerHTML = `<div style="color:var(--red);font-size:12.5px;margin-bottom:10px;">❌ Missing columns: <b>${missing.join(', ')}</b>. Download the template for the correct format.</div>`; return;
+    }
+
+    const idx = k => header.indexOf(k);
+    const parseCell = (row, i) => {
+      const raw = row[i] || '';
+      return raw.replace(/^"|"$/g,'').replace(/""/g,'"').trim();
+    };
+
+    const errors = [];
+    const items = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+      const name     = parseCell(row, idx('name'));
+      const category = parseCell(row, idx('category'));
+      const priceRaw = parseCell(row, idx('price'));
+      const desc     = parseCell(row, idx('description'));
+      const availRaw = parseCell(row, idx('available'));
+
+      if (!name) { errors.push(`Row ${i+1}: name is empty`); continue; }
+      if (!validCats.includes(category)) { errors.push(`Row ${i+1}: invalid category "${category}". Valid: ${validCats.join(', ')}`); continue; }
+      const price = parseFloat(priceRaw);
+      if (isNaN(price) || price < 0) { errors.push(`Row ${i+1}: invalid price "${priceRaw}"`); continue; }
+      const avail = availRaw.toLowerCase() !== 'false';
+      items.push({ name, cat: category, price, desc, img:'', avail });
+    }
+
+    if (errors.length) {
+      statusEl.innerHTML = `<div style="color:var(--red);font-size:12.5px;margin-bottom:10px;">❌ Fix these errors and re-upload:<br>${errors.map(e=>`• ${e}`).join('<br>')}</div>`; return;
+    }
+
+    // Merge — skip existing items by name
+    const existingNames = new Set(menuItems.map(m => m.name.toLowerCase()));
+    const toAdd = items.filter(item => !existingNames.has(item.name.toLowerCase()));
+    const skipped = items.length - toAdd.length;
+
+    if (!toAdd.length) {
+      statusEl.innerHTML = `<div style="color:var(--gold);font-size:12.5px;margin-bottom:10px;">⚠ All ${items.length} items already exist. Nothing added.</div>`; return;
+    }
+
+    try {
+      const batch = db.batch();
+      toAdd.forEach(item => { const ref = db.collection('menu_items').doc(); batch.set(ref, item); });
+      await batch.commit();
+      await loadMenuItems();
+      statusEl.innerHTML = `<div style="color:var(--green);font-size:12.5px;margin-bottom:10px;">✅ Added ${toAdd.length} items.${skipped ? ` Skipped ${skipped} existing.` : ''}</div>`;
+      toast(`Imported ${toAdd.length} items`, 'success');
+    } catch(err) {
+      statusEl.innerHTML = `<div style="color:var(--red);font-size:12.5px;margin-bottom:10px;">❌ Import failed: ${err.message}</div>`;
+    }
+  };
+  reader.readAsText(file);
 }
 
 function dangerAction(fnName, message) {
