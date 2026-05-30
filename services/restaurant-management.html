@@ -105,6 +105,11 @@ textarea.fi{resize:vertical;min-height:70px;}
 
 /* ── ORDERS ── */
 .order-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .day-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.day-stat{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 14px;display:flex;flex-direction:column;gap:2px;min-width:90px;}
+.day-stat-val{font-size:18px;font-weight:700;color:var(--text);}
+.day-stat-label{font-size:10px;color:var(--td);letter-spacing:.8px;text-transform:uppercase;}
+.day-stat.highlight .day-stat-val{color:var(--gold);}
 .ofilter{padding:6px 13px;border-radius:100px;border:1px solid var(--bd);background:var(--s2);color:var(--tm);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
 .ofilter.active{background:var(--gold);color:#0A0A0A;border-color:var(--gold);font-weight:700;}
 .orders-grid{display:flex;flex-direction:column;gap:10px;}
@@ -328,6 +333,7 @@ textarea.fi{resize:vertical;min-height:70px;}
         <button class="btn btn-red btn-sm" onclick="clearDoneOrders()">Clear Completed</button>
       </div>
     </div>
+    <div class="day-summary" id="day-summary"></div>
     <div class="order-filters" id="order-filters">
       <button class="ofilter active" onclick="filterOrders('all')" data-f="all">All</button>
       <button class="ofilter" onclick="filterOrders('pending')" data-f="pending">🟡 Pending</button>
@@ -1043,7 +1049,38 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+  function renderDaySummary() {
+  const el = document.getElementById('day-summary');
+  if (!el) return;
+  const now = new Date();
+  const todayOrders = allOrders.filter(o => {
+    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp || 0);
+    return ts.toDateString() === now.toDateString();
+  });
+  const total    = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const pending  = allOrders.filter(o => o.status === 'pending').length;
+  const active   = allOrders.filter(o => o.status === 'pending' || o.status === 'preparing').length;
+  const currency = settings.currencySymbol || '$';
+  el.innerHTML = `
+    <div class="day-stat highlight">
+      <div class="day-stat-val">${currency}${total.toFixed(2)}</div>
+      <div class="day-stat-label">Today's Revenue</div>
+    </div>
+    <div class="day-stat">
+      <div class="day-stat-val">${todayOrders.length}</div>
+      <div class="day-stat-label">Today's Orders</div>
+    </div>
+    <div class="day-stat">
+      <div class="day-stat-val">${active}</div>
+      <div class="day-stat-label">Active</div>
+    </div>
+    <div class="day-stat">
+      <div class="day-stat-val">${pending}</div>
+      <div class="day-stat-label">Pending</div>
+    </div>`;
+}
 function renderOrders() {
+  renderDaySummary();
   const con = document.getElementById('orders-container');
   if (!db) { con.innerHTML = `<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3><p>Configure Firebase to see live orders</p></div>`; return; }
 
