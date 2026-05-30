@@ -794,6 +794,25 @@ textarea.fi{resize:vertical;min-height:70px;}
     </label>
   </div>
 </div>
+    <div class="setup-card">
+  <div class="setup-title">🔔 Order Alert Sound</div>
+  <div class="setup-desc">Played when a new order arrives. Must be loud enough for kitchen staff to hear.</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--text);font-weight:600;">Alert Sound</span>
+    <label class="toggle-wrap" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <div class="toggle" id="sound-toggle" onclick="toggleSoundEnabled()"></div>
+      <span id="sound-toggle-label" style="font-size:12px;color:var(--td);">Enabled</span>
+    </label>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <button class="btn btn-ghost btn-sm" onclick="previewAlertSound()">▶ Preview Sound</button>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('sound-upload').click()">⬆ Upload Custom Sound</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetDefaultSound()">↺ Reset to Default</button>
+    <input type="file" id="sound-upload" accept="audio/*" style="display:none;" onchange="uploadCustomSound(this)">
+  </div>
+  <div id="sound-status" style="font-size:12px;color:var(--td);"></div>
+  <div style="font-size:11px;color:var(--tm);margin-top:6px;">Supported formats: MP3, WAV, OGG. Max 2MB. Custom sound is stored in your browser on this device.</div>
+</div>
 <!-- PRINTER -->
 <div class="setup-card">
   <div class="setup-title">🖨️ Printer Setup</div>
@@ -1068,8 +1087,8 @@ async function initAdmin() {
   await initDefaultCategories();
   startOrdersListener();
   renderTablePreview();
+  _refreshSoundToggleUI();
 }
-
 function tickTime() {
   document.getElementById('tb-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 }
@@ -1115,17 +1134,115 @@ if (!prevIds.has(o._id) && prevIds.size > 0 && o.status === 'pending') {
     }, err => console.warn('Orders listener:', err));
 }
 
-function playBeep() {
-  try {
-    const ctx = new AudioContext();
+// ── SOUND SYSTEM ─────────────────────────────────────
+const SOUND_ENABLED_KEY  = 'hx_sound_enabled';
+const SOUND_CUSTOM_KEY   = 'hx_sound_custom_b64';
+
+function isSoundEnabled() {
+  return localStorage.getItem(SOUND_ENABLED_KEY) !== 'false';
+}
+
+function toggleSoundEnabled() {
+  const enabled = !isSoundEnabled();
+  localStorage.setItem(SOUND_ENABLED_KEY, enabled);
+  _refreshSoundToggleUI();
+  toast(enabled ? 'Alert sound enabled' : 'Alert sound disabled', 'success');
+}
+
+function _refreshSoundToggleUI() {
+  const tog   = document.getElementById('sound-toggle');
+  const label = document.getElementById('sound-toggle-label');
+  if (!tog) return;
+  const on = isSoundEnabled();
+  tog.classList.toggle('active', on);
+  if (label) label.textContent = on ? 'Enabled' : 'Disabled';
+}
+
+function _makeDefaultSound() {
+  // Professional order-received chime: three ascending tones
+  const ctx    = new AudioContext();
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.8, ctx.currentTime);
+  master.connect(ctx.destination);
+
+  const notes  = [523.25, 659.25, 783.99]; // C5, E5, G5
+  const times  = [0, 0.18, 0.36];
+  const dur    = 0.45;
+
+  notes.forEach((freq, i) => {
     const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.connect(g); g.connect(ctx.destination);
-    osc.frequency.value = 880;
-    g.gain.setValueAtTime(0.25, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(); osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {}
+    const env = ctx.createGain();
+    osc.connect(env); env.connect(master);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const t = ctx.currentTime + times[i];
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(0.9, t + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t);
+    osc.stop(t + dur);
+
+    // Add a subtle harmonic for richness
+    const osc2 = ctx.createOscillator();
+    const env2 = ctx.createGain();
+    osc2.connect(env2); env2.connect(master);
+    osc2.type = 'triangle';
+    osc2.frequency.value = freq * 2;
+    env2.gain.setValueAtTime(0, t);
+    env2.gain.linearRampToValueAtTime(0.2, t + 0.02);
+    env2.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.6);
+    osc2.start(t);
+    osc2.stop(t + dur);
+  });
+}
+
+function playBeep() {
+  if (!isSoundEnabled()) return;
+  try {
+    const customB64 = localStorage.getItem(SOUND_CUSTOM_KEY);
+    if (customB64) {
+      const audio = new Audio(customB64);
+      audio.volume = 1.0;
+      audio.play().catch(() => _makeDefaultSound());
+    } else {
+      _makeDefaultSound();
+    }
+  } catch(e) { console.warn('playBeep:', e); }
+}
+
+function previewAlertSound() {
+  const was = localStorage.getItem(SOUND_ENABLED_KEY);
+  localStorage.setItem(SOUND_ENABLED_KEY, 'true');
+  playBeep();
+  if (was !== null) localStorage.setItem(SOUND_ENABLED_KEY, was);
+}
+
+function uploadCustomSound(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    document.getElementById('sound-status').innerHTML =
+      '<span style="color:var(--red);">❌ File too large. Max 2MB.</span>';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    localStorage.setItem(SOUND_CUSTOM_KEY, e.target.result);
+    document.getElementById('sound-status').innerHTML =
+      `<span style="color:var(--green);">✅ Custom sound saved: ${file.name}</span>`;
+    toast('Custom sound uploaded', 'success');
+    previewAlertSound();
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetDefaultSound() {
+  localStorage.removeItem(SOUND_CUSTOM_KEY);
+  document.getElementById('sound-status').innerHTML =
+    '<span style="color:var(--gold);">↺ Reset to default chime.</span>';
+  toast('Default sound restored', 'success');
+  previewAlertSound();
 }
 
 function updateNewBadge() {
