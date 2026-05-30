@@ -315,9 +315,17 @@ textarea.fi{resize:vertical;min-height:70px;}
       style="letter-spacing:0;" onkeydown="if(event.key==='Enter')tryLogin()">
     <input type="password" id="pw2-input" class="login-input" placeholder="••••••••••"
       onkeydown="if(event.key==='Enter')tryLogin()">
-    <div class="login-err" id="login-err"></div>
+<div class="login-err" id="login-err"></div>
     <div style="margin-top:8px;"><span onclick="sendPasswordReset()" style="font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:1px;">Forgot password?</span></div>
-    <button class="btn btn-gold" style="width:100%" onclick="tryLogin()">Sign In →</button>
+    <div id="turnstile-wrap" style="display:flex;justify-content:center;margin-bottom:14px;margin-top:14px;">
+      <div class="cf-turnstile"
+        data-sitekey="0x4AAAAAAA_REPLACE_WITH_YOUR_SITEKEY"
+        data-theme="dark"
+        data-callback="onTurnstileSuccess"
+        data-expired-callback="onTurnstileExpired">
+      </div>
+    </div>
+    <button class="btn btn-gold" style="width:100%;opacity:0.5;" id="login-btn" onclick="tryLogin()" disabled>Sign In →</button>
   </div>
 </div>
 
@@ -1020,6 +1028,8 @@ textarea.fi{resize:vertical;min-height:70px;}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -1066,7 +1076,25 @@ const CATS = [
 ];
 
 // ── AUTH ───────────────────────────────────────
+let _turnstileToken = null;
+
+function onTurnstileSuccess(token) {
+  _turnstileToken = token;
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').style.opacity = '1';
+}
+
+function onTurnstileExpired() {
+  _turnstileToken = null;
+  document.getElementById('login-btn').disabled = true;
+  document.getElementById('login-btn').style.opacity = '0.5';
+}
+
 function tryLogin() {
+  if (!_turnstileToken) {
+    document.getElementById('login-err').textContent = 'Please complete the human check.';
+    return;
+  }
   const email = document.getElementById('pw-input').value.trim();
   const pw    = document.getElementById('pw2-input').value;
   document.getElementById('login-err').textContent = '';
@@ -1075,6 +1103,10 @@ function tryLogin() {
     .catch(e => {
       document.getElementById('login-err').textContent = 'Incorrect email or password';
       document.getElementById('pw2-input').value = '';
+      _turnstileToken = null;
+      if (window.turnstile) turnstile.reset();
+      document.getElementById('login-btn').disabled = true;
+      document.getElementById('login-btn').style.opacity = '0.5';
       setTimeout(() => document.getElementById('login-err').textContent = '', 2500);
     });
 }
