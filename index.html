@@ -169,6 +169,16 @@ textarea.fi{resize:vertical;min-height:70px;}
 .mi-actions{display:flex;gap:6px;flex-shrink:0;}
 .cat-group-label{font-size:11px;font-weight:700;color:var(--td);letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 8px;}
 
+.mi-toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.mi-toggle input{opacity:0;width:0;height:0;position:absolute;}
+.mi-toggle-slider{position:absolute;inset:0;background:var(--s4);border-radius:100px;cursor:pointer;transition:background .2s;}
+.mi-toggle-slider::before{content:'';position:absolute;left:2px;bottom:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;}
+.mi-toggle input:checked + .mi-toggle-slider{background:var(--green);}
+.mi-toggle input:checked + .mi-toggle-slider::before{transform:translateX(16px);}
+.cat-header{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px;}
+.cat-header .cat-group-label{margin:0;}
+.cat-toggle-wrap{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--td);}
+  
 /* ── DEALS ── */
 .deals-grid{display:flex;flex-direction:column;gap:10px;}
 .deal-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;}
@@ -1764,46 +1774,75 @@ function filterMenuItems() {
 }
 
 function renderMenuItems() {
-  const con = document.getElementById('menu-items-container');
-  const q   = (document.getElementById('menu-search')?.value||'').toLowerCase();
-  if (!db) { con.innerHTML=`<div class="empty-state"><div class="emoji">🔌</div><h3>Firebase Not Connected</h3></div>`; return; }
-  if (!menuItems.length) { con.innerHTML=`<div class="empty-state"><div class="emoji">🍽</div><h3>No items yet</h3><p>Add items manually or import a CSV from Setup</p></div>`; return; }
+  const con = document.getElementById('menu-items-list');
+  if (!con) return;
+  const q   = document.getElementById('menu-search')?.value.toLowerCase() || '';
+  const liveCats = (settings.categories && settings.categories.length) ? settings.categories : CATS;
 
-  const filtered = q ? menuItems.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.cat||'').toLowerCase().includes(q)) : menuItems;
-  const CE = {bbq:'🔥',rolls:'🫓',rice_bowls:'🍚',karahi:'🥘',street:'🥙',burgers:'🍔',breads:'🫓',sides:'🍟',desserts:'🍮',drinks:'🥤'};
-  const grouped = {};
-  filtered.forEach(i=>{ const c=i.cat||i.category||'other'; if(!grouped[c]) grouped[c]=[]; grouped[c].push(i); });
+  // Group by category
+  const byCat = {};
+  menuItems.filter(i => !q || i.name.toLowerCase().includes(q) || (i.cat||i.category||'').includes(q))
+    .forEach(i => {
+      const c = i.cat || i.category || 'other';
+      if (!byCat[c]) byCat[c] = [];
+      byCat[c].push(i);
+    });
 
   con.innerHTML = '';
-  getCats().forEach(cat => {
-    const items = grouped[cat.id];
-    if (!items) return;
-    const gl = document.createElement('div');
-    gl.className = 'cat-group-label';
-    gl.textContent = `${cat.e} ${cat.name} (${items.length})`;
-    con.appendChild(gl);
-    const list = document.createElement('div');
-    list.className = 'menu-items-list';
-    items.forEach(item => {
-      const card = document.createElement('div');
-      card.className = `mi-card${item.avail===false?' unavail':''}`;
-      const photo = item.img||item.imageUrl
-        ? `<div class="mi-photo"><img src="${item.img||item.imageUrl}" alt="${item.name}"></div>`
-        : `<div class="mi-photo">${CE[item.cat||item.category]||'🍽'}</div>`;
+
+  // Sort categories by liveCats order
+  const catKeys = Object.keys(byCat).sort((a, b) => {
+    const ai = liveCats.findIndex(c => c.id === a);
+    const bi = liveCats.findIndex(c => c.id === b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  catKeys.forEach(cid => {
+    const cat     = liveCats.find(c => c.id === cid) || { name: cid, e: '🍽' };
+    const catData = settings.categories?.find(c => c.id === cid);
+    const catOn   = catData ? catData.enabled !== false : true;
+
+    // Category header with toggle
+    const header = document.createElement('div');
+    header.className = 'cat-header';
+    header.innerHTML = `
+      <div class="cat-group-label">${cat.e || ''} ${cat.name}</div>
+      <div class="cat-toggle-wrap">
+        <span>${catOn ? 'Category On' : 'Category Off'}</span>
+        <label class="mi-toggle">
+          <input type="checkbox" ${catOn ? 'checked' : ''} onchange="toggleCategory('${cid}', this.checked)">
+          <span class="mi-toggle-slider"></span>
+        </label>
+      </div>`;
+    con.appendChild(header);
+
+    // Items in this category
+    byCat[cid].forEach(item => {
+      const avail = item.avail !== false;
+      const card  = document.createElement('div');
+      card.className = `mi-card${!avail ? ' unavail' : ''}`;
+      card.id = `mi-${item.id}`;
+      const photoHTML = item.img || item.imageUrl
+        ? `<div class="mi-photo"><img src="${item.img||item.imageUrl}" alt="${item.name}" loading="lazy"></div>`
+        : `<div class="mi-photo">${cat.e || '🍽'}</div>`;
       card.innerHTML = `
-        ${photo}
+        ${photoHTML}
         <div class="mi-info">
-          <div class="mi-name">${item.name}</div>
-          <div class="mi-meta">${getCats().find(c=>c.id===(item.cat||item.category))?.name||item.cat} · ${item.avail===false?'<span style="color:var(--red)">Unavailable</span>':'<span style="color:var(--green)">Available</span>'}</div>
+          <div class="mi-name">${escapeHtml(item.name)}</div>
+          <div class="mi-meta">${cat.name} · $${parseFloat(item.price||0).toFixed(2)}</div>
         </div>
-        <div class="mi-price">$${(item.price||0).toFixed(2)}</div>
-        <div class="mi-actions">
-          <button class="btn btn-ghost btn-sm btn-icon" onclick="openItemModal('${item._id}')" title="Edit">✏️</button>
-          <button class="btn btn-red btn-sm btn-icon" onclick="deleteItem('${item._id}')" title="Delete">🗑</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label class="mi-toggle" title="${avail ? 'Available' : 'Unavailable'}">
+            <input type="checkbox" ${avail ? 'checked' : ''} onchange="toggleItemAvail('${item.id}', this.checked)">
+            <span class="mi-toggle-slider"></span>
+          </label>
+          <div class="mi-actions">
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="openEditItem('${item.id}')" title="Edit">✏️</button>
+            <button class="btn btn-red btn-icon btn-sm" onclick="deleteItem('${item.id}')" title="Delete">🗑</button>
+          </div>
         </div>`;
-      list.appendChild(card);
+      con.appendChild(card);
     });
-    con.appendChild(list);
   });
 }
 
@@ -1902,6 +1941,36 @@ if (file) {
   btn.textContent='Save Item'; btn.disabled=false;
 }
 
+async function toggleItemAvail(id, avail) {
+  if (!db) return;
+  try {
+    await db.collection('menu_items').doc(id).update({ avail });
+    toast(avail ? 'Item turned on' : 'Item turned off', 'success');
+  } catch(e) { toast('Error updating item', 'error'); }
+}
+
+async function toggleCategory(catId, enabled) {
+  if (!db) return;
+  try {
+    // Get current categories from settings
+    const snap = await db.collection('settings').doc('global').get();
+    let cats = (snap.exists && snap.data().categories) ? snap.data().categories : CATS.map(c => ({...c}));
+
+    // Find and update the category
+    const idx = cats.findIndex(c => c.id === catId);
+    if (idx !== -1) {
+      cats[idx] = { ...cats[idx], enabled };
+    } else {
+      // Category not in settings yet — add it
+      const base = CATS.find(c => c.id === catId);
+      if (base) cats.push({ ...base, enabled });
+    }
+
+    await db.collection('settings').doc('global').set({ categories: cats }, { merge: true });
+    toast(enabled ? 'Category turned on' : 'Category turned off', 'success');
+  } catch(e) { toast('Error updating category', 'error'); }
+}
+  
 async function deleteItem(id) {
   if (!confirm('Delete this item?')) return;
   if (!db) return;
