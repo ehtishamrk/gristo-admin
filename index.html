@@ -1679,17 +1679,6 @@ async function saveOrderEdit() {
   }
 }
   
-function quick86(orderId, items) {
-  const names = items.map(i => i.name);
-  const pick  = prompt(`Type item name to mark sold out:\n${names.join('\n')}`);
-  if (!pick) return;
-  const match = menuItems.find(m => m.name.toLowerCase() === pick.trim().toLowerCase());
-  if (!match) { toast('Item not found — check spelling', 'error'); return; }
-  db.collection('menu_items').doc(match._id).update({ avail: false })
-    .then(() => toast(`"${match.name}" marked sold out`, 'success'))
-    .catch(() => toast('Error — try from Menu tab', 'error'));
-}
-  
 async function reprintOrder(id) {
 
   const snap = await db
