@@ -1242,7 +1242,6 @@ function switchTab(t) {
   if (t==='deals')     renderDeals();
   if (t==='customers') loadCustomers();
   if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
-  if (t==='analytics') renderAnalytics();
   if (t==='tables')    { renderTablePreview(); loadTableOccupancy(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
   if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
@@ -1385,7 +1384,7 @@ function resetDefaultSound() {
 }
 
 function updateNewBadge() {
-  const pending = allOrders.filter(o=>o.status==='pending').length;
+  const pending = allOrders.filter(o => ['pending','received'].includes(o.status)).length;
   const nb = document.getElementById('new-notif');
   if (pending > 0) { nb.style.display='inline-flex'; nb.textContent=pending; }
   else nb.style.display='none';
@@ -1447,8 +1446,8 @@ function renderOrders() {
     return;
   }
 
-  const STATUS_COLORS = { pending:'amber', preparing:'blue', ready:'green', completed:'grey' };
-  const STATUS_LABELS = { pending:'Pending', preparing:'Preparing', ready:'Ready!', completed:'Done' };
+const STATUS_COLORS = { received:'amber', pending:'amber', confirmed:'blue', preparing:'blue', ready:'green', served:'grey', picked_up:'grey', delivered:'grey', completed:'grey' };
+const STATUS_LABELS = { received:'New', pending:'New', confirmed:'Confirmed', preparing:'Preparing', ready:'Ready!', served:'Served', picked_up:'Picked Up', delivered:'Delivered', completed:'Done' };
 
   con.innerHTML = '';
   filtered.forEach(o => {
