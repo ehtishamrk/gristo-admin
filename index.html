@@ -1499,7 +1499,6 @@ const statusBtns = !['served','delivered','completed'].includes(o.status) ? `
       ${o.status==='ready' && o.orderType==='delivery'  ? `<button class="sbtn sbtn-done" onclick="setStatus('${o._id}','picked_up')">✓ Rider Picked Up</button>` : ''}
 
 <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
-      <button class="sbtn" style="background:var(--red-d);color:var(--red);" onclick="quick86('${o._id}',${JSON.stringify(o.items||[]).replace(/'/g,'&#39;')})">86</button>
       <button class="sbtn" style="background:var(--s3);color:var(--gold);" onclick="openOrderEdit('${o._id}')">✏️</button>
     ` : `<span style="font-size:11px;color:var(--td)">Completed ${timeStr}</span>
          <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>`;
