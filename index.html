@@ -686,6 +686,21 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div id="tax-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
 </div>
 
+<div class="setup-card">
+  <div class="setup-title">🛵 Delivery</div>
+  <div class="setup-desc">Enable delivery orders on the customer portal. Turn off when riders are unavailable.</div>
+  <div class="setup-row">
+    <div>
+      <div style="font-size:13.5px;font-weight:600;">Accept Delivery Orders</div>
+      <div style="font-size:12px;color:var(--tm);">Shows the delivery option on the order type screen</div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="s-delivery-enabled" onchange="saveDeliverySetting()">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+</div>
+    
 <!-- ORDERING PAUSE -->
 <div class="setup-card">
   <div class="setup-title">🚦 Ordering Control</div>
@@ -703,7 +718,7 @@ textarea.fi{resize:vertical;min-height:70px;}
     <input type="text" class="fi" id="s-pause-msg" placeholder="We're not taking orders right now. Please see staff." onchange="saveOrderingPause()">
   </div>
 </div>
-
+    
 <!-- RESERVATION SETTINGS -->
 <div class="setup-card">
   <div class="setup-title">📅 Reservation Settings</div>
@@ -2110,6 +2125,8 @@ async function loadSettings() {
     if (snap.exists) {
       settings = {...settings, ...snap.data()};
       loadResvSettings(settings);
+      const delEl = document.getElementById('s-delivery-enabled');
+if (delEl) delEl.checked = settings.deliveryEnabled === true;
       tableCount = settings.tableCount || 10;
 
       // Payment
@@ -3689,6 +3706,16 @@ function updateReservBadge() {
   const badge = document.getElementById('reserv-notif');
   if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline-flex' : 'none'; }
 }
+
+async function saveDeliverySetting() {
+  if (!db) return;
+  await db.collection('settings').doc('global').set(
+    { deliveryEnabled: document.getElementById('s-delivery-enabled').checked },
+    { merge: true }
+  ).catch(e => console.warn(e));
+  toast('Delivery setting saved', 'success');
+}
+  
   // ── RESERVATION SETTINGS ────────────────────────
 async function saveResvSettings() {
   if (!db) return;
