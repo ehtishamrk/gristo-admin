@@ -405,8 +405,8 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- LOGIN -->
 <div id="login-overlay">
   <div class="login-box">
-    <div class="login-logo">Admin Panel</div>
-    <div class="login-sub">Admin Panel</div>
+<div class="login-logo" id="admin-login-logo">Restaurant</div>
+<div class="login-sub">Admin Panel</div>
 <input type="email" id="pw-input" class="login-input" placeholder="admin@email.com"
       style="letter-spacing:0;" onkeydown="if(event.key==='Enter')tryLogin()">
     <input type="password" id="pw2-input" class="login-input" placeholder="••••••••••"
@@ -428,7 +428,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- ADMIN APP -->
 <div id="admin-app" style="display:none">
   <div id="topbar">
-    <span class="tb-brand">Admin Panel</span>
+    <span class="tb-brand" id="admin-topbar-brand">Restaurant</span>
     <span class="tb-badge">Admin</span>
     <span class="tb-badge live" id="live-badge"><span class="live-dot"></span>LIVE</span>
     <div class="tb-spacer"></div>
@@ -1371,6 +1371,40 @@ function logout() {
     .catch(e => { document.getElementById('login-err').style.color = 'var(--red)'; document.getElementById('login-err').textContent = e.message; });
 }
 }
+
+let adminSettingsListener = null;
+
+function applyAdminRestaurantName(name) {
+  const restaurantName = name || localStorage.getItem('restaurantName') || 'Restaurant';
+
+  const loginLogo = document.getElementById('admin-login-logo');
+  const topbarBrand = document.getElementById('admin-topbar-brand');
+
+  if (loginLogo) loginLogo.textContent = restaurantName;
+  if (topbarBrand) topbarBrand.textContent = restaurantName;
+
+  document.title = restaurantName + ' - Admin Panel';
+}
+
+function startAdminSettingsListener() {
+  if (!db || adminSettingsListener) return;
+
+  const cachedName = localStorage.getItem('restaurantName');
+  if (cachedName) applyAdminRestaurantName(cachedName);
+
+  adminSettingsListener = db.collection('settings').doc('global').onSnapshot(snap => {
+    if (!snap.exists) return;
+
+    const name = snap.data().restaurantName;
+    if (!name) return;
+
+    localStorage.setItem('restaurantName', name);
+    applyAdminRestaurantName(name);
+  }, err => console.warn('admin settings listener:', err));
+}
+
+startAdminSettingsListener();
+  
 firebase.auth().onAuthStateChanged(async user => {
   if (user) {
     document.getElementById('login-overlay').style.display = 'none';
@@ -1383,14 +1417,7 @@ firebase.auth().onAuthStateChanged(async user => {
     if (ordersListener) ordersListener();
     document.getElementById('admin-app').style.display = 'none';
     document.getElementById('login-overlay').style.display = 'flex';
-    try {
-      const snap = await db.collection('settings').doc('global').get();
-      if (snap.exists && snap.data().restaurantName) {
-        const n = snap.data().restaurantName;
-        document.querySelector('.login-logo').textContent = n;
-        document.title = n + ' — Admin Panel';
-      }
-    } catch(e) {}
+startAdminSettingsListener();
     document.getElementById('pw-input').value  = '';
     document.getElementById('pw2-input').value = '';
   }
@@ -2369,9 +2396,7 @@ if (delEl) delEl.checked = settings.deliveryEnabled === true;
       document.getElementById('s-footer').value    = settings.receiptFooter  || 'Thank you for dining with us!';
       // Update live admin topbar
       const restName = settings.restaurantName || 'Spice Korner';
-      document.querySelector('.tb-brand').textContent = restName;
-      document.querySelector('.login-logo')?.textContent && (document.querySelector('.login-logo').textContent = restName);
-
+applyAdminRestaurantName(restName);
       // Tax
       document.getElementById('s-tax-rate').value        = settings.taxRate        ?? 8.5;
       document.getElementById('s-service-charge').value  = settings.serviceCharge  ?? 0;
@@ -3149,9 +3174,8 @@ async function saveBrandingSettings() {
     );
     settings.restaurantName = name; settings.tagline = tagline; settings.receiptFooter = footer;
     // Update admin topbar immediately
-    document.querySelector('.tb-brand').textContent = name;
-    const loginLogo = document.querySelector('.login-logo');
-    if (loginLogo) loginLogo.textContent = name;
+localStorage.setItem('restaurantName', name);
+applyAdminRestaurantName(name);
     const msg = document.getElementById('brand-save-msg');
     msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
     toast('Branding saved — customer portal will update in real time','success');
