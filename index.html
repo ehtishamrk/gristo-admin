@@ -697,6 +697,17 @@ textarea.fi{resize:vertical;min-height:70px;}
     <div id="reservations-container"><div class="spinner"></div></div>
   </div>
 
+<!-- Break Requests Section -->
+<div style="margin-bottom:20px;">
+  <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--td);margin-bottom:10px;font-weight:700;">
+    Break Requests
+    <span id="break-notif" style="display:none;background:var(--amber);color:#0A0A0A;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin-left:6px;"></span>
+  </div>
+  <div id="break-requests-list">
+    <div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>
+  </div>
+</div>
+  
 <!-- STAFF TAB -->
   <div class="tab-panel" id="panel-staff">
     <div class="page-hd">
@@ -1392,6 +1403,7 @@ async function initAdmin() {
   await Promise.all([loadMenuItems(), loadDeals(), loadSettings()]);
   await initDefaultCategories();
   startOrdersListener();
+  startBreakRequestsListener();
   renderTablePreview();
   _refreshSoundToggleUI();
   updateStaffOnlineBadge();
@@ -1425,6 +1437,7 @@ function switchTab(t) {
   if (t==='reservations') { loadReservations(); }
   if (t==='staff') { loadStaff(); }
   if (t==='analytics') { initTaxYearDropdown(); renderAnalytics(); }
+  if (t === 'staff') { renderStaffList(); renderBreakRequests(); }
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -1650,7 +1663,10 @@ const statusBtns = !['served','delivered','completed'].includes(o.status) ? `
       ${o.status==='preparing'  ? `<button class="sbtn sbtn-ready" onclick="setStatus('${o._id}','ready')">→ Ready!</button>` : ''}
       ${o.status==='ready' && o.orderType==='dine_in'   ? `<button class="sbtn sbtn-done" onclick="setStatus('${o._id}','served')">✓ Served</button>` : ''}
       ${o.status==='ready' && o.orderType==='takeaway'  ? `<button class="sbtn sbtn-done" onclick="setStatus('${o._id}','completed')">✓ Picked Up</button>` : ''}
-      ${o.status==='ready' && o.orderType==='delivery'  ? `<button class="sbtn sbtn-done" onclick="setStatus('${o._id}','picked_up')">✓ Rider Picked Up</button>` : ''}
+      ${o.status==='ready' && o.orderType==='delivery' ? `<span style="font-size:11px;color:var(--td);">🏍 Rider will pick up</span>` : ''}
+${o.status==='picked_up' && o.orderType==='delivery' ? `<span class="sbtn" style="background:var(--blue-d);color:var(--blue);border-color:rgba(74,127,200,.3);cursor:default;">🏍 In Transit</span>` : ''}
+${o.status==='out_for_delivery' && o.orderType==='delivery' ? `<span class="sbtn" style="background:var(--gold-d);color:var(--gold);border-color:rgba(200,146,42,.3);cursor:default;">🛵 Out for Delivery</span>` : ''}
+${o.status==='arriving' && o.orderType==='delivery' ? `<span class="sbtn" style="background:var(--green-d);color:var(--green);border-color:rgba(61,155,106,.3);cursor:default;">📍 Arriving</span>` : ''}
 
 <button class="sbtn sbtn-print" onclick="reprintOrder('${o._id}')">🖨</button>
       <button class="sbtn" style="background:var(--s3);color:var(--gold);" onclick="openOrderEdit('${o._id}')">✏️</button>
@@ -4304,6 +4320,67 @@ function loadResvSettings(s) {
   if (el('s-resv-close'))     el('s-resv-close').value       = s.reservationCloseTime  || '22:00';
   if (el('s-resv-interval'))  el('s-resv-interval').value    = s.reservationSlotInterval || 30;
   if (el('s-resv-duration'))  el('s-resv-duration').value    = s.reservationDuration    || 90;
+}
+  let breakRequestsListener = null;
+let allBreakRequests = [];
+
+function startBreakRequestsListener() {
+  if (!db) return;
+  if (breakRequestsListener) breakRequestsListener();
+  breakRequestsListener = db.collection('break_requests')
+    .where('status', '==', 'pending')
+    .onSnapshot(snap => {
+      allBreakRequests = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+      updateBreakBadge();
+      if (document.getElementById('panel-staff')?.classList.contains('active')) {
+        renderBreakRequests();
+      }
+    }, () => {});
+}
+
+function updateBreakBadge() {
+  const badge = document.getElementById('break-notif');
+  if (!badge) return;
+  const n = allBreakRequests.length;
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+async function approveBreak(requestId) {
+  await db.collection('break_requests').doc(requestId).update({
+    status: 'approved',
+    approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    approvedBy: currentUser?.uid || 'admin'
+  });
+  toast('Break approved ✅', 'success');
+}
+
+async function denyBreak(requestId) {
+  await db.collection('break_requests').doc(requestId).update({
+    status: 'denied',
+    deniedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  toast('Break request denied', 'info');
+}
+
+function renderBreakRequests() {
+  const con = document.getElementById('break-requests-list');
+  if (!con) return;
+  if (!allBreakRequests.length) {
+    con.innerHTML = '<div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>';
+    return;
+  }
+  con.innerHTML = allBreakRequests.map(r => {
+    const ts = r.requestedAt?.seconds ? new Date(r.requestedAt.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<div style="background:var(--s2);border:1px solid rgba(200,146,42,.25);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:13px;">☕ ${escapeHtml(r.riderName||'Rider')} — Break Request</div>
+        <div style="font-size:11px;color:var(--tm);">Requested at ${ts}</div>
+      </div>
+      <button onclick="approveBreak('${r._id}')" style="background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">✓ Approve</button>
+      <button onclick="denyBreak('${r._id}')"   style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">✗ Deny</button>
+    </div>`;
+  }).join('');
 }
 </script>
 </body>
