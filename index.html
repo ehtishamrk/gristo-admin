@@ -448,6 +448,13 @@ textarea.fi{resize:vertical;min-height:70px;}
   <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Stats</button>
   <button class="tab-btn" onclick="switchTab('reservations')" id="tab-reservations-btn">📅 Reservations <span class="notif" id="reserv-notif" style="display:none">0</span></button>
   <button class="tab-btn" onclick="switchTab('staff')" id="tab-staff-btn">👥 Staff <span class="notif" id="staff-notif" style="display:none">0</span></button>
+  <button class="tab-btn" onclick="switchTab('purchase-orders')" id="tab-purchase-orders-btn">
+  📦 Purchase Orders <span class="notif" id="po-notif" style="display:none">0</span>
+</button>
+
+<button class="tab-btn" onclick="switchTab('admin-notifications')" id="tab-admin-notifications-btn">
+  🔔 Notifications <span class="notif" id="admin-notif" style="display:none">0</span>
+</button>
   <button class="tab-btn" onclick="switchTab('setup')"     id="tab-setup-btn">⚙️ Setup</button>
 </nav>
 
@@ -794,6 +801,21 @@ textarea.fi{resize:vertical;min-height:70px;}
       <button class="btn btn-ghost" style="width:100%;margin-top:12px;" onclick="closeStaffStatusModal()">Cancel</button>
     </div>
   </div>
+
+<div class="tab-panel" id="panel-purchase-orders">
+  <div class="page-hd">
+    <div class="page-title">Purchase Orders</div>
+  </div>
+  <div id="purchase-orders-list"><div class="spinner"></div></div>
+</div>
+
+<div class="tab-panel" id="panel-admin-notifications">
+  <div class="page-hd">
+    <div class="page-title">Admin Notifications</div>
+    <button class="btn btn-ghost btn-sm" onclick="markAllAdminNotificationsRead()">Mark All Read</button>
+  </div>
+  <div id="admin-notifications-list"><div class="spinner"></div></div>
+</div>
   
   <!-- SETUP TAB -->
   <div class="tab-panel" id="panel-setup">
@@ -1311,6 +1333,8 @@ try {
 let menuItems = [], allDeals = [], allOrders = [], settings = {tableCount:10};
 let editItemId = null, editDealId = null, selectedItemIds = [];
 let orderFilter = 'all', knownOrderIds = new Set(), ordersListener = null;
+let purchaseOrders = [], purchaseOrdersListener = null;
+let adminNotifications = [], adminNotificationsListener = null, knownAdminNotifIds = new Set();
 let tableCount = 10;
 let allReservations = [], reservFilter = 'all', reservListener = null;
 const CATS = [
@@ -1431,6 +1455,8 @@ async function initAdmin() {
   await initDefaultCategories();
   startOrdersListener();
   startBreakRequestsListener();
+  startPurchaseOrdersListener();
+startAdminNotificationsListener();
   renderTablePreview();
   _refreshSoundToggleUI();
   updateStaffOnlineBadge();
@@ -1465,6 +1491,8 @@ function switchTab(t) {
   if (t==='staff') { loadStaff(); }
   if (t==='analytics') { initTaxYearDropdown(); renderAnalytics(); }
   if (t === 'staff') { renderStaffList(); renderBreakRequests(); }
+  if (t === 'purchase-orders') renderPurchaseOrders();
+if (t === 'admin-notifications') renderAdminNotifications();
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -4348,6 +4376,308 @@ function loadResvSettings(s) {
   let breakRequestsListener = null;
 let allBreakRequests = [];
 
+function fmtAdminTs(ts) {
+  if (!ts) return '-';
+  const d = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
+  return d.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function setBadge(id, count) {
+  const badge = document.getElementById(id);
+  if (!badge) return;
+  badge.textContent = count;
+  badge.style.display = count ? 'inline-flex' : 'none';
+}
+
+function notifyStaffPortal(data) {
+  if (!db) return Promise.resolve();
+
+  return db.collection('staff_notifications').add({
+    ...data,
+    read: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+/* PURCHASE ORDERS */
+
+function startPurchaseOrdersListener() {
+  if (!db) return;
+  if (purchaseOrdersListener) purchaseOrdersListener();
+
+  purchaseOrdersListener = db.collection('purchase_orders')
+    .orderBy('createdAt', 'desc')
+    .limit(100)
+    .onSnapshot(snap => {
+      purchaseOrders = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+
+      const pendingCount = purchaseOrders.filter(p => p.status === 'pending').length;
+      setBadge('po-notif', pendingCount);
+
+      if (document.getElementById('panel-purchase-orders')?.classList.contains('active')) {
+        renderPurchaseOrders();
+      }
+    }, e => console.warn('purchase orders listener:', e));
+}
+
+function renderPurchaseOrders() {
+  const con = document.getElementById('purchase-orders-list');
+  if (!con) return;
+
+  if (!purchaseOrders.length) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">📦</div><h3>No purchase orders</h3><p>Chef purchase requests will appear here.</p></div>`;
+    return;
+  }
+
+  con.innerHTML = purchaseOrders.map(po => {
+    const items = (po.items || []).map(i => `
+      <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--bd);">
+        <strong style="min-width:120px;">${escHtml(i.name || '')}</strong>
+        <span style="color:var(--tm);">${escHtml(i.qty || '')} ${escHtml(i.unit || '')}</span>
+      </div>
+    `).join('');
+
+    const statusColor =
+      po.status === 'approved' ? 'var(--green)' :
+      po.status === 'rejected' ? 'var(--red)' :
+      'var(--gold)';
+
+    return `
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <div style="font-weight:700;font-size:15px;">Purchase Request</div>
+          <span class="badge" style="color:${statusColor};border:1px solid ${statusColor};">${escHtml(po.status || 'pending')}</span>
+          <span style="color:var(--td);font-size:12px;">${fmtAdminTs(po.createdAt)}</span>
+          <span style="color:var(--tm);font-size:12px;">By ${escHtml(po.requestedBy || 'Chef')}</span>
+          <span style="color:var(--gold);font-size:12px;">Urgency: ${escHtml(po.urgency || 'normal')}</span>
+        </div>
+
+        <div style="margin-bottom:10px;">${items}</div>
+
+        ${po.notes ? `<div style="font-size:13px;color:var(--tm);margin-bottom:12px;">Notes: ${escHtml(po.notes)}</div>` : ''}
+
+        ${po.status === 'pending' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-gold btn-sm" onclick="approvePurchaseOrder('${po._id}')">Approve</button>
+            <button class="btn btn-red btn-sm" onclick="rejectPurchaseOrder('${po._id}')">Reject</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function approvePurchaseOrder(id) {
+  const po = purchaseOrders.find(p => p._id === id);
+  if (!po) return;
+
+  await db.collection('purchase_orders').doc(id).update({
+    status: 'approved',
+    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (po.requestedByUid) {
+    await notifyStaffPortal({
+      toUid: po.requestedByUid,
+      role: 'chef',
+      type: 'purchase_order_approved',
+      title: 'Purchase Request Approved',
+      message: `Your purchase request for ${(po.items || []).length} item(s) was approved.`
+    });
+  }
+
+  toast('Purchase order approved', 'success');
+}
+
+async function rejectPurchaseOrder(id) {
+  const po = purchaseOrders.find(p => p._id === id);
+  if (!po) return;
+
+  const reason = prompt('Reason for rejection?') || '';
+
+  await db.collection('purchase_orders').doc(id).update({
+    status: 'rejected',
+    rejectionReason: reason,
+    rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (po.requestedByUid) {
+    await notifyStaffPortal({
+      toUid: po.requestedByUid,
+      role: 'chef',
+      type: 'purchase_order_rejected',
+      title: 'Purchase Request Rejected',
+      message: reason || 'Your purchase request was rejected.'
+    });
+  }
+
+  toast('Purchase order rejected', 'success');
+}
+
+/* ADMIN NOTIFICATIONS */
+
+function startAdminNotificationsListener() {
+  if (!db) return;
+  if (adminNotificationsListener) adminNotificationsListener();
+
+  adminNotificationsListener = db.collection('admin_notifications')
+    .orderBy('createdAt', 'desc')
+    .limit(100)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (
+          change.type === 'added' &&
+          knownAdminNotifIds.size > 0 &&
+          !knownAdminNotifIds.has(change.doc.id)
+        ) {
+          playBeep();
+          toast('New admin notification', 'success');
+        }
+      });
+
+      adminNotifications = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+      snap.docs.forEach(d => knownAdminNotifIds.add(d.id));
+
+      const unreadCount = adminNotifications.filter(n => !n.read).length;
+      setBadge('admin-notif', unreadCount);
+
+      if (document.getElementById('panel-admin-notifications')?.classList.contains('active')) {
+        renderAdminNotifications();
+      }
+    }, e => console.warn('admin notifications listener:', e));
+}
+
+function renderAdminNotifications() {
+  const con = document.getElementById('admin-notifications-list');
+  if (!con) return;
+
+  if (!adminNotifications.length) {
+    con.innerHTML = `<div class="empty-state"><div class="emoji">🔔</div><h3>No notifications</h3></div>`;
+    return;
+  }
+
+  con.innerHTML = adminNotifications.map(n => {
+    const isMenuRequest = n.type === 'menu_change_request' || n.type === 'menu_86_request';
+    const isPending = (n.status || 'pending') === 'pending';
+
+    return `
+      <div style="background:${n.read ? 'var(--s2)' : 'var(--gold-d)'};border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:15px;">${escHtml(n.title || 'Notification')}</div>
+          <span style="font-size:12px;color:var(--td);">${fmtAdminTs(n.createdAt)}</span>
+          ${!n.read ? `<span class="badge badge-amber">New</span>` : ''}
+        </div>
+
+        <div style="font-size:13px;color:var(--tm);line-height:1.5;margin-bottom:12px;">
+          ${escHtml(n.message || '')}
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${!n.read ? `<button class="btn btn-ghost btn-sm" onclick="markAdminNotificationRead('${n._id}')">Mark Read</button>` : ''}
+
+          ${isMenuRequest && isPending ? `
+            <button class="btn btn-gold btn-sm" onclick="approveMenuChangeRequest('${n._id}')">Approve</button>
+            <button class="btn btn-red btn-sm" onclick="rejectMenuChangeRequest('${n._id}')">Reject</button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function markAdminNotificationRead(id) {
+  await db.collection('admin_notifications').doc(id).update({ read: true });
+}
+
+async function markAllAdminNotificationsRead() {
+  const unread = adminNotifications.filter(n => !n.read);
+  if (!unread.length) return;
+
+  const batch = db.batch();
+  unread.forEach(n => batch.update(db.collection('admin_notifications').doc(n._id), { read: true }));
+  await batch.commit();
+
+  toast('Notifications marked read', 'success');
+}
+
+async function approveMenuChangeRequest(id) {
+  const n = adminNotifications.find(x => x._id === id);
+  if (!n) return;
+
+  const action = n.action || (n.type === 'menu_86_request' ? 'remove_item' : '');
+
+  if (action === 'remove_item' && n.itemId) {
+    await db.collection('menu_items').doc(n.itemId).update({
+      avail: false,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  if (action === 'add_item') {
+    await db.collection('menu_items').add({
+      name: n.itemName || 'New item',
+      desc: n.notes || 'Requested by chef',
+      cat: 'other',
+      price: 0,
+      avail: false,
+      img: '',
+      createdFromRequest: id,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  await db.collection('admin_notifications').doc(id).update({
+    status: 'approved',
+    read: true,
+    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (n.requestedByUid) {
+    await notifyStaffPortal({
+      toUid: n.requestedByUid,
+      role: 'chef',
+      type: 'menu_request_approved',
+      title: 'Menu Request Approved',
+      message: action === 'add_item'
+        ? `"${n.itemName}" was added as an unavailable draft item. Admin can now set price/category and turn it on.`
+        : `"${n.itemName}" was turned off.`
+    });
+  }
+
+  toast('Menu request approved', 'success');
+}
+
+async function rejectMenuChangeRequest(id) {
+  const n = adminNotifications.find(x => x._id === id);
+  if (!n) return;
+
+  const reason = prompt('Reason for rejection?') || '';
+
+  await db.collection('admin_notifications').doc(id).update({
+    status: 'rejected',
+    read: true,
+    rejectionReason: reason,
+    rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (n.requestedByUid) {
+    await notifyStaffPortal({
+      toUid: n.requestedByUid,
+      role: 'chef',
+      type: 'menu_request_rejected',
+      title: 'Menu Request Rejected',
+      message: reason || `Your menu request for "${n.itemName || 'an item'}" was rejected.`
+    });
+  }
+
+  toast('Menu request rejected', 'success');
+}
+  
 function startBreakRequestsListener() {
   if (!db) return;
   if (breakRequestsListener) breakRequestsListener();
