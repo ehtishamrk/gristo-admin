@@ -1447,13 +1447,14 @@ function tryLogin() {
 }
 function logout() {
   firebase.auth().signOut();
-  function sendPasswordReset() {
+}
+
+function sendPasswordReset() {
   const email = document.getElementById('pw-input').value.trim();
   if (!email) { document.getElementById('login-err').textContent = 'Enter your email first'; return; }
   firebase.auth().sendPasswordResetEmail(email)
     .then(() => { document.getElementById('login-err').style.color = 'var(--gold)'; document.getElementById('login-err').textContent = 'Reset link sent to ' + email; })
     .catch(e => { document.getElementById('login-err').style.color = 'var(--red)'; document.getElementById('login-err').textContent = e.message; });
-}
 }
 
 let adminSettingsListener = null;
@@ -3207,31 +3208,7 @@ function _makeQRCard(label, sublabel, canvas, wifiName, wifiPass) {
   }
   return out;
 }
-  const ctx = out.getContext('2d');
-  // Background
-  ctx.fillStyle = '#ffffff';
-  ctx.roundRect(0, 0, out.width, out.height, 24);
-  ctx.fill();
-  // Gold top bar
-  ctx.fillStyle = '#C8922A';
-  ctx.fillRect(0, 0, CARD, 10);
-  // QR code centered
-  const qrX = (CARD - QR) / 2;
-  const qrY = PAD + 20;
-  ctx.drawImage(canvas, qrX, qrY, QR, QR);
-  // Label
-  ctx.fillStyle = '#0D1929';
-  ctx.font = `bold ${FONT_LABEL}px "DM Sans", Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(label, CARD / 2, qrY + QR + 60);
-  // Sublabel
-  ctx.fillStyle = '#888';
-  ctx.font = `${FONT_SUB}px "DM Sans", Arial, sans-serif`;
-  ctx.fillText(sublabel, CARD / 2, qrY + QR + 108);
-  return out;
-}
-
-function generateQRCodes() {
+  function generateQRCodes() {
   const url = document.getElementById('qr-portal-url').value.trim();
   if (!url) { toast('Enter the customer portal URL first', 'error'); return; }
   localStorage.setItem('hx_portal_url', url);
