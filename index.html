@@ -527,6 +527,15 @@ textarea.fi{resize:vertical;min-height:70px;}
         <label class="fl">Customer Portal URL</label>
         <input type="text" id="qr-portal-url" class="fi" placeholder="https://your-portal-url.com/services/restaurant-management.html">
       </div>
+      <div class="fg" style="max-width:440px;margin-bottom:8px;margin-top:8px;">
+        <label class="fl">WiFi Network Name (optional)</label>
+        <input type="text" id="qr-wifi-name" class="fi" placeholder="RestaurantWiFi">
+      </div>
+      <div class="fg" style="max-width:440px;margin-bottom:12px;">
+        <label class="fl">WiFi Password (optional)</label>
+        <input type="text" id="qr-wifi-pass" class="fi" placeholder="password123">
+      </div>
+      
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
         <button class="btn btn-gold btn-sm" onclick="generateQRCodes()">Generate Table QR Codes</button>
         <button class="btn btn-ghost btn-sm" onclick="generateGeneralQR()">Generate General QR</button>
@@ -731,6 +740,14 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
 
     <div id="staff-list"><div class="spinner"></div></div>
+    <!-- TABLE ASSIGNMENT SECTION -->
+<div style="margin-top:32px;">
+  <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📋 Waiter Table Assignments</p>
+  <div id="table-assignment-grid" style="display:flex;flex-direction:column;gap:10px;">
+    <div class="empty-state"><div class="emoji">👤</div><p>Loading waiters...</p></div>
+  </div>
+  <button class="btn btn-gold btn-sm" style="margin-top:14px;" onclick="saveTableAssignments()">Save Assignments</button>
+</div>
   </div>
 
   <!-- ADD STAFF MODAL -->
@@ -1542,6 +1559,7 @@ function switchTab(t) {
   if (t === 'staff') { renderStaffList(); renderBreakRequests(); }
   if (t === 'purchase-orders') renderPurchaseOrders();
 if (t === 'admin-notifications') renderAdminNotifications();
+  if (t === 'staff') renderTableAssignments();
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -3145,11 +3163,50 @@ function _makeQRCanvas(text, size) {
   return canvas;
 }
 
-function _makeQRCard(label, sublabel, canvas) {
-  const CARD = 900, QR = 640, PAD = 40, FONT_LABEL = 52, FONT_SUB = 36;
+function _makeQRCard(label, sublabel, canvas, wifiName, wifiPass) {
+  const hasWifi = wifiName && wifiName.trim();
+  const CARD = 900, QR = 580, PAD = 40, FONT_LABEL = 52, FONT_SUB = 34, FONT_WIFI = 28;
+  const extraH = hasWifi ? 120 : 0;
   const out = document.createElement('canvas');
   out.width  = CARD;
-  out.height = CARD + 120;
+  out.height = CARD + 120 + extraH;
+  const ctx = out.getContext('2d');
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.roundRect(0, 0, out.width, out.height, 24);
+  ctx.fill();
+  // Gold top bar
+  ctx.fillStyle = '#C8922A';
+  ctx.fillRect(0, 0, CARD, 10);
+  // QR code centered
+  const qrX = (CARD - QR) / 2;
+  const qrY = PAD + 20;
+  ctx.drawImage(canvas, qrX, qrY, QR, QR);
+  // Label
+  ctx.fillStyle = '#0D1929';
+  ctx.font = `bold ${FONT_LABEL}px "DM Sans", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, CARD / 2, qrY + QR + 60);
+  // Sublabel
+  ctx.fillStyle = '#888';
+  ctx.font = `${FONT_SUB}px "DM Sans", Arial, sans-serif`;
+  ctx.fillText(sublabel, CARD / 2, qrY + QR + 108);
+  // WiFi section
+  if (hasWifi) {
+    const wfY = qrY + QR + 140;
+    ctx.fillStyle = '#f4f4f4';
+    ctx.roundRect(PAD, wfY, CARD - PAD*2, 90, 12);
+    ctx.fill();
+    ctx.fillStyle = '#C8922A';
+    ctx.font = `bold ${FONT_WIFI}px "DM Sans", Arial, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('📶  WiFi: ' + wifiName.trim(), PAD + 20, wfY + 36);
+    ctx.fillStyle = '#555';
+    ctx.font = `${FONT_WIFI}px "DM Sans", Arial, sans-serif`;
+    ctx.fillText('Password: ' + (wifiPass?.trim() || '(no password)'), PAD + 20, wfY + 72);
+  }
+  return out;
+}
   const ctx = out.getContext('2d');
   // Background
   ctx.fillStyle = '#ffffff';
@@ -3186,7 +3243,9 @@ function generateQRCodes() {
 
   for (let i = 1; i <= n; i++) {
     const qrCanvas  = _makeQRCanvas(`${url}?table=${i}`, 800);
-    const cardCanvas = _makeQRCard(`TABLE ${i}`, restName || 'Scan to Order', qrCanvas);
+    const wifiName = document.getElementById('qr-wifi-name')?.value.trim() || '';
+    const wifiPass = document.getElementById('qr-wifi-pass')?.value.trim() || '';
+    const cardCanvas = _makeQRCard(`TABLE ${i}`, restName || 'Scan to Order', qrCanvas, wifiName, wifiPass);
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'text-align:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;width:148px;';
@@ -3223,7 +3282,9 @@ function generateGeneralQR() {
 
   const restName   = settings.restaurantName || '';
   const qrCanvas   = _makeQRCanvas(url, 800);
-  const cardCanvas = _makeQRCard('SCAN TO ORDER', restName || 'Self Checkout', qrCanvas);
+  const wifiName = document.getElementById('qr-wifi-name')?.value.trim() || '';
+  const wifiPass = document.getElementById('qr-wifi-pass')?.value.trim() || '';
+  const cardCanvas = _makeQRCard('SCAN TO ORDER', restName || 'Self Checkout', qrCanvas, wifiName, wifiPass);
 
   const grid = document.getElementById('qr-grid');
   grid.innerHTML = '';
@@ -4850,6 +4911,86 @@ async function resetRiderDailyCounters() {
     toast('Daily delivery counters reset ✓', 'success');
   } catch(e) {
     toast('Reset failed: ' + e.message, 'error');
+  }
+}
+
+// ── TABLE ASSIGNMENT ──────────────────────────
+async function renderTableAssignments() {
+  const grid = document.getElementById('table-assignment-grid');
+  if (!grid || !db) return;
+  const totalTables = settings.tableCount || 10;
+
+  try {
+    const snap = await db.collection('employees').where('role','==','waiter').where('active','==',true).get();
+    const waiters = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+    if (!waiters.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="emoji">👤</div><p>No waiters found. Add waiter-role employees first.</p></div>`;
+      return;
+    }
+
+    // If only one waiter, auto-assign all
+    if (waiters.length === 1) {
+      const allTables = Array.from({length: totalTables}, (_, i) => i + 1);
+      grid.innerHTML = `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;">
+        <div style="font-size:13px;font-weight:700;">${waiters[0].name} <span style="font-size:11px;color:var(--td);font-weight:400;">— only waiter, all tables assigned automatically</span></div>
+        <div style="font-size:12px;color:var(--gold);margin-top:4px;">Tables 1–${totalTables}</div>
+        <input type="hidden" id="assign-${waiters[0].uid}" value="${allTables.join(',')}">
+      </div>`;
+      return;
+    }
+
+    // Multiple waiters — show checkboxes per waiter
+    const tableAssignSnap = await db.collection('settings').doc('tableAssignments').get();
+    const existing = tableAssignSnap.exists ? tableAssignSnap.data() : {};
+
+    grid.innerHTML = waiters.map(w => {
+      const assigned = existing[w.uid] || [];
+      const tableCheckboxes = Array.from({length: totalTables}, (_, i) => {
+        const t = i + 1;
+        const chk = assigned.includes(t) ? 'checked' : '';
+        return `<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin:2px 6px 2px 0;cursor:pointer;"><input type="checkbox" value="${t}" ${chk} class="assign-chk-${w.uid}"> ${t}</label>`;
+      }).join('');
+
+      return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">${w.name}</div>
+        <div style="display:flex;flex-wrap:wrap;">${tableCheckboxes}</div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    grid.innerHTML = `<div style="color:var(--red);font-size:13px;">Error loading waiters</div>`;
+    console.warn('renderTableAssignments:', e);
+  }
+}
+
+async function saveTableAssignments() {
+  if (!db) return;
+  const totalTables = settings.tableCount || 10;
+  const snap = await db.collection('employees').where('role','==','waiter').where('active','==',true).get();
+  const waiters = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+  const assignments = {};
+  if (waiters.length === 1) {
+    assignments[waiters[0].uid] = Array.from({length: totalTables}, (_, i) => i + 1);
+  } else {
+    waiters.forEach(w => {
+      const checks = document.querySelectorAll(`.assign-chk-${w.uid}:checked`);
+      assignments[w.uid] = Array.from(checks).map(c => parseInt(c.value));
+    });
+  }
+
+  try {
+    // Save to Firestore settings
+    await db.collection('settings').doc('tableAssignments').set(assignments);
+    // Also update each employee doc
+    for (const [uid, tables] of Object.entries(assignments)) {
+      await db.collection('employees').doc(uid).update({ assignedTables: tables });
+    }
+    toast('Table assignments saved', 'success');
+  } catch(e) {
+    toast('Error saving assignments', 'error');
+    console.warn('saveTableAssignments:', e);
   }
 }
   
