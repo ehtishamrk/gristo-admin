@@ -2139,11 +2139,25 @@ if (file) {
   const data = { name, desc, cat, price, avail, img: imgUrl };
   try {
     if (!db) throw new Error('No DB');
-    if (editItemId) {
-      await db.collection('menu_items').doc(editItemId).update(data);
-    } else {
-      await db.collection('menu_items').add(data);
-    }
+if (editItemId) {
+  await db.collection('menu_items').doc(editItemId).update(data);
+
+  await notifyStaffPortal({
+    role: 'chef',
+    type: 'menu_item_updated',
+    title: 'Menu Item Updated',
+    message: `"${name}" was updated by admin.`
+  });
+} else {
+  await db.collection('menu_items').add(data);
+
+  await notifyStaffPortal({
+    role: 'chef',
+    type: 'menu_item_added',
+    title: 'New Menu Item Added',
+    message: `"${name}" was added to the menu by admin.`
+  });
+}
     closeModal();
     await loadMenuItems();
     renderMenuItems();
@@ -2156,10 +2170,24 @@ if (file) {
 
 async function toggleItemAvail(id, avail) {
   if (!db) return;
+
   try {
+    const item = menuItems.find(m => m._id === id || m.id === id);
+    const itemName = item?.name || 'Menu item';
+
     await db.collection('menu_items').doc(id).update({ avail });
+
+    await notifyStaffPortal({
+      role: 'chef',
+      type: avail ? 'menu_item_enabled' : 'menu_item_disabled',
+      title: avail ? 'Menu Item Turned On' : 'Menu Item Turned Off',
+      message: `"${itemName}" was ${avail ? 'turned on' : 'turned off'} by admin.`
+    });
+
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
-  } catch(e) { toast('Error updating item', 'error'); }
+  } catch(e) {
+    toast('Error updating item', 'error');
+  }
 }
 
 async function toggleCategory(catId, enabled) {
