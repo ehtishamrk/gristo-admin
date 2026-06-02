@@ -882,6 +882,49 @@ textarea.fi{resize:vertical;min-height:70px;}
       <span class="toggle-slider"></span>
     </label>
   </div>
+
+<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Delivery Fee</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="fee-type" value="free"       id="fee-free"       onchange="saveDeliverySetting()">
+        <span>Free Delivery</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="fee-type" value="fixed"      id="fee-fixed"      onchange="saveDeliverySetting(); toggleFeeFields()">
+        <span>Fixed Fee</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="fee-type" value="per_km"     id="fee-per-km"     onchange="saveDeliverySetting(); toggleFeeFields()">
+        <span>Per KM</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="fee-type" value="free_above" id="fee-free-above" onchange="saveDeliverySetting(); toggleFeeFields()">
+        <span>Free above order total</span>
+      </label>
+    </div>
+    <div id="fee-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="fg" id="field-fixed" style="display:none;">
+        <label class="fl">Fixed Fee Amount</label>
+        <input type="number" class="fi" id="s-delivery-fee-fixed" placeholder="3.50" min="0" step="0.25" oninput="saveDeliverySetting()">
+      </div>
+      <div class="fg" id="field-per-km" style="display:none;">
+        <label class="fl">Fee per KM</label>
+        <input type="number" class="fi" id="s-delivery-fee-km" placeholder="0.50" min="0" step="0.10" oninput="saveDeliverySetting()">
+      </div>
+      <div class="fg" id="field-free-above" style="display:none;">
+        <label class="fl">Free if order total above</label>
+        <input type="number" class="fi" id="s-delivery-fee-above" placeholder="30.00" min="0" step="1" oninput="saveDeliverySetting()">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--td);">⚠️ Delivery area restriction (radius, coordinates) coming in next update.</div>
+  </div>
+  
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);">
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Reset Daily Rider Counters</div>
+    <div style="font-size:12px;color:var(--tm);margin-bottom:10px;">Resets each rider's daily delivery count to zero. Run this once every morning so the fairness algorithm starts fresh.</div>
+    <button class="btn btn-ghost btn-sm" onclick="resetRiderDailyCounters()">🔄 Reset Counters for Today</button>
+  </div>
 </div>
     
 <!-- ORDERING PAUSE -->
@@ -1467,7 +1510,13 @@ function updateStaffOnlineBadge() {
   db.collection('presence').onSnapshot(snap => {
     const online = snap.docs.filter(d => d.data().online === true).length;
     const badge  = document.getElementById('staff-notif');
-    if (badge) { badge.textContent = online; badge.style.display = online ? 'inline-flex' : 'none'; }
+    if (!badge) return;
+    const breakCount = allBreakRequests ? allBreakRequests.length : 0;
+    const total = online + breakCount;
+    badge.textContent = total;
+    badge.style.display = total ? 'inline-flex' : 'none';
+    // Turn amber if there are pending break requests, green otherwise
+    badge.style.background = breakCount > 0 ? 'var(--amber)' : 'var(--red)';
   });
 }
 function tickTime() {
@@ -2437,6 +2486,17 @@ async function loadSettings() {
       loadResvSettings(settings);
       const delEl = document.getElementById('s-delivery-enabled');
 if (delEl) delEl.checked = settings.deliveryEnabled === true;
+      // Load delivery fee settings
+const feeType = settings.deliveryFeeType || 'free';
+const feeRadio = document.getElementById('fee-' + (feeType === 'per_km' ? 'per-km' : feeType === 'free_above' ? 'free-above' : feeType));
+if (feeRadio) feeRadio.checked = true;
+const fixedEl   = document.getElementById('s-delivery-fee-fixed');
+const kmEl      = document.getElementById('s-delivery-fee-km');
+const aboveEl   = document.getElementById('s-delivery-fee-above');
+if (fixedEl)  fixedEl.value  = settings.deliveryFeeFixed  || '';
+if (kmEl)     kmEl.value     = settings.deliveryFeePerKm  || '';
+if (aboveEl)  aboveEl.value  = settings.deliveryFreeAbove || '';
+toggleFeeFields();
       tableCount = settings.tableCount || 10;
 
       // Payment
@@ -4016,11 +4076,25 @@ function updateReservBadge() {
 
 async function saveDeliverySetting() {
   if (!db) return;
-  await db.collection('settings').doc('global').set(
-    { deliveryEnabled: document.getElementById('s-delivery-enabled').checked },
-    { merge: true }
-  ).catch(e => console.warn(e));
-  toast('Delivery setting saved', 'success');
+  const feeType = document.querySelector('input[name="fee-type"]:checked')?.value || 'free';
+  const data = {
+    deliveryEnabled:    document.getElementById('s-delivery-enabled').checked,
+    deliveryFeeType:    feeType,
+    deliveryFeeFixed:   parseFloat(document.getElementById('s-delivery-fee-fixed')?.value)  || 0,
+    deliveryFeePerKm:   parseFloat(document.getElementById('s-delivery-fee-km')?.value)     || 0,
+    deliveryFreeAbove:  parseFloat(document.getElementById('s-delivery-fee-above')?.value)  || 0,
+    // deliveryFee is kept in sync as the flat value riders see in earnings
+    deliveryFee: feeType === 'fixed' ? (parseFloat(document.getElementById('s-delivery-fee-fixed')?.value) || 0) : 0,
+  };
+  await db.collection('settings').doc('global').set(data, { merge: true }).catch(e => console.warn(e));
+  toast('Delivery settings saved', 'success');
+}
+
+function toggleFeeFields() {
+  const type = document.querySelector('input[name="fee-type"]:checked')?.value || 'free';
+  document.getElementById('field-fixed')?.style      && (document.getElementById('field-fixed').style.display      = type === 'fixed'      ? 'block' : 'none');
+  document.getElementById('field-per-km')?.style     && (document.getElementById('field-per-km').style.display     = type === 'per_km'     ? 'block' : 'none');
+  document.getElementById('field-free-above')?.style && (document.getElementById('field-free-above').style.display = type === 'free_above' ? 'block' : 'none');
 }
 
 // ══════════════════════════════════════════
@@ -4764,6 +4838,21 @@ function renderBreakRequests() {
     </div>`;
   }).join('');
 }
+
+async function resetRiderDailyCounters() {
+  if (!db) return;
+  if (!confirm('Reset today\'s delivery counts for all riders? This is meant to be done once at the start of each day.')) return;
+  try {
+    const snap  = await db.collection('presence').where('portal','==','rider').get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.update(d.ref, { todayDeliveries: 0 }));
+    await batch.commit();
+    toast('Daily delivery counters reset ✓', 'success');
+  } catch(e) {
+    toast('Reset failed: ' + e.message, 'error');
+  }
+}
+  
 </script>
 </body>
 </html>
