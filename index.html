@@ -5153,61 +5153,25 @@ async function renderCallStaffList() {
 }
 
 async function initiateCall(targetUid, targetName) {
-  if (currentCallId) { toast('Already in a call', 'error'); return; }
+  if (!db) { toast('Firebase not connected', 'error'); return; }
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch(e) { toast('Microphone access denied. Please allow mic permission.', 'error'); return; }
-
-  peerConnection = new RTCPeerConnection(ICE_SERVERS);
-  localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-
-  peerConnection.ontrack = e => {
-    const audio = document.createElement('audio');
-    audio.srcObject = e.streams[0];
-    audio.autoplay = true;
-    audio.id = 'call-audio-out';
-    document.body.appendChild(audio);
-  };
-
-  const callRef = db.collection('calls').doc();
-  currentCallId  = callRef.id;
-  currentCallRole = 'caller';
-
-  const iceCandidates = [];
-  peerConnection.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
-
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  await callRef.set({
-    callerId: firebase.auth().currentUser?.uid || 'admin',
-    callerName: settings.restaurantName || 'Admin',
-    calleeId: targetUid,
-    calleeName: targetName,
-    status: 'ringing',
-    offer: { type: offer.type, sdp: offer.sdp },
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  // Show active call UI immediately for caller
-  showActiveCall(targetName);
-  toast(`📞 Calling ${targetName}...`, 'success');
-
-  // Listen for answer
-  callListener = callRef.onSnapshot(async snap => {
-    const data = snap.data();
-    if (!data) return;
-    if (data.status === 'answered' && data.answer && currentCallRole === 'caller') {
-      try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        (data.iceCandidatesCallee || []).forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
-        // Push caller ICE candidates
-        await callRef.update({ iceCandidatesCaller: iceCandidates });
-      } catch(e) { console.warn('call answer:', e); }
-    }
-    if (data.status === 'ended') { cleanupCall(); }
-    if (data.status === 'rejected') { toast(`${targetName} rejected the call`, 'info'); cleanupCall(); }
-  });
+    // Write a waiter_calls doc — matches the waiter portal's listener
+    await db.collection('waiter_calls').add({
+      calledBy:    settings.restaurantName || 'Admin',
+      calledAt:    firebase.firestore.FieldValue.serverTimestamp(),
+      status:      'ringing',
+      acknowledged: false,
+      targetUid:   targetUid,
+      targetName:  targetName,
+      orderNumber: '—',
+      tableNumber: null,
+      note:        'Admin is calling you'
+    });
+    toast(`📞 Calling ${targetName}...`, 'success');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+    console.warn('initiateCall:', e);
+  }
 }
 
 async function answerCall() {
