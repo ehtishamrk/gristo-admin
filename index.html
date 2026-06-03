@@ -455,6 +455,8 @@ textarea.fi{resize:vertical;min-height:70px;}
 <button class="tab-btn" onclick="switchTab('admin-notifications')" id="tab-admin-notifications-btn">
   🔔 Notifications <span class="notif" id="admin-notif" style="display:none">0</span>
 </button>
+  <button class="tab-btn" onclick="switchTab('new-order')" id="tab-new-order-btn">🧾 New Order</button>
+  <button class="tab-btn" onclick="switchTab('call')" id="tab-call-btn">📞 Call Staff</button>
   <button class="tab-btn" onclick="switchTab('setup')"     id="tab-setup-btn">⚙️ Setup</button>
 </nav>
 
@@ -488,7 +490,7 @@ textarea.fi{resize:vertical;min-height:70px;}
       <span style="color:var(--td)">🔍</span>
       <input type="text" id="menu-search" placeholder="Search items..." oninput="filterMenuItems()">
     </div>
-    <div id="menu-items-container"><div class="spinner"></div></div>
+    <div id="menu-items-list"><div class="spinner"></div></div>
   </div>
 
   <!-- DEALS TAB -->
@@ -519,6 +521,14 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
   </div>
   <div class="table-display" id="table-display"></div>
+  <!-- WAITER TABLE ASSIGNMENT — in Tables tab -->
+<div style="margin-top:28px;">
+  <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">👤 Assign Tables to Waiters</p>
+  <p style="font-size:12px;color:var(--tm);margin-bottom:14px;">Click a table below to assign it to a waiter. Each table shows the waiter's initials when assigned.</p>
+  <div id="waiter-assign-legend" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+  <div id="waiter-assign-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:420px;margin-bottom:14px;"></div>
+  <button class="btn btn-gold btn-sm" onclick="saveTableAssignments()">Save Assignments</button>
+</div>
 </div>
 
     <div style="margin-top:32px;">
@@ -712,17 +722,6 @@ textarea.fi{resize:vertical;min-height:70px;}
 
     <div id="reservations-container"><div class="spinner"></div></div>
   </div>
-
-<!-- Break Requests Section -->
-<div style="margin-bottom:20px;">
-  <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--td);margin-bottom:10px;font-weight:700;">
-    Break Requests
-    <span id="break-notif" style="display:none;background:var(--amber);color:#0A0A0A;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin-left:6px;"></span>
-  </div>
-  <div id="break-requests-list">
-    <div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>
-  </div>
-</div>
   
 <!-- STAFF TAB -->
   <div class="tab-panel" id="panel-staff">
@@ -740,14 +739,18 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
 
     <div id="staff-list"><div class="spinner"></div></div>
-    <!-- TABLE ASSIGNMENT SECTION -->
-<div style="margin-top:32px;">
-  <p style="font-size:11px;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;font-weight:700;">📋 Waiter Table Assignments</p>
-  <div id="table-assignment-grid" style="display:flex;flex-direction:column;gap:10px;">
-    <div class="empty-state"><div class="emoji">👤</div><p>Loading waiters...</p></div>
-  </div>
-  <button class="btn btn-gold btn-sm" style="margin-top:14px;" onclick="saveTableAssignments()">Save Assignments</button>
-</div>
+    <div id="staff-list"><div class="spinner"></div></div>
+
+    <!-- Break Requests Section — MOVED HERE -->
+    <div style="margin-top:24px;margin-bottom:20px;">
+      <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--td);margin-bottom:10px;font-weight:700;">
+        Break Requests
+        <span id="break-notif" style="display:none;background:var(--amber);color:#0A0A0A;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin-left:6px;"></span>
+      </div>
+      <div id="break-requests-list">
+        <div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>
+      </div>
+    </div>
   </div>
 
   <!-- ADD STAFF MODAL -->
@@ -1188,6 +1191,85 @@ textarea.fi{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+<!-- CALL STAFF TAB -->
+<div class="tab-panel" id="panel-call">
+  <div class="page-hd">
+    <div class="page-title">Call Staff</div>
+  </div>
+  <p style="font-size:13px;color:var(--tm);margin-bottom:18px;">Only online staff are shown. Calls use the browser — both parties need the tab open.</p>
+  <div id="call-staff-list"><div class="spinner"></div></div>
+  <!-- Incoming call UI -->
+  <div id="incoming-call-banner" style="display:none;position:fixed;bottom:80px;right:20px;background:var(--s1);border:1px solid rgba(61,155,106,.4);border-radius:16px;padding:16px 20px;z-index:800;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">📞 Incoming call from <span id="incoming-caller-name">—</span></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="answerCall()" style="flex:1;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;">✓ Answer</button>
+      <button onclick="rejectCall()" style="flex:1;background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;">✕ Reject</button>
+    </div>
+  </div>
+  <!-- Active call UI -->
+  <div id="active-call-banner" style="display:none;background:var(--green-d);border:1px solid rgba(61,155,106,.3);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <span style="font-size:18px;">📞</span>
+    <div style="flex:1;">
+      <div style="font-size:14px;font-weight:700;color:var(--green);">Call Active — <span id="active-call-name">—</span></div>
+      <div id="call-timer" style="font-size:12px;color:var(--tm);">00:00</div>
+    </div>
+    <button onclick="endCall()" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;">End Call</button>
+  </div>
+</div>
+
+<!-- NEW ORDER TAB -->
+<div class="tab-panel" id="panel-new-order">
+  <div class="page-hd">
+    <div class="page-title">Place New Order</div>
+    <button class="btn btn-gold" onclick="submitAdminOrder()">Submit Order</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;max-width:500px;">
+    <div class="fg">
+      <label class="fl">Order Type</label>
+      <select class="fi" id="ao-type" onchange="document.getElementById('ao-table-wrap').style.display=this.value==='dine_in'?'flex':'none'">
+        <option value="dine_in">🍽 Dine In</option>
+        <option value="takeaway">📦 Takeaway</option>
+      </select>
+    </div>
+    <div class="fg" id="ao-table-wrap">
+      <label class="fl">Table Number</label>
+      <input type="number" class="fi" id="ao-table" placeholder="1" min="1">
+    </div>
+    <div class="fg">
+      <label class="fl">Customer Name</label>
+      <input type="text" class="fi" id="ao-name" placeholder="Walk-in guest">
+    </div>
+    <div class="fg">
+      <label class="fl">Payment Method</label>
+      <select class="fi" id="ao-payment">
+        <option value="cash">💵 Cash</option>
+        <option value="card">💳 Card</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Item Search -->
+  <div class="search-bar" style="max-width:500px;">
+    <span style="color:var(--td)">🔍</span>
+    <input type="text" id="ao-search" placeholder="Search menu items..." oninput="renderAdminOrderPicker()">
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px;max-height:300px;overflow-y:auto;margin-bottom:16px;" id="ao-item-picker"></div>
+
+  <!-- Cart -->
+  <div style="max-width:500px;">
+    <div style="font-size:11px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Cart</div>
+    <div id="ao-cart" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;min-height:40px;">
+      <div style="font-size:13px;color:var(--td);">No items added yet</div>
+    </div>
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:14px;font-weight:600;">Total</span>
+      <span id="ao-total" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold);">$0.00</span>
+    </div>
+  </div>
+</div>
+  
 <!-- ITEM MODAL -->
 <div id="modal-overlay">
   <div class="modal" id="item-modal" style="display:none">
@@ -1297,11 +1379,17 @@ textarea.fi{resize:vertical;min-height:70px;}
         <label class="fl" id="dm-val-label">Discount Value (%)</label>
         <input type="number" class="fi" id="dm-val" placeholder="25" min="0" step="0.01">
       </div>
-      <div class="fg">
+<div class="fg span2">
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <span class="toggle-label">🕐 All Day Deal (no time restriction)</span>
+          <label class="toggle"><input type="checkbox" id="dm-allday" onchange="toggleDealAllDay()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="fg" id="dm-start-wrap">
         <label class="fl">Start Time</label>
         <input type="time" class="fi" id="dm-start" value="12:00">
       </div>
-      <div class="fg">
+      <div class="fg" id="dm-end-wrap">
         <label class="fl">End Time</label>
         <input type="time" class="fi" id="dm-end" value="15:00">
       </div>
@@ -1521,20 +1609,20 @@ startAdminNotificationsListener();
   renderTablePreview();
   _refreshSoundToggleUI();
   updateStaffOnlineBadge();
+  startIncomingCallListener();
 }
 
 function updateStaffOnlineBadge() {
   if (!db) return;
-  db.collection('presence').onSnapshot(snap => {
-    const online = snap.docs.filter(d => d.data().online === true).length;
-    const badge  = document.getElementById('staff-notif');
+  // Staff badge only shows pending break requests, not online count
+  // (online count was causing always-visible "1" on the tab)
+  db.collection('break_requests').where('status','==','pending').onSnapshot(snap => {
+    const badge = document.getElementById('staff-notif');
     if (!badge) return;
-    const breakCount = allBreakRequests ? allBreakRequests.length : 0;
-    const total = online + breakCount;
-    badge.textContent = total;
-    badge.style.display = total ? 'inline-flex' : 'none';
-    // Turn amber if there are pending break requests, green otherwise
-    badge.style.background = breakCount > 0 ? 'var(--amber)' : 'var(--red)';
+    const n = snap.size;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? 'inline-flex' : 'none';
+    badge.style.background = 'var(--amber)';
   });
 }
 function tickTime() {
@@ -1548,11 +1636,10 @@ function switchTab(t) {
   document.getElementById(`panel-${t}`).classList.add('active');
   document.getElementById(`tab-${t}-btn`).classList.add('active');
   if (t==='orders')    renderOrders();
-  if (t==='menu')      renderMenuItems();
+  if (t==='menu') { if (!menuItems.length) loadMenuItems().then(renderMenuItems); else renderMenuItems(); }
   if (t==='deals')     renderDeals();
   if (t==='customers') loadCustomers();
   if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
-  if (t==='tables')    { renderTablePreview(); loadTableOccupancy(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
   if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
   if (t==='staff') { loadStaff(); }
@@ -1560,7 +1647,9 @@ function switchTab(t) {
   if (t === 'staff') { renderStaffList(); renderBreakRequests(); }
   if (t === 'purchase-orders') renderPurchaseOrders();
 if (t === 'admin-notifications') renderAdminNotifications();
-  if (t === 'staff') renderTableAssignments();
+  if (t === 'tables') { renderTablePreview(); loadTableOccupancy(); renderTableAssignments(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
+  if (t === 'call') renderCallStaffList();
+  if (t === 'new-order') { adminCartItems = []; renderAdminOrderPicker(); renderAdminCart(); }
 }
 // ── ORDERS ─────────────────────────────────────
 function startOrdersListener() {
@@ -2381,6 +2470,9 @@ function openDealModal(id) {
       document.getElementById('dm-val').value    = deal.discountValue||'';
       document.getElementById('dm-start').value  = deal.startTime||'12:00';
       document.getElementById('dm-end').value    = deal.endTime||'15:00';
+            const isAllDay = deal.startTime==='00:00' && deal.endTime==='23:59';
+      document.getElementById('dm-allday').checked = isAllDay;
+      toggleDealAllDay();
       document.getElementById('dm-apply').value  = deal.applyTo||'all';
       document.getElementById('dm-active').checked = deal.active !== false;
       (deal.days||[]).forEach(d=>document.querySelector(`#days-grid [data-d="${d}"]`)?.classList.add('active'));
@@ -2394,6 +2486,8 @@ function openDealModal(id) {
     document.getElementById('dm-val').value    = '';
     document.getElementById('dm-start').value  = '12:00';
     document.getElementById('dm-end').value    = '15:00';
+        document.getElementById('dm-allday').checked = false;
+    toggleDealAllDay();
     document.getElementById('dm-apply').value  = 'all';
     document.getElementById('dm-active').checked = true;
   }
@@ -3172,40 +3266,45 @@ function _makeQRCard(label, sublabel, canvas, wifiName, wifiPass) {
   out.width  = CARD;
   out.height = CARD + 120 + extraH;
   const ctx = out.getContext('2d');
-  // Background
+
+  // Background — plain fillRect (roundRect has poor Safari/older browser support)
   ctx.fillStyle = '#ffffff';
-  ctx.roundRect(0, 0, out.width, out.height, 24);
-  ctx.fill();
+  ctx.fillRect(0, 0, out.width, out.height);
+
   // Gold top bar
   ctx.fillStyle = '#C8922A';
-  ctx.fillRect(0, 0, CARD, 10);
+  ctx.fillRect(0, 0, CARD, 12);
+
   // QR code centered
   const qrX = (CARD - QR) / 2;
   const qrY = PAD + 20;
   ctx.drawImage(canvas, qrX, qrY, QR, QR);
-  // Label
+
+  // Main label (e.g. "TABLE 3")
   ctx.fillStyle = '#0D1929';
-  ctx.font = `bold ${FONT_LABEL}px "DM Sans", Arial, sans-serif`;
+  ctx.font = `bold ${FONT_LABEL}px Arial, sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(label, CARD / 2, qrY + QR + 60);
-  // Sublabel
-  ctx.fillStyle = '#888';
-  ctx.font = `${FONT_SUB}px "DM Sans", Arial, sans-serif`;
-  ctx.fillText(sublabel, CARD / 2, qrY + QR + 108);
+  ctx.fillText(label, CARD / 2, qrY + QR + 70);
+
+  // Sublabel (restaurant name)
+  ctx.fillStyle = '#888888';
+  ctx.font = `${FONT_SUB}px Arial, sans-serif`;
+  ctx.fillText(sublabel, CARD / 2, qrY + QR + 118);
+
   // WiFi section
   if (hasWifi) {
-    const wfY = qrY + QR + 140;
+    const wfY = qrY + QR + 148;
     ctx.fillStyle = '#f4f4f4';
-    ctx.roundRect(PAD, wfY, CARD - PAD*2, 90, 12);
-    ctx.fill();
+    ctx.fillRect(PAD, wfY, CARD - PAD * 2, 90);
     ctx.fillStyle = '#C8922A';
-    ctx.font = `bold ${FONT_WIFI}px "DM Sans", Arial, sans-serif`;
+    ctx.font = `bold ${FONT_WIFI}px Arial, sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('📶  WiFi: ' + wifiName.trim(), PAD + 20, wfY + 36);
-    ctx.fillStyle = '#555';
-    ctx.font = `${FONT_WIFI}px "DM Sans", Arial, sans-serif`;
-    ctx.fillText('Password: ' + (wifiPass?.trim() || '(no password)'), PAD + 20, wfY + 72);
+    ctx.fillText('WiFi: ' + wifiName.trim(), PAD + 20, wfY + 38);
+    ctx.fillStyle = '#555555';
+    ctx.font = `${FONT_WIFI}px Arial, sans-serif`;
+    ctx.fillText('Password: ' + (wifiPass?.trim() || '(no password)'), PAD + 20, wfY + 74);
   }
+
   return out;
 }
   function generateQRCodes() {
@@ -4892,53 +4991,97 @@ async function resetRiderDailyCounters() {
 }
 
 // ── TABLE ASSIGNMENT ──────────────────────────
+let waiterColors = ['#4A7FC8','#3D9B6A','#C8922A','#8A50C8','#C04040','#2A9B9B'];
+let pendingAssignments = {}; // tableNum -> waiterUid
+
 async function renderTableAssignments() {
-  const grid = document.getElementById('table-assignment-grid');
+  const grid   = document.getElementById('waiter-assign-grid');
+  const legend = document.getElementById('waiter-assign-legend');
   if (!grid || !db) return;
+
   const totalTables = settings.tableCount || 10;
 
   try {
     const snap = await db.collection('employees').where('role','==','waiter').where('active','==',true).get();
     const waiters = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
-    if (!waiters.length) {
-      grid.innerHTML = `<div class="empty-state"><div class="emoji">👤</div><p>No waiters found. Add waiter-role employees first.</p></div>`;
-      return;
-    }
-
-    // If only one waiter, auto-assign all
-    if (waiters.length === 1) {
-      const allTables = Array.from({length: totalTables}, (_, i) => i + 1);
-      grid.innerHTML = `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;">
-        <div style="font-size:13px;font-weight:700;">${waiters[0].name} <span style="font-size:11px;color:var(--td);font-weight:400;">— only waiter, all tables assigned automatically</span></div>
-        <div style="font-size:12px;color:var(--gold);margin-top:4px;">Tables 1–${totalTables}</div>
-        <input type="hidden" id="assign-${waiters[0].uid}" value="${allTables.join(',')}">
-      </div>`;
-      return;
-    }
-
-    // Multiple waiters — show checkboxes per waiter
     const tableAssignSnap = await db.collection('settings').doc('tableAssignments').get();
     const existing = tableAssignSnap.exists ? tableAssignSnap.data() : {};
 
-    grid.innerHTML = waiters.map(w => {
-      const assigned = existing[w.uid] || [];
-      const tableCheckboxes = Array.from({length: totalTables}, (_, i) => {
-        const t = i + 1;
-        const chk = assigned.includes(t) ? 'checked' : '';
-        return `<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin:2px 6px 2px 0;cursor:pointer;"><input type="checkbox" value="${t}" ${chk} class="assign-chk-${w.uid}"> ${t}</label>`;
-      }).join('');
+    // Build reverse map: tableNum -> waiterUid
+    pendingAssignments = {};
+    waiters.forEach(w => {
+      (existing[w.uid] || []).forEach(t => { pendingAssignments[t] = w.uid; });
+    });
 
-      return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">${w.name}</div>
-        <div style="display:flex;flex-wrap:wrap;">${tableCheckboxes}</div>
+    // Legend
+    legend.innerHTML = waiters.map((w, i) => {
+      const col = waiterColors[i % waiterColors.length];
+      const initials = (w.name || 'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+      return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tm);">
+        <div style="width:22px;height:22px;border-radius:50%;background:${col};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>
+        <span>${w.name}</span>
       </div>`;
-    }).join('');
+    }).join('') + (waiters.length === 0 ? '<span style="font-size:12px;color:var(--td);">No waiters found. Add waiter-role employees in Staff tab.</span>' : '');
+
+    // Table grid
+    grid.innerHTML = '';
+    for (let i = 1; i <= totalTables; i++) {
+      const assignedUid = pendingAssignments[i];
+      const waiterIdx = waiters.findIndex(w => w.uid === assignedUid);
+      const waiter = waiterIdx !== -1 ? waiters[waiterIdx] : null;
+      const col = waiter ? waiterColors[waiterIdx % waiterColors.length] : null;
+      const initials = waiter ? (waiter.name||'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2) : '';
+
+      const tile = document.createElement('div');
+      tile.style.cssText = `aspect-ratio:1;border-radius:8px;background:${col ? col+'22' : 'var(--s3)'};border:2px solid ${col || 'var(--bd)'};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;`;
+      tile.innerHTML = `
+        <div style="font-size:15px;font-weight:700;color:${col || 'var(--tm)'};">${i}</div>
+        ${waiter ? `<div style="font-size:9px;font-weight:700;color:${col};margin-top:2px;">${initials}</div>` : ''}
+      `;
+      tile.onclick = () => openTableAssignPicker(i, waiters);
+      grid.appendChild(tile);
+    }
 
   } catch(e) {
-    grid.innerHTML = `<div style="color:var(--red);font-size:13px;">Error loading waiters</div>`;
+    grid.innerHTML = `<div style="color:var(--red);font-size:13px;">Error loading</div>`;
     console.warn('renderTableAssignments:', e);
   }
+}
+
+function openTableAssignPicker(tableNum, waiters) {
+  const existing = pendingAssignments[tableNum];
+  const waiterOptions = waiters.map((w, i) => {
+    const col = waiterColors[i % waiterColors.length];
+    const sel = existing === w.uid;
+    return `<div onclick="assignTableToWaiter(${tableNum}, '${w.uid}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:${sel?col+'22':'var(--s3)'};border:1px solid ${sel?col:'var(--bd)'};cursor:pointer;margin-bottom:6px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:${col};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">${(w.name||'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)}</div>
+      <span style="font-size:13px;font-weight:${sel?'700':'400'}">${w.name}</span>
+      ${sel ? '<span style="margin-left:auto;color:var(--green);font-size:11px;">✓ Assigned</span>' : ''}
+    </div>`;
+  }).join('');
+
+  const popup = document.createElement('div');
+  popup.id = 'assign-popup';
+  popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:600;padding:16px;';
+  popup.innerHTML = `
+    <div style="background:var(--s1);border:1px solid var(--bd2);border-radius:20px;width:100%;max-width:360px;padding:24px;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:16px;">Assign Table ${tableNum}</div>
+      ${waiterOptions}
+      <button onclick="assignTableToWaiter(${tableNum}, null)" style="width:100%;margin-top:8px;background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✕ Unassign</button>
+      <button onclick="document.getElementById('assign-popup').remove()" style="width:100%;margin-top:8px;background:var(--s3);color:var(--tm);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:13px;cursor:pointer;">Cancel</button>
+    </div>`;
+  document.body.appendChild(popup);
+}
+
+function assignTableToWaiter(tableNum, waiterUid) {
+  document.getElementById('assign-popup')?.remove();
+  if (waiterUid === null) {
+    delete pendingAssignments[tableNum];
+  } else {
+    pendingAssignments[tableNum] = waiterUid;
+  }
+  renderTableAssignments();
 }
 
 async function saveTableAssignments() {
@@ -4947,28 +5090,337 @@ async function saveTableAssignments() {
   const snap = await db.collection('employees').where('role','==','waiter').where('active','==',true).get();
   const waiters = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
+  // Build uid -> tables[] map from pendingAssignments
   const assignments = {};
-  if (waiters.length === 1) {
-    assignments[waiters[0].uid] = Array.from({length: totalTables}, (_, i) => i + 1);
-  } else {
-    waiters.forEach(w => {
-      const checks = document.querySelectorAll(`.assign-chk-${w.uid}:checked`);
-      assignments[w.uid] = Array.from(checks).map(c => parseInt(c.value));
-    });
+  waiters.forEach(w => assignments[w.uid] = []);
+  for (let t = 1; t <= totalTables; t++) {
+    const uid = pendingAssignments[t];
+    if (uid && assignments[uid] !== undefined) assignments[uid].push(t);
   }
 
   try {
-    // Save to Firestore settings
     await db.collection('settings').doc('tableAssignments').set(assignments);
-    // Also update each employee doc
     for (const [uid, tables] of Object.entries(assignments)) {
       await db.collection('employees').doc(uid).update({ assignedTables: tables });
     }
-    toast('Table assignments saved', 'success');
+    toast('Table assignments saved ✓', 'success');
   } catch(e) {
     toast('Error saving assignments', 'error');
     console.warn('saveTableAssignments:', e);
   }
+}
+  function toggleDealAllDay() {
+  const allDay = document.getElementById('dm-allday').checked;
+  document.getElementById('dm-start-wrap').style.display = allDay ? 'none' : 'flex';
+  document.getElementById('dm-end-wrap').style.display   = allDay ? 'none' : 'flex';
+  if (allDay) {
+    document.getElementById('dm-start').value = '00:00';
+    document.getElementById('dm-end').value   = '23:59';
+  }
+}
+
+// ── CALL SYSTEM ───────────────────────────────────
+let callDoc = null, callListener = null, localStream = null;
+let peerConnection = null, callTimerInterval = null, callSeconds = 0;
+let currentCallId = null, currentCallRole = null; // 'caller' or 'callee'
+
+const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+async function renderCallStaffList() {
+  const con = document.getElementById('call-staff-list');
+  if (!con || !db) return;
+  try {
+    const snap = await db.collection('presence').where('online','==',true).get();
+    const onlineUids = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    if (!onlineUids.length) {
+      con.innerHTML = '<div class="empty-state"><div class="emoji">📵</div><h3>No staff online</h3><p>Staff appear here when they are logged in to their portal.</p></div>';
+      return;
+    }
+    con.innerHTML = onlineUids.map(p => {
+      const roleClass = p.role ? `role-${p.role}` : 'badge-grey';
+      return `<div class="staff-card">
+        <div class="staff-avatar online">👤</div>
+        <div class="staff-info">
+          <div class="staff-name">${escapeHtml(p.name || p.uid)}</div>
+          <div class="staff-meta"><span class="online-dot"></span>Online · ${p.portal || p.role || ''}</div>
+        </div>
+        <button onclick="initiateCall('${p.uid}', '${escapeHtml(p.name||p.uid)}')" style="background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px;">📞 Call</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    con.innerHTML = '<div style="color:var(--red);font-size:13px;">Error loading staff</div>';
+  }
+}
+
+async function initiateCall(targetUid, targetName) {
+  if (currentCallId) { toast('Already in a call', 'error'); return; }
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) { toast('Microphone access denied. Please allow mic permission.', 'error'); return; }
+
+  peerConnection = new RTCPeerConnection(ICE_SERVERS);
+  localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+  peerConnection.ontrack = e => {
+    const audio = document.createElement('audio');
+    audio.srcObject = e.streams[0];
+    audio.autoplay = true;
+    audio.id = 'call-audio-out';
+    document.body.appendChild(audio);
+  };
+
+  const callRef = db.collection('calls').doc();
+  currentCallId  = callRef.id;
+  currentCallRole = 'caller';
+
+  const iceCandidates = [];
+  peerConnection.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  await callRef.set({
+    callerId: firebase.auth().currentUser?.uid || 'admin',
+    callerName: settings.restaurantName || 'Admin',
+    calleeId: targetUid,
+    calleeName: targetName,
+    status: 'ringing',
+    offer: { type: offer.type, sdp: offer.sdp },
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Show active call UI immediately for caller
+  showActiveCall(targetName);
+  toast(`📞 Calling ${targetName}...`, 'success');
+
+  // Listen for answer
+  callListener = callRef.onSnapshot(async snap => {
+    const data = snap.data();
+    if (!data) return;
+    if (data.status === 'answered' && data.answer && currentCallRole === 'caller') {
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        (data.iceCandidatesCallee || []).forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+        // Push caller ICE candidates
+        await callRef.update({ iceCandidatesCaller: iceCandidates });
+      } catch(e) { console.warn('call answer:', e); }
+    }
+    if (data.status === 'ended') { cleanupCall(); }
+    if (data.status === 'rejected') { toast(`${targetName} rejected the call`, 'info'); cleanupCall(); }
+  });
+}
+
+async function answerCall() {
+  const banner = document.getElementById('incoming-call-banner');
+  banner.style.display = 'none';
+  if (!callDoc) return;
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) { toast('Microphone access denied', 'error'); return; }
+
+  peerConnection = new RTCPeerConnection(ICE_SERVERS);
+  localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+  peerConnection.ontrack = e => {
+    const audio = document.createElement('audio');
+    audio.srcObject = e.streams[0];
+    audio.autoplay = true;
+    audio.id = 'call-audio-out';
+    document.body.appendChild(audio);
+  };
+
+  const data = callDoc.data();
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+  const iceCandidates = [];
+  peerConnection.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
+
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  await callDoc.ref.update({
+    answer: { type: answer.type, sdp: answer.sdp },
+    iceCandidatesCallee: iceCandidates,
+    status: 'answered'
+  });
+
+  showActiveCall(data.callerName || 'Admin');
+  currentCallRole = 'callee';
+  currentCallId   = callDoc.id;
+
+  callListener = callDoc.ref.onSnapshot(async snap => {
+    const d = snap.data();
+    if (!d) return;
+    if (d.status === 'ended') cleanupCall();
+    // Apply caller ICE candidates when they arrive
+    if (d.iceCandidatesCaller && peerConnection.remoteDescription) {
+      (d.iceCandidatesCaller || []).forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+    }
+  });
+}
+
+function rejectCall() {
+  document.getElementById('incoming-call-banner').style.display = 'none';
+  if (callDoc) callDoc.ref.update({ status: 'rejected' }).catch(()=>{});
+  callDoc = null;
+}
+
+async function endCall() {
+  if (currentCallId) {
+    await db.collection('calls').doc(currentCallId).update({ status: 'ended' }).catch(()=>{});
+  }
+  cleanupCall();
+}
+
+function cleanupCall() {
+  if (callListener) { callListener(); callListener = null; }
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('call-audio-out')?.remove();
+  currentCallId = null; currentCallRole = null; callDoc = null;
+  document.getElementById('active-call-banner').style.display = 'none';
+  clearInterval(callTimerInterval);
+}
+
+function showActiveCall(name) {
+  document.getElementById('active-call-name').textContent = name;
+  const banner = document.getElementById('active-call-banner');
+  banner.style.display = 'flex';
+  callSeconds = 0;
+  clearInterval(callTimerInterval);
+  callTimerInterval = setInterval(() => {
+    callSeconds++;
+    const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
+    const s = String(callSeconds%60).padStart(2,'0');
+    document.getElementById('call-timer').textContent = m + ':' + s;
+  }, 1000);
+}
+
+// Listen for incoming calls
+function startIncomingCallListener() {
+  if (!db || !firebase.auth().currentUser) return;
+  const adminUid = firebase.auth().currentUser.uid;
+  db.collection('calls')
+    .where('calleeId', '==', adminUid)
+    .where('status', '==', 'ringing')
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added' && !currentCallId) {
+          callDoc = change.doc;
+          const data = callDoc.data();
+          document.getElementById('incoming-caller-name').textContent = data.callerName || 'Staff';
+          document.getElementById('incoming-call-banner').style.display = 'block';
+        }
+      });
+    });
+}
+
+// ── ADMIN ORDER CREATION ──────────────────────────
+let adminCartItems = [];
+
+function renderAdminOrderPicker() {
+  const q = (document.getElementById('ao-search')?.value||'').toLowerCase();
+  const con = document.getElementById('ao-item-picker');
+  if (!con) return;
+  const items = q ? menuItems.filter(i=>i.avail!==false&&(i.name||'').toLowerCase().includes(q)) : menuItems.filter(i=>i.avail!==false).slice(0,20);
+  con.innerHTML = items.map(item => {
+    const inCart = adminCartItems.find(c=>c.id===item._id);
+    return `<div onclick="addToAdminCart('${item._id}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:${inCart?'var(--gold-d)':'var(--s2)'};border:1px solid ${inCart?'rgba(200,146,42,.4)':'var(--bd)'};cursor:pointer;">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${escapeHtml(item.name)}</div>
+        <div style="font-size:11px;color:var(--tm);">${(settings.currencySymbol||'$')}${parseFloat(item.price||0).toFixed(2)}</div>
+      </div>
+      ${inCart ? `<div style="font-size:12px;font-weight:700;color:var(--gold);">×${inCart.qty}</div>` : '<div style="font-size:16px;color:var(--tm);">+</div>'}
+    </div>`;
+  }).join('');
+}
+
+function addToAdminCart(itemId) {
+  const item = menuItems.find(i=>i._id===itemId);
+  if (!item) return;
+  const existing = adminCartItems.find(c=>c.id===itemId);
+  if (existing) existing.qty++;
+  else adminCartItems.push({ id: itemId, name: item.name, price: parseFloat(item.price||0), qty: 1, unitPrice: parseFloat(item.price||0) });
+  renderAdminCart();
+  renderAdminOrderPicker();
+}
+
+function renderAdminCart() {
+  const con = document.getElementById('ao-cart');
+  const cur = settings.currencySymbol || '$';
+  if (!adminCartItems.length) { con.innerHTML='<div style="font-size:13px;color:var(--td);">No items added yet</div>'; document.getElementById('ao-total').textContent=cur+'0.00'; return; }
+  con.innerHTML = adminCartItems.map(item => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;">
+      <span style="flex:1;font-size:13px;">${escapeHtml(item.name)}</span>
+      <span style="font-size:11px;color:var(--td);">${cur}${item.price.toFixed(2)}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="changeAdminCartQty('${item.id}',-1)" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--bd);background:var(--s3);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+        <span style="font-size:14px;font-weight:700;min-width:16px;text-align:center;">${item.qty}</span>
+        <button onclick="changeAdminCartQty('${item.id}',1)"  style="width:24px;height:24px;border-radius:50%;border:1px solid var(--bd);background:var(--s3);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+      </div>
+      <button onclick="removeFromAdminCart('${item.id}')" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;">×</button>
+    </div>`).join('');
+  const subtotal = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const tax = subtotal * ((settings.taxRate||0)/100);
+  document.getElementById('ao-total').textContent = cur + (subtotal+tax).toFixed(2);
+}
+
+function changeAdminCartQty(itemId, delta) {
+  const item = adminCartItems.find(c=>c.id===itemId);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) adminCartItems = adminCartItems.filter(c=>c.id!==itemId);
+  renderAdminCart();
+  renderAdminOrderPicker();
+}
+
+function removeFromAdminCart(itemId) {
+  adminCartItems = adminCartItems.filter(c=>c.id!==itemId);
+  renderAdminCart();
+  renderAdminOrderPicker();
+}
+
+async function submitAdminOrder() {
+  if (!adminCartItems.length) { toast('Add at least one item','error'); return; }
+  if (!db) { toast('Firebase not connected','error'); return; }
+
+  const type    = document.getElementById('ao-type').value;
+  const tableN  = parseInt(document.getElementById('ao-table')?.value)||null;
+  const name    = document.getElementById('ao-name').value.trim() || 'Admin Order';
+  const payment = document.getElementById('ao-payment').value;
+
+  if (type==='dine_in' && !tableN) { toast('Enter table number','error'); return; }
+
+  const subtotal = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const taxRate  = settings.taxRate || 0;
+  const taxAmt   = subtotal * taxRate/100;
+  const total    = subtotal + taxAmt;
+
+  const orderNum = Math.floor(Math.random()*9000)+1000;
+
+  const order = {
+    orderNumber: orderNum,
+    orderType: type,
+    tableNumber: tableN,
+    customerName: name,
+    items: adminCartItems.map(i=>({ name:i.name, qty:i.qty, unitPrice:i.price })),
+    subtotal, taxRate, taxAmount: taxAmt, total,
+    paymentMethod: payment,
+    paymentStatus: 'pending',
+    status: 'confirmed',
+    source: 'admin',
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection('orders').add(order);
+    adminCartItems = [];
+    renderAdminCart();
+    renderAdminOrderPicker();
+    toast(`Order #${orderNum} placed ✓`, 'success');
+    // Switch to orders tab to see it
+    switchTab('orders');
+  } catch(e) { toast('Error placing order: '+e.message,'error'); }
 }
   
 </script>
