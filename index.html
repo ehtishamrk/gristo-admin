@@ -1456,6 +1456,15 @@ textarea.fi{resize:vertical;min-height:70px;}
   </div>
 </div>
 
+<div id="active-call-banner" style="display:none;position:fixed;top:60px;right:20px;background:var(--s1);border:2px solid rgba(61,155,106,.5);border-radius:16px;padding:16px 20px;z-index:800;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.6);align-items:center;gap:12px;">
+  <div style="flex:1;">
+    <div style="font-size:13px;font-weight:700;color:var(--green);">📞 On Call</div>
+    <div style="font-size:14px;font-weight:700;" id="active-call-name">—</div>
+    <div style="font-size:12px;color:var(--tm);" id="call-timer">00:00</div>
+  </div>
+  <button onclick="endCall()" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;font-size:13px;">End</button>
+</div>
+  
 <div class="toast" id="toast"></div>
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -1818,6 +1827,7 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+  function escHtml(s) { return escapeHtml(s); }
   // Alias used in purchase orders and notifications render
 function escHtml(s) { return escapeHtml(s); }
   function renderDaySummary() {
@@ -5431,7 +5441,8 @@ async function submitAdminOrder() {
     paymentMethod: payment,
     paymentStatus: 'pending',
     status: 'confirmed',
-    source: 'admin',
+source: 'admin',
+    sessionId: `admin-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
 
