@@ -739,8 +739,6 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
 
     <div id="staff-list"><div class="spinner"></div></div>
-    <div id="staff-list"><div class="spinner"></div></div>
-
     <!-- Break Requests Section — MOVED HERE -->
     <div style="margin-top:24px;margin-bottom:20px;">
       <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--td);margin-bottom:10px;font-weight:700;">
@@ -1589,7 +1587,9 @@ function startAdminSettingsListener() {
 
 startAdminSettingsListener();
   
+let currentUser = null;
 firebase.auth().onAuthStateChanged(async user => {
+  currentUser = user;
   if (user) {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('setup-overlay').style.display = 'none';
@@ -5251,55 +5251,6 @@ async function initiateCall(targetUid, targetName) {
   }
 }
 
-async function answerCall() {
-  const banner = document.getElementById('incoming-call-banner');
-  banner.style.display = 'none';
-  if (!callDoc) return;
-
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch(e) { toast('Microphone access denied', 'error'); return; }
-
-  peerConnection = new RTCPeerConnection(ICE_SERVERS);
-  localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-  peerConnection.ontrack = e => {
-    const audio = document.createElement('audio');
-    audio.srcObject = e.streams[0];
-    audio.autoplay = true;
-    audio.id = 'call-audio-out';
-    document.body.appendChild(audio);
-  };
-
-  const data = callDoc.data();
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-  const iceCandidates = [];
-  peerConnection.onicecandidate = e => { if (e.candidate) iceCandidates.push(e.candidate.toJSON()); };
-
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-
-  await callDoc.ref.update({
-    answer: { type: answer.type, sdp: answer.sdp },
-    iceCandidatesCallee: iceCandidates,
-    status: 'answered'
-  });
-
-  showActiveCall(data.callerName || 'Admin');
-  currentCallRole = 'callee';
-  currentCallId   = callDoc.id;
-
-  callListener = callDoc.ref.onSnapshot(async snap => {
-    const d = snap.data();
-    if (!d) return;
-    if (d.status === 'ended') cleanupCall();
-    // Apply caller ICE candidates when they arrive
-    if (d.iceCandidatesCaller && peerConnection.remoteDescription) {
-      (d.iceCandidatesCaller || []).forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
-    }
-  });
-}
-
 function rejectCall() {
   document.getElementById('incoming-call-banner').style.display = 'none';
   if (callDoc) callDoc.ref.update({ status: 'rejected' }).catch(()=>{});
@@ -5494,5 +5445,6 @@ async function submitAdminOrder() {
 }
   
 </script>
+  
 </body>
 </html>
