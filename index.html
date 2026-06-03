@@ -1192,28 +1192,22 @@ textarea.fi{resize:vertical;min-height:70px;}
 </div>
 
 <!-- CALL STAFF TAB -->
+<!-- CALL STAFF TAB -->
 <div class="tab-panel" id="panel-call">
   <div class="page-hd">
     <div class="page-title">Call Staff</div>
   </div>
-  <p style="font-size:13px;color:var(--tm);margin-bottom:18px;">Only online staff are shown. Calls use the browser — both parties need the tab open.</p>
+  <p style="font-size:13px;color:var(--tm);margin-bottom:18px;">Tap Call to send a ring alert to any online waiter. They'll see a full-screen alert on their portal until they acknowledge it.</p>
   <div id="call-staff-list"><div class="spinner"></div></div>
-  <!-- Incoming call UI -->
-  <div id="incoming-call-banner" style="display:none;position:fixed;bottom:80px;right:20px;background:var(--s1);border:1px solid rgba(61,155,106,.4);border-radius:16px;padding:16px 20px;z-index:800;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
-    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">📞 Incoming call from <span id="incoming-caller-name">—</span></div>
+
+  <!-- Incoming rider emergency call banner -->
+  <div id="incoming-call-banner" style="display:none;position:fixed;bottom:80px;right:20px;background:var(--s1);border:2px solid rgba(192,64,64,.5);border-radius:16px;padding:16px 20px;z-index:800;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px;">🚨 Emergency Call</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px;">📞 <span id="incoming-caller-name">Rider</span> needs help</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="answerCall()" style="flex:1;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;">✓ Answer</button>
-      <button onclick="rejectCall()" style="flex:1;background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;">✕ Reject</button>
+      <button onclick="answerCall()" style="flex:1;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;font-size:13px;">✓ Acknowledge</button>
+      <button onclick="rejectCall()" style="flex:1;background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:9px;font-weight:700;cursor:pointer;font-size:13px;">✕ Dismiss</button>
     </div>
-  </div>
-  <!-- Active call UI -->
-  <div id="active-call-banner" style="display:none;background:var(--green-d);border:1px solid rgba(61,155,106,.3);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <span style="font-size:18px;">📞</span>
-    <div style="flex:1;">
-      <div style="font-size:14px;font-weight:700;color:var(--green);">Call Active — <span id="active-call-name">—</span></div>
-      <div id="call-timer" style="font-size:12px;color:var(--tm);">00:00</div>
-    </div>
-    <button onclick="endCall()" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;">End Call</button>
   </div>
 </div>
 
@@ -5155,22 +5149,19 @@ async function renderCallStaffList() {
 async function initiateCall(targetUid, targetName) {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   try {
-    // Write a waiter_calls doc — matches the waiter portal's listener
-    await db.collection('waiter_calls').add({
-      calledBy:    settings.restaurantName || 'Admin',
-      calledAt:    firebase.firestore.FieldValue.serverTimestamp(),
-      status:      'ringing',
+    await db.collection('staff_calls').add({
+      type:         'admin_to_waiter',
+      callerName:   settings.restaurantName || 'Admin',
+      callerUid:    firebase.auth().currentUser?.uid || 'admin',
+      targetUid:    targetUid,
+      targetName:   targetName,
+      status:       'ringing',
       acknowledged: false,
-      targetUid:   targetUid,
-      targetName:  targetName,
-      orderNumber: '—',
-      tableNumber: null,
-      note:        'Admin is calling you'
+      calledAt:     firebase.firestore.FieldValue.serverTimestamp()
     });
     toast(`📞 Calling ${targetName}...`, 'success');
   } catch(e) {
     toast('Error: ' + e.message, 'error');
-    console.warn('initiateCall:', e);
   }
 }
 
@@ -5262,21 +5253,50 @@ function showActiveCall(name) {
 
 // Listen for incoming calls
 function startIncomingCallListener() {
-  if (!db || !firebase.auth().currentUser) return;
-  const adminUid = firebase.auth().currentUser.uid;
-  db.collection('calls')
-    .where('calleeId', '==', adminUid)
+  if (!db) return;
+  db.collection('staff_calls')
+    .where('type', '==', 'rider_to_admin')
     .where('status', '==', 'ringing')
     .onSnapshot(snap => {
       snap.docChanges().forEach(change => {
-        if (change.type === 'added' && !currentCallId) {
-          callDoc = change.doc;
-          const data = callDoc.data();
-          document.getElementById('incoming-caller-name').textContent = data.callerName || 'Staff';
-          document.getElementById('incoming-call-banner').style.display = 'block';
-        }
+        if (change.type !== 'added') return;
+        const data = change.doc.data();
+        if (data.acknowledged) return;
+        showAdminIncomingCall(change.doc.id, data);
       });
-    });
+    }, e => console.warn('incoming call listener:', e));
+}
+
+function showAdminIncomingCall(callId, data) {
+  const banner = document.getElementById('incoming-call-banner');
+  document.getElementById('incoming-caller-name').textContent = data.callerName || 'Rider';
+  banner.style.display = 'block';
+  banner._callId = callId;
+}
+
+async function answerCall() {
+  const banner = document.getElementById('incoming-call-banner');
+  const callId = banner._callId;
+  banner.style.display = 'none';
+  if (!callId || !db) return;
+  await db.collection('staff_calls').doc(callId).update({
+    status:         'acknowledged',
+    acknowledged:   true,
+    acknowledgedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e => console.warn(e));
+  toast('Call acknowledged ✓', 'success');
+}
+
+function rejectCall() {
+  const banner = document.getElementById('incoming-call-banner');
+  const callId = banner._callId;
+  banner.style.display = 'none';
+  if (!callId || !db) return;
+  db.collection('staff_calls').doc(callId).update({
+    status: 'rejected',
+    acknowledged: true,
+    acknowledgedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e => console.warn(e));
 }
 
 // ── ADMIN ORDER CREATION ──────────────────────────
