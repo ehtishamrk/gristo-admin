@@ -2202,7 +2202,7 @@ function renderMenuItems() {
       const avail = item.avail !== false;
       const card  = document.createElement('div');
       card.className = `mi-card${!avail ? ' unavail' : ''}`;
-      card.id = `mi-${item.id}`;
+      card.id = `mi-${item._id}`;
       const photoHTML = item.img || item.imageUrl
         ? `<div class="mi-photo"><img src="${item.img||item.imageUrl}" alt="${item.name}" loading="lazy"></div>`
         : `<div class="mi-photo">${cat.e || '🍽'}</div>`;
@@ -2214,12 +2214,12 @@ function renderMenuItems() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <label class="mi-toggle" title="${avail ? 'Available' : 'Unavailable'}">
-            <input type="checkbox" ${avail ? 'checked' : ''} onchange="toggleItemAvail('${item.id}', this.checked)">
+            <input type="checkbox" ${avail ? 'checked' : ''} onchange="toggleItemAvail('${item._id}', this.checked)">
             <span class="mi-toggle-slider"></span>
           </label>
           <div class="mi-actions">
             <button class="btn btn-ghost btn-icon btn-sm" onclick="openItemModal('${item._id}')" title="Edit">✏️</button>
-            <button class="btn btn-red btn-icon btn-sm" onclick="deleteItem('${item.id}')" title="Delete">🗑</button>
+            <button class="btn btn-red btn-icon btn-sm" onclick="deleteItem('${item._id}')" title="Delete">🗑</button>
           </div>
         </div>`;
       con.appendChild(card);
