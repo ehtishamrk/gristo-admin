@@ -747,9 +747,9 @@ textarea.fi{resize:vertical;min-height:70px;}
         Break Requests
         <span id="break-notif" style="display:none;background:var(--amber);color:#0A0A0A;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin-left:6px;"></span>
       </div>
-      <div id="break-requests-list">
-        <div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>
-      </div>
+<div id="break-requests-list">
+  <div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>
+</div>
     </div>
   </div>
 
@@ -1214,53 +1214,70 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- NEW ORDER TAB -->
 <div class="tab-panel" id="panel-new-order">
   <div class="page-hd">
-    <div class="page-title">Place New Order</div>
-    <button class="btn btn-gold" onclick="submitAdminOrder()">Submit Order</button>
+    <div class="page-title">🧾 New Order</div>
+    <button class="btn btn-gold" onclick="submitAdminOrder()">Place Order →</button>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;max-width:500px;">
-    <div class="fg">
-      <label class="fl">Order Type</label>
-      <select class="fi" id="ao-type" onchange="document.getElementById('ao-table-wrap').style.display=this.value==='dine_in'?'flex':'none'">
-        <option value="dine_in">🍽 Dine In</option>
-        <option value="takeaway">📦 Takeaway</option>
-      </select>
-    </div>
-    <div class="fg" id="ao-table-wrap">
-      <label class="fl">Table Number</label>
-      <input type="number" class="fi" id="ao-table" placeholder="1" min="1">
-    </div>
-    <div class="fg">
-      <label class="fl">Customer Name</label>
-      <input type="text" class="fi" id="ao-name" placeholder="Walk-in guest">
-    </div>
-    <div class="fg">
-      <label class="fl">Payment Method</label>
-      <select class="fi" id="ao-payment">
-        <option value="cash">💵 Cash</option>
-        <option value="card">💳 Card</option>
-      </select>
-    </div>
-  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:920px;">
 
-  <!-- Item Search -->
-  <div class="search-bar" style="max-width:500px;">
-    <span style="color:var(--td)">🔍</span>
-    <input type="text" id="ao-search" placeholder="Search menu items..." oninput="renderAdminOrderPicker()">
-  </div>
+    <!-- LEFT: Order Details + Item Picker -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px;max-height:300px;overflow-y:auto;margin-bottom:16px;" id="ao-item-picker"></div>
+      <!-- Order Meta Card -->
+      <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:14px;padding:18px 20px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--td);text-transform:uppercase;margin-bottom:14px;">Order Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="fg">
+            <label class="fl">Order Type</label>
+            <select class="fi" id="ao-type" onchange="document.getElementById('ao-table-wrap').style.display=this.value==='dine_in'?'block':'none'">
+              <option value="dine_in">🍽 Dine In</option>
+              <option value="takeaway">📦 Takeaway</option>
+            </select>
+          </div>
+          <div class="fg" id="ao-table-wrap">
+            <label class="fl">Table No.</label>
+            <input type="number" class="fi" id="ao-table" placeholder="e.g. 4" min="1">
+          </div>
+          <div class="fg">
+            <label class="fl">Customer Name</label>
+            <input type="text" class="fi" id="ao-name" placeholder="Walk-in guest">
+          </div>
+          <div class="fg">
+            <label class="fl">Payment</label>
+            <select class="fi" id="ao-payment">
+              <option value="cash">💵 Cash</option>
+              <option value="card">💳 Card</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-  <!-- Cart -->
-  <div style="max-width:500px;">
-    <div style="font-size:11px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Cart</div>
-    <div id="ao-cart" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;min-height:40px;">
-      <div style="font-size:13px;color:var(--td);">No items added yet</div>
+      <!-- Search + Item Picker Card -->
+      <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:14px;padding:18px 20px;flex:1;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--td);text-transform:uppercase;margin-bottom:12px;">Menu Items</div>
+        <div class="search-bar" style="margin-bottom:12px;">
+          <span style="color:var(--td)">🔍</span>
+          <input type="text" id="ao-search" placeholder="Search dishes..." oninput="renderAdminOrderPicker()">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:340px;overflow-y:auto;padding-right:2px;" id="ao-item-picker"></div>
+      </div>
     </div>
-    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:14px;font-weight:600;">Total</span>
-      <span id="ao-total" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold);">$0.00</span>
+
+    <!-- RIGHT: Cart & Total -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:14px;padding:18px 20px;flex:1;display:flex;flex-direction:column;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--td);text-transform:uppercase;margin-bottom:14px;">Cart</div>
+        <div id="ao-cart" style="flex:1;display:flex;flex-direction:column;gap:8px;min-height:80px;margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--td);padding:24px 0;text-align:center;">No items added yet</div>
+        </div>
+        <div style="border-top:1px solid var(--bd);padding-top:16px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:600;color:var(--tm);">Total</span>
+          <span id="ao-total" style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--gold);">$0.00</span>
+        </div>
+        <button class="btn btn-gold" onclick="submitAdminOrder()" style="width:100%;margin-top:16px;padding:14px;font-size:15px;border-radius:12px;">Place Order →</button>
+      </div>
     </div>
+
   </div>
 </div>
   
@@ -2321,22 +2338,19 @@ if (editItemId) {
 
 async function toggleItemAvail(id, avail) {
   if (!db) return;
-
   try {
-    const item = menuItems.find(m => m._id === id || m.id === id);
-    const itemName = item?.name || 'Menu item';
-
     await db.collection('menu_items').doc(id).update({ avail });
-
+    const item = menuItems.find(m => m._id === id);
+    const itemName = item?.name || 'Menu item';
     await notifyStaffPortal({
       role: 'chef',
       type: avail ? 'menu_item_enabled' : 'menu_item_disabled',
       title: avail ? 'Menu Item Turned On' : 'Menu Item Turned Off',
       message: `"${itemName}" was ${avail ? 'turned on' : 'turned off'} by admin.`
     });
-
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
   } catch(e) {
+    console.warn('toggleItemAvail error:', e);
     toast('Error updating item', 'error');
   }
 }
@@ -2344,23 +2358,35 @@ async function toggleItemAvail(id, avail) {
 async function toggleCategory(catId, enabled) {
   if (!db) return;
   try {
-    // Get current categories from settings
+    // 1. Update category enabled state in settings
     const snap = await db.collection('settings').doc('global').get();
     let cats = (snap.exists && snap.data().categories) ? snap.data().categories : CATS.map(c => ({...c}));
-
-    // Find and update the category
     const idx = cats.findIndex(c => c.id === catId);
     if (idx !== -1) {
       cats[idx] = { ...cats[idx], enabled };
     } else {
-      // Category not in settings yet — add it
       const base = CATS.find(c => c.id === catId);
       if (base) cats.push({ ...base, enabled });
     }
-
     await db.collection('settings').doc('global').set({ categories: cats }, { merge: true });
-    toast(enabled ? 'Category turned on' : 'Category turned off', 'success');
-  } catch(e) { toast('Error updating category', 'error'); }
+
+    // 2. If turning OFF, also set avail=false on all items in this category
+    if (!enabled) {
+      const itemsSnap = await db.collection('menu_items')
+        .where('cat', '==', catId).get();
+      const batch = db.batch();
+      itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: false }));
+      await batch.commit();
+      // refresh local array so UI reflects immediately
+      await loadMenuItems();
+      renderMenuItems();
+    }
+
+    toast(enabled ? 'Category turned on' : 'Category turned off — all items hidden', 'success');
+  } catch(e) { 
+    console.warn('toggleCategory error:', e);
+    toast('Error updating category', 'error'); 
+  }
 }
   
 async function deleteItem(id) {
@@ -4648,14 +4674,23 @@ function startPurchaseOrdersListener() {
     .limit(100)
     .onSnapshot(snap => {
       purchaseOrders = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
-
       const pendingCount = purchaseOrders.filter(p => p.status === 'pending').length;
       setBadge('po-notif', pendingCount);
-
       if (document.getElementById('panel-purchase-orders')?.classList.contains('active')) {
         renderPurchaseOrders();
       }
-    }, e => console.warn('purchase orders listener:', e));
+    }, e => {
+      console.warn('purchase orders listener:', e);
+      // Fallback: fetch without orderBy in case index is missing
+      db.collection('purchase_orders').limit(100).get().then(snap => {
+        purchaseOrders = snap.docs
+          .map(d => ({ ...d.data(), _id: d.id }))
+          .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        const pendingCount = purchaseOrders.filter(p => p.status === 'pending').length;
+        setBadge('po-notif', pendingCount);
+        renderPurchaseOrders();
+      }).catch(() => renderPurchaseOrders());
+    });
 }
 
 function renderPurchaseOrders() {
@@ -4919,10 +4954,13 @@ function startBreakRequestsListener() {
     .onSnapshot(snap => {
       allBreakRequests = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
       updateBreakBadge();
-      if (document.getElementById('panel-staff')?.classList.contains('active')) {
-        renderBreakRequests();
-      }
-    }, () => {});
+      // Always render — not just when panel is active
+      renderBreakRequests();
+    }, (e) => {
+      console.warn('break requests listener:', e);
+      const con = document.getElementById('break-requests-list');
+      if (con) con.innerHTML = '<div style="font-size:13px;color:var(--td);padding:12px 0;">No pending break requests</div>';
+    });
 }
 
 function updateBreakBadge() {
@@ -5075,9 +5113,12 @@ function assignTableToWaiter(tableNum, waiterUid) {
   } else {
     pendingAssignments[tableNum] = waiterUid;
   }
-  renderTableAssignments();
+  // Re-render from pendingAssignments in memory (not Firestore) so initials show immediately
+  _renderTableGridFromMemory();
 }
 
+
+  
 async function saveTableAssignments() {
   if (!db) return;
   const totalTables = settings.tableCount || 10;
@@ -5103,6 +5144,39 @@ async function saveTableAssignments() {
     console.warn('saveTableAssignments:', e);
   }
 }
+
+// Renders table grid from in-memory pendingAssignments without re-fetching Firestore
+async function _renderTableGridFromMemory() {
+  const grid = document.getElementById('waiter-assign-grid');
+  if (!grid) return;
+  const totalTables = settings.tableCount || 10;
+
+  // Re-fetch waiter list (already loaded, use cached if possible)
+  let waiters = [];
+  try {
+    const snap = await db.collection('employees').where('role','==','waiter').where('active','==',true).get();
+    waiters = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  } catch(e) {}
+
+  grid.innerHTML = '';
+  for (let i = 1; i <= totalTables; i++) {
+    const assignedUid = pendingAssignments[i];
+    const waiterIdx = waiters.findIndex(w => w.uid === assignedUid);
+    const waiter = waiterIdx !== -1 ? waiters[waiterIdx] : null;
+    const col = waiter ? waiterColors[waiterIdx % waiterColors.length] : null;
+    const initials = waiter ? (waiter.name||'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2) : '';
+
+    const tile = document.createElement('div');
+    tile.style.cssText = `aspect-ratio:1;border-radius:8px;background:${col ? col+'22' : 'var(--s3)'};border:2px solid ${col || 'var(--bd)'};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;`;
+    tile.innerHTML = `
+      <div style="font-size:15px;font-weight:700;color:${col || 'var(--tm)'};">${i}</div>
+      ${waiter ? `<div style="font-size:9px;font-weight:700;color:${col};margin-top:2px;">${initials}</div>` : ''}
+    `;
+    tile.onclick = () => openTableAssignPicker(i, waiters);
+    grid.appendChild(tile);
+  }
+}
+  
   function toggleDealAllDay() {
   const allDay = document.getElementById('dm-allday').checked;
   document.getElementById('dm-start-wrap').style.display = allDay ? 'none' : 'flex';
@@ -5149,19 +5223,31 @@ async function renderCallStaffList() {
 async function initiateCall(targetUid, targetName) {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   try {
-    await db.collection('staff_calls').add({
-      type:         'admin_to_waiter',
+    const callRef = await db.collection('staff_calls').add({
+      type:         'admin_to_waiter',   // waiter portal listens for this
       callerName:   settings.restaurantName || 'Admin',
       callerUid:    firebase.auth().currentUser?.uid || 'admin',
       targetUid:    targetUid,
       targetName:   targetName,
       status:       'ringing',
       acknowledged: false,
+      orderNumber:  '',
+      tableNumber:  null,
+      calledBy:     settings.restaurantName || 'Admin',
       calledAt:     firebase.firestore.FieldValue.serverTimestamp()
     });
     toast(`📞 Calling ${targetName}...`, 'success');
+    // Auto-mark as expired after 30s if not acknowledged
+    setTimeout(async () => {
+      try {
+        const doc = await callRef.get();
+        if (doc.exists && doc.data().status === 'ringing') {
+          await callRef.update({ status: 'missed' });
+        }
+      } catch(e) {}
+    }, 30000);
   } catch(e) {
-    toast('Error: ' + e.message, 'error');
+    toast('Error initiating call: ' + e.message, 'error');
   }
 }
 
