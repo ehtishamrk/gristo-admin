@@ -3693,11 +3693,12 @@ async function saveOrderingPause() {
   const openTime  = document.getElementById('s-kitchen-open').value  || '';
   const closeTime = document.getElementById('s-kitchen-close').value || '';
   try {
-    await db.collection('settings').doc('global').set({
-      orderingPaused: paused,
-      pauseMessage:   msg,
-      kitchenOpenTime:  openTime,
-      kitchenCloseTime: closeTime
+await db.collection('settings').doc('global').set({
+      orderingPaused:      paused,
+      kitchenOverride:     paused === false, // true = admin manually forced open
+      pauseMessage:        msg,
+      kitchenOpenTime:     openTime,
+      kitchenCloseTime:    closeTime
     }, { merge: true });
     document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
     const hasSchedule = openTime && closeTime;
