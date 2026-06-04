@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
 :root{
   --bg:#080808;--s1:#111;--s2:#181818;--s3:#212121;--s4:#2A2A2A;
   --bd:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.12);
@@ -864,23 +866,31 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- TAX & CURRENCY -->
 <div class="setup-card">
   <div class="setup-title">💵 Tax & Currency</div>
-  <div class="setup-desc">Tax rate is displayed as a line item and included in totals and Stripe charges. Required by US law.</div>
-  <div class="form-grid">
-    <div class="fg">
-      <label class="fl">Sales Tax Rate (%)</label>
-      <input type="number" class="fi" id="s-tax-rate" placeholder="e.g. 8.5" min="0" max="30" step="0.01" style="max-width:130px;">
+  <div class="setup-desc">Toggle tax on/off. When disabled, no tax is added to orders or shown on receipts.</div>
+  <div class="setup-row" style="margin-bottom:16px;">
+    <div>
+      <div style="font-size:13.5px;font-weight:600;">Charge Sales Tax</div>
+      <div style="font-size:12px;color:var(--tm);">Turn off to stop adding tax to all orders</div>
     </div>
-    <div class="fg">
-      <label class="fl">Service Charge (%)</label>
-      <input type="number" class="fi" id="s-service-charge" placeholder="e.g. 0 or 3" min="0" max="20" step="0.01" style="max-width:130px;">
-    </div>
-    <div class="fg">
-      <label class="fl">Currency Symbol</label>
-      <input type="text" class="fi" id="s-currency-symbol" placeholder="$" maxlength="3" style="max-width:80px;">
-    </div>
-    <div class="fg">
-      <label class="fl">Currency Code</label>
-      <input type="text" class="fi" id="s-currency-code" placeholder="USD" maxlength="4" style="max-width:80px;" oninput="this.value=this.value.toUpperCase()">
+    <label class="toggle">
+      <input type="checkbox" id="s-tax-enabled" checked onchange="saveTaxSettings()">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <div id="tax-fields-wrap">
+    <div class="form-grid">
+      <div class="fg">
+        <label class="fl">Sales Tax Rate (%)</label>
+        <input type="number" class="fi" id="s-tax-rate" placeholder="e.g. 8.5" min="0" max="30" step="0.01" style="max-width:130px;">
+      </div>
+      <div class="fg">
+        <label class="fl">Currency Symbol</label>
+        <input type="text" class="fi" id="s-currency-symbol" placeholder="$" maxlength="3" style="max-width:80px;">
+      </div>
+      <div class="fg">
+        <label class="fl">Currency Code</label>
+        <input type="text" class="fi" id="s-currency-code" placeholder="USD" maxlength="4" style="max-width:80px;" oninput="this.value=this.value.toUpperCase()">
+      </div>
     </div>
   </div>
   <button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveTaxSettings()">Save Tax & Currency</button>
@@ -1236,9 +1246,13 @@ textarea.fi{resize:vertical;min-height:70px;}
             <label class="fl">Table No.</label>
             <input type="number" class="fi" id="ao-table" placeholder="e.g. 4" min="1">
           </div>
-          <div class="fg">
+<div class="fg">
             <label class="fl">Customer Name</label>
-            <input type="text" class="fi" id="ao-name" placeholder="Walk-in guest">
+            <input type="text" class="fi" id="ao-name" placeholder="Walk in guest">
+          </div>
+          <div class="fg">
+            <label class="fl">Phone Number</label>
+            <input type="tel" class="fi" id="ao-phone" placeholder="Optional — saved for SMS">
           </div>
           <div class="fg">
             <label class="fl">Payment</label>
@@ -2349,10 +2363,29 @@ if (editItemId) {
 }
 
 async function toggleItemAvail(id, avail) {
-  if (!db) return;
+  if (!db) {
+    // Revert toggle visually
+    const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
+    if (cb) cb.checked = !avail;
+    return;
+  }
+
+  // Check if this item's category is OFF — block turning ON
+  const item = menuItems.find(m => m._id === id);
+  const catId = item?.cat || item?.category;
+  const catData = settings.categories?.find(c => c.id === catId);
+  if (avail && catData && catData.enabled === false) {
+    // Revert toggle
+    const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
+    if (cb) cb.checked = false;
+    toast('Turn the category on first before enabling individual items', 'error');
+    return;
+  }
+
   try {
     await db.collection('menu_items').doc(id).update({ avail });
-    const item = menuItems.find(m => m._id === id);
+    // Update local array
+    if (item) item.avail = avail;
     const itemName = item?.name || 'Menu item';
     await notifyStaffPortal({
       role: 'chef',
@@ -2363,6 +2396,10 @@ async function toggleItemAvail(id, avail) {
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
   } catch(e) {
     console.warn('toggleItemAvail error:', e);
+    // Revert toggle on error
+    const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
+    if (cb) cb.checked = !avail;
+    if (item) item.avail = !avail;
     toast('Error updating item', 'error');
   }
 }
@@ -2370,34 +2407,41 @@ async function toggleItemAvail(id, avail) {
 async function toggleCategory(catId, enabled) {
   if (!db) return;
   try {
-    // 1. Update category enabled state in settings
-    const snap = await db.collection('settings').doc('global').get();
-    let cats = (snap.exists && snap.data().categories) ? snap.data().categories : CATS.map(c => ({...c}));
-    const idx = cats.findIndex(c => c.id === catId);
+    // 1. Update settings.categories in memory FIRST so re-render uses correct state
+    if (!settings.categories) settings.categories = [];
+    const idx = settings.categories.findIndex(c => c.id === catId);
     if (idx !== -1) {
-      cats[idx] = { ...cats[idx], enabled };
+      settings.categories[idx] = { ...settings.categories[idx], enabled };
     } else {
       const base = CATS.find(c => c.id === catId);
-      if (base) cats.push({ ...base, enabled });
+      if (base) settings.categories.push({ ...base, enabled });
     }
-    await db.collection('settings').doc('global').set({ categories: cats }, { merge: true });
 
-    // 2. If turning OFF, also set avail=false on all items in this category
+    // 2. Persist to Firestore
+    await db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true });
+
+    // 3. If turning OFF, also mark all items in this category as unavailable
     if (!enabled) {
-      const itemsSnap = await db.collection('menu_items')
-        .where('cat', '==', catId).get();
-      const batch = db.batch();
-      itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: false }));
-      await batch.commit();
-      // refresh local array so UI reflects immediately
-      await loadMenuItems();
-      renderMenuItems();
+      const itemsSnap = await db.collection('menu_items').where('cat', '==', catId).get();
+      if (!itemsSnap.empty) {
+        const batch = db.batch();
+        itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: false }));
+        await batch.commit();
+        // Update local menuItems array
+        menuItems.forEach(m => { if ((m.cat || m.category) === catId) m.avail = false; });
+      }
     }
 
+    // 4. Re-render from updated in-memory state (no Firestore re-fetch needed)
+    renderMenuItems();
     toast(enabled ? 'Category turned on' : 'Category turned off — all items hidden', 'success');
-  } catch(e) { 
+  } catch(e) {
     console.warn('toggleCategory error:', e);
-    toast('Error updating category', 'error'); 
+    // Revert the in-memory change on failure
+    const idx2 = settings.categories.findIndex(c => c.id === catId);
+    if (idx2 !== -1) settings.categories[idx2].enabled = !enabled;
+    renderMenuItems();
+    toast('Error updating category', 'error');
   }
 }
   
@@ -2663,6 +2707,11 @@ applyAdminRestaurantName(restName);
       document.getElementById('s-service-charge').value  = settings.serviceCharge  ?? 0;
       document.getElementById('s-currency-symbol').value = settings.currencySymbol || '$';
       document.getElementById('s-currency-code').value   = settings.currencyCode   || 'USD';
+      if (el('s-tax-enabled')) {
+    el('s-tax-enabled').checked = s.taxEnabled !== false;
+    const wrap = el('tax-fields-wrap');
+    if (wrap) wrap.style.opacity = s.taxEnabled !== false ? '1' : '0.4';
+  }
 
       // Ordering pause
       const paused = !!settings.orderingPaused;
@@ -3339,48 +3388,110 @@ function _makeQRCard(label, sublabel, canvas, wifiName, wifiPass) {
 
   return out;
 }
-  function generateQRCodes() {
-  const url = document.getElementById('qr-portal-url').value.trim();
-  if (!url) { toast('Enter the customer portal URL first', 'error'); return; }
-  localStorage.setItem('hx_portal_url', url);
-
+function generateQRCodes() {
+  const base = document.getElementById('qr-portal-url').value.trim();
+  if (!base) { toast('Enter the portal URL first', 'error'); return; }
+  const wifiName = document.getElementById('qr-wifi-name').value.trim();
+  const wifiPass = document.getElementById('qr-wifi-pass').value.trim();
+  const restName = settings.restaurantName || 'Restaurant';
+  const tc = settings.tableCount || 10;
   const grid = document.getElementById('qr-grid');
   grid.innerHTML = '';
-  const n = tableCount || settings.tableCount || 10;
-  const restName = settings.restaurantName || '';
-
-  for (let i = 1; i <= n; i++) {
-    const qrCanvas  = _makeQRCanvas(`${url}?table=${i}`, 800);
-    const wifiName = document.getElementById('qr-wifi-name')?.value.trim() || '';
-    const wifiPass = document.getElementById('qr-wifi-pass')?.value.trim() || '';
-    const cardCanvas = _makeQRCard(`TABLE ${i}`, restName || 'Scan to Order', qrCanvas, wifiName, wifiPass);
-
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'text-align:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;width:148px;';
-    // Preview at small size
-    const preview = document.createElement('canvas');
-    preview.width  = 120;
-    preview.height = 120;
-    preview.getContext('2d').drawImage(qrCanvas, 0, 0, 120, 120);
-    preview.style.borderRadius = '6px';
-
-    wrap.innerHTML = `<div style="font-size:10px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Table ${i}</div>`;
-    wrap.appendChild(preview);
-
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-ghost btn-sm';
-    btn.style.cssText = 'margin-top:10px;font-size:11px;padding:5px 12px;';
-    btn.textContent = '↓ Save';
-    btn.onclick = () => {
-      const a = document.createElement('a');
-      a.download = `table-${i}-qr.png`;
-      a.href = cardCanvas.toDataURL('image/png');
-      a.click();
-    };
-    wrap.appendChild(btn);
-    grid.appendChild(wrap);
+  for (let t = 1; t <= tc; t++) {
+    const url = base.includes('?') ? `${base}&table=${t}` : `${base}?table=${t}`;
+    grid.appendChild(_buildQRCard(url, t, wifiName, wifiPass, restName));
   }
-  toast('QR codes generated', 'success');
+  toast(`Generated ${tc} QR codes`, 'success');
+}
+
+function generateGeneralQR() {
+  const base = document.getElementById('qr-portal-url').value.trim();
+  if (!base) { toast('Enter the portal URL first', 'error'); return; }
+  const wifiName = document.getElementById('qr-wifi-name').value.trim();
+  const wifiPass = document.getElementById('qr-wifi-pass').value.trim();
+  const restName = settings.restaurantName || 'Restaurant';
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML = '';
+  grid.appendChild(_buildQRCard(base, null, wifiName, wifiPass, restName));
+  toast('General QR generated', 'success');
+}
+
+function _buildQRCard(url, tableNum, wifiName, wifiPass, restName) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;';
+
+  const qrId = `qr-canvas-${tableNum || 'gen'}-${Date.now()}`;
+
+  const card = document.createElement('div');
+  card.style.cssText = `
+    width:260px;background:#faf8f4;border-radius:16px;overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;
+    border:1px solid #e8e0d0;
+  `;
+
+  card.innerHTML = `
+    <!-- Gold header band -->
+    <div style="background:linear-gradient(135deg,#1a1208 0%,#2d1f08 50%,#1a1208 100%);padding:18px 16px 14px;text-align:center;">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:700;color:#C8922A;letter-spacing:4px;text-transform:uppercase;">${restName}</div>
+      <div style="font-size:9px;color:rgba(200,146,42,0.6);letter-spacing:2.5px;text-transform:uppercase;margin-top:3px;">Scan to Order & View Menu</div>
+    </div>
+    <!-- QR Area -->
+    <div style="background:#fff;padding:18px;display:flex;justify-content:center;">
+      <canvas id="${qrId}" style="border-radius:8px;"></canvas>
+    </div>
+    <!-- Table number -->
+    ${tableNum ? `
+    <div style="text-align:center;padding:2px 0 8px;">
+      <div style="display:inline-block;background:#1a1208;color:#C8922A;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 20px;border-radius:100px;">Table ${tableNum}</div>
+    </div>` : ''}
+    <!-- WiFi section -->
+    ${(wifiName || wifiPass) ? `
+    <div style="margin:0 16px 16px;background:#f0ebe2;border-radius:10px;padding:10px 14px;border:1px solid #d8c8a0;">
+      <div style="font-size:8px;font-weight:700;color:#8a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">📶 WiFi</div>
+      ${wifiName ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:10px;color:#6a5a4a;">Network</span><span style="font-size:11px;font-weight:700;color:#1a1208;">${wifiName}</span></div>` : ''}
+      ${wifiPass ? `<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:#6a5a4a;">Password</span><span style="font-size:11px;font-weight:700;color:#1a1208;">${wifiPass}</span></div>` : ''}
+    </div>` : `<div style="height:12px;"></div>`}
+  `;
+
+  wrap.appendChild(card);
+
+  // Download button
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'btn btn-ghost btn-sm';
+  dlBtn.textContent = '⬇ Download';
+  dlBtn.onclick = () => _downloadQRCard(card, tableNum, restName, qrId);
+  wrap.appendChild(dlBtn);
+
+  // Generate QR after insertion
+  setTimeout(() => {
+    const canvas = document.getElementById(qrId);
+    if (!canvas || !window.QRCode) return;
+    QRCode.toCanvas(canvas, url, { width: 200, margin: 1, color: { dark: '#1a1208', light: '#ffffff' } }, err => {
+      if (err) console.warn('QR error:', err);
+    });
+  }, 50);
+
+  return wrap;
+}
+
+function _downloadQRCard(card, tableNum, restName, qrId) {
+  // Use html2canvas if available, otherwise fallback to canvas-only download
+  if (window.html2canvas) {
+    html2canvas(card, { scale: 3, backgroundColor: null, useCORS: true }).then(canvas => {
+      const a = document.createElement('a');
+      a.download = tableNum ? `${restName}-Table-${tableNum}-QR.png` : `${restName}-QR.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+    return;
+  }
+  // Fallback: download just the QR canvas
+  const qrCanvas = document.getElementById(qrId);
+  if (!qrCanvas) return;
+  const a = document.createElement('a');
+  a.download = tableNum ? `${restName}-Table-${tableNum}-QR.png` : `${restName}-QR.png`;
+  a.href = qrCanvas.toDataURL('image/png');
+  a.click();
 }
 
 function generateGeneralQR() {
@@ -3469,17 +3580,23 @@ applyAdminRestaurantName(name);
 
 // ── SAVE TAX ────────────────────────────────────
 async function saveTaxSettings() {
-  const tax     = parseFloat(document.getElementById('s-tax-rate').value) || 0;
-  const service = parseFloat(document.getElementById('s-service-charge').value) || 0;
-  const symbol  = document.getElementById('s-currency-symbol').value.trim() || '$';
-  const code    = document.getElementById('s-currency-code').value.trim()   || 'USD';
+  if (!db) return;
+  const taxEnabled = document.getElementById('s-tax-enabled')?.checked !== false;
+  // Show/hide fields
+  const wrap = document.getElementById('tax-fields-wrap');
+  if (wrap) wrap.style.opacity = taxEnabled ? '1' : '0.4';
+
+  const data = {
+    taxEnabled,
+    taxRate:        parseFloat(document.getElementById('s-tax-rate')?.value) || 0,
+    currencySymbol: document.getElementById('s-currency-symbol')?.value || '$',
+    currencyCode:   document.getElementById('s-currency-code')?.value   || 'USD',
+  };
   try {
-    await db.collection('settings').doc('global').set(
-      { taxRate: tax, serviceCharge: service, currencySymbol: symbol, currencyCode: code }, { merge: true }
-    );
-    Object.assign(settings, { taxRate: tax, serviceCharge: service, currencySymbol: symbol, currencyCode: code });
+    await db.collection('settings').doc('global').set(data, { merge: true });
+    Object.assign(settings, data);
     const msg = document.getElementById('tax-save-msg');
-    msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
+    if (msg) { msg.style.display='block'; setTimeout(()=>msg.style.display='none',2500); }
     toast('Tax settings saved','success');
   } catch(e) { toast('Save failed','error'); }
 }
@@ -4430,9 +4547,10 @@ function renderStaffList() {
           ${s.fatherName ? `<span style="font-size:11px;color:var(--td);">Son of ${escapeHtml(s.fatherName)}</span>` : ''}
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-        <button class="btn btn-ghost btn-sm" onclick="openStaffStatusModal('${s._uid}')">Manage</button>
-        <button class="btn btn-ghost btn-sm" onclick="resendStaffInvite('${s._uid}')">📧 Resend</button>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        <button class="btn btn-gold btn-sm" onclick="openStaffStatusModal('${s._uid}')" style="font-size:11px;padding:6px 14px;">⚙ Manage</button>
+        <button class="btn btn-ghost btn-sm" onclick="resendStaffInvite('${s._uid}')" style="font-size:11px;">📧 Invite</button>
+        <button class="btn btn-red btn-sm" onclick="confirmDeleteStaff('${s._uid}','${escapeHtml(s.name||'')}')" style="font-size:11px;">🗑 Delete</button>
       </div>`;
     con.appendChild(card);
   });
@@ -4545,17 +4663,44 @@ function openStaffStatusModal(uid) {
   const isFrozen   = emp.frozen === true;
   const isArchived = ['resigned','fired','archived'].includes(emp.status);
 
-  actions.innerHTML = `
-    ${!isFrozen && !isArchived ? `<button class="btn" style="background:var(--blue-d);color:var(--blue);border:1px solid rgba(74,127,200,.3);" onclick="updateStaffStatus('${uid}','freeze')">🔒 Freeze Access</button>` : ''}
-    ${isFrozen ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','unfreeze')">🔓 Unfreeze Access</button>` : ''}
-    ${emp.status === 'active' ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','on_leave')">🏖 Mark On Leave</button>` : ''}
-    ${emp.status === 'on_leave' ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','active')">✅ Mark Active</button>` : ''}
-    ${emp.role !== 'admin' && emp.role !== 'superadmin' ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','grant_admin')">⭐ Grant Admin Access</button>` : ''}
-    ${emp.role === 'admin' ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','revoke_admin')">↩ Revoke Admin</button>` : ''}
-    ${!isArchived ? `
-    <button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','resigned')" style="color:var(--red);">📝 Mark Resigned</button>
-    <button class="btn" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);" onclick="updateStaffStatus('${uid}','fired')">🚫 Terminate</button>` : ''}
-    ${isArchived ? `<button class="btn btn-ghost" onclick="updateStaffStatus('${uid}','active')">↩ Reinstate</button>` : ''}`;
+actions.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      ${!isFrozen && !isArchived ? `
+        <button onclick="updateStaffStatus('${uid}','freeze')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:rgba(74,127,200,.12);color:var(--blue);border:1px solid rgba(74,127,200,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          🔒 Freeze Access
+        </button>` : ''}
+      ${isFrozen ? `
+        <button onclick="updateStaffStatus('${uid}','unfreeze')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          🔓 Unfreeze
+        </button>` : ''}
+      ${emp.status === 'active' ? `
+        <button onclick="updateStaffStatus('${uid}','on_leave')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--amber-d);color:var(--amber);border:1px solid rgba(200,146,42,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          🏖 On Leave
+        </button>` : ''}
+      ${emp.status === 'on_leave' ? `
+        <button onclick="updateStaffStatus('${uid}','active')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          ✅ Mark Active
+        </button>` : ''}
+      ${emp.role !== 'admin' && emp.role !== 'superadmin' ? `
+        <button onclick="updateStaffStatus('${uid}','grant_admin')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:rgba(138,80,200,.12);color:var(--purple);border:1px solid rgba(138,80,200,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          ⭐ Grant Admin
+        </button>` : ''}
+      ${emp.role === 'admin' ? `
+        <button onclick="updateStaffStatus('${uid}','revoke_admin')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--s3);color:var(--tm);border:1px solid var(--bd);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          ↩ Revoke Admin
+        </button>` : ''}
+      ${!isArchived ? `
+        <button onclick="updateStaffStatus('${uid}','resigned')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--s3);color:var(--tm);border:1px solid var(--bd);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;grid-column:1/-1;">
+          📝 Mark Resigned
+        </button>
+        <button onclick="updateStaffStatus('${uid}','fired')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--red-d);color:var(--red);border:1px solid rgba(192,64,64,.3);cursor:pointer;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;grid-column:1/-1;">
+          🚫 Terminate
+        </button>` : ''}
+      ${isArchived ? `
+        <button onclick="updateStaffStatus('${uid}','active')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;grid-column:1/-1;">
+          ↩ Reinstate
+        </button>` : ''}
+    </div>`;
 
   document.getElementById('staff-status-overlay').style.display = 'flex';
 }
@@ -4564,6 +4709,26 @@ function closeStaffStatusModal() {
   document.getElementById('staff-status-overlay').style.display = 'none';
 }
 
+async function confirmDeleteStaff(uid, name) {
+  if (!confirm(`Permanently delete "${name}"?\n\nThis will remove their employee record, role, and all associated data. This cannot be undone.`)) return;
+  if (!db) return;
+  try {
+    const emp = allStaff.find(s => s._uid === uid);
+    // Delete employee record
+    await db.collection('employees').doc(uid).delete();
+    // Delete role hash
+    if (emp?.email) {
+      const hash = await hashEmail(emp.email);
+      await db.collection('employee_roles').doc(hash).delete().catch(()=>{});
+    }
+    // Delete presence doc if exists
+    await db.collection('presence').doc(uid).delete().catch(()=>{});
+    toast(`${name} deleted`, 'success');
+  } catch(e) {
+    toast('Error deleting staff: ' + e.message, 'error');
+  }
+}
+  
 async function updateStaffStatus(uid, action) {
   if (!db) return;
   const emp = allStaff.find(s => s._uid === uid);
@@ -5058,16 +5223,25 @@ async function renderTableAssignments() {
       (existing[w.uid] || []).forEach(t => { pendingAssignments[t] = w.uid; });
     });
 
+// Build table count per waiter
+    const waiterTableCount = {};
+    waiters.forEach(w => waiterTableCount[w.uid] = 0);
+    for (let t = 1; t <= totalTables; t++) {
+      const uid = pendingAssignments[t];
+      if (uid && waiterTableCount[uid] !== undefined) waiterTableCount[uid]++;
+    }
+
     // Legend
     legend.innerHTML = waiters.map((w, i) => {
       const col = waiterColors[i % waiterColors.length];
       const initials = (w.name || 'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+      const tCount = waiterTableCount[w.uid] || 0;
       return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tm);">
         <div style="width:22px;height:22px;border-radius:50%;background:${col};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>
         <span>${w.name}</span>
+        <span style="background:${col}22;color:${col};border:1px solid ${col}44;border-radius:100px;font-size:10px;font-weight:700;padding:1px 7px;">${tCount} table${tCount!==1?'s':''}</span>
       </div>`;
     }).join('') + (waiters.length === 0 ? '<span style="font-size:12px;color:var(--td);">No waiters found. Add waiter-role employees in Staff tab.</span>' : '');
-
     // Table grid
     grid.innerHTML = '';
     for (let i = 1; i <= totalTables; i++) {
@@ -5077,12 +5251,28 @@ async function renderTableAssignments() {
       const col = waiter ? waiterColors[waiterIdx % waiterColors.length] : null;
       const initials = waiter ? (waiter.name||'W').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2) : '';
 
+// Get today's orders for this table
+      const tableOrders = allOrders.filter(o =>
+        o.tableNumber === i &&
+        o.orderType === 'dine_in' &&
+        (() => { const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp||0); return ts.toDateString() === new Date().toDateString(); })()
+      );
+      const tableSale = tableOrders.reduce((s,o) => s+(o.total||0), 0);
+      const cur = settings.currencySymbol || '$';
+
       const tile = document.createElement('div');
       tile.style.cssText = `aspect-ratio:1;border-radius:8px;background:${col ? col+'22' : 'var(--s3)'};border:2px solid ${col || 'var(--bd)'};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;`;
       tile.innerHTML = `
         <div style="font-size:15px;font-weight:700;color:${col || 'var(--tm)'};">${i}</div>
         ${waiter ? `<div style="font-size:9px;font-weight:700;color:${col};margin-top:2px;">${initials}</div>` : ''}
+        <div class="table-hover-tip" style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--bd2);border-radius:8px;padding:8px 12px;font-size:11px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+          ${waiter ? `<div style="font-weight:700;color:var(--text);margin-bottom:3px;">👤 ${waiter.name}</div>` : '<div style="color:var(--td);">Unassigned</div>'}
+          <div style="color:var(--gold);">Today's Sales: <b>${cur}${tableSale.toFixed(2)}</b></div>
+          <div style="color:var(--tm);font-size:10px;">${tableOrders.length} order${tableOrders.length!==1?'s':''}</div>
+        </div>
       `;
+      tile.addEventListener('mouseenter', () => { const tip = tile.querySelector('.table-hover-tip'); if(tip) tip.style.display='block'; });
+      tile.addEventListener('mouseleave', () => { const tip = tile.querySelector('.table-hover-tip'); if(tip) tip.style.display='none'; });
       tile.onclick = () => openTableAssignPicker(i, waiters);
       grid.appendChild(tile);
     }
@@ -5420,6 +5610,7 @@ async function submitAdminOrder() {
   const type    = document.getElementById('ao-type').value;
   const tableN  = parseInt(document.getElementById('ao-table')?.value)||null;
   const name    = document.getElementById('ao-name').value.trim() || 'Admin Order';
+  const phone   = document.getElementById('ao-phone')?.value.trim() || '';
   const payment = document.getElementById('ao-payment').value;
 
   if (type==='dine_in' && !tableN) { toast('Enter table number','error'); return; }
@@ -5447,7 +5638,18 @@ source: 'admin',
   };
 
   try {
-    await db.collection('orders').add(order);
+    const orderRef = await db.collection('orders').add(order);
+    // Save phone number to phone_leads if provided
+    if (phone) {
+      await db.collection('phone_leads').add({
+        name: order.customerName,
+        phone,
+        orderNumber: orderNum,
+        orderType: type,
+        source: 'admin',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('phone_leads save:', e));
+    }
     adminCartItems = [];
     renderAdminCart();
     renderAdminOrderPicker();
