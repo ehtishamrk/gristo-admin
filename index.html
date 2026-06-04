@@ -995,6 +995,20 @@ textarea.fi{resize:vertical;min-height:70px;}
     <label class="fl">Message shown to customers</label>
     <input type="text" class="fi" id="s-pause-msg" placeholder="We're not taking orders right now. Please see staff." onchange="saveOrderingPause()">
   </div>
+  <div style="margin-top:16px;">
+    <div style="font-size:11px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Kitchen Auto-Schedule <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--tm);">(optional)</span></div>
+    <div style="font-size:12px;color:var(--tm);margin-bottom:10px;">Set open/close times to auto-pause outside kitchen hours. Leave blank for manual control only.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="fg">
+        <label class="fl">Opens At</label>
+        <input type="time" class="fi" id="s-kitchen-open" onchange="saveOrderingPause()">
+      </div>
+      <div class="fg">
+        <label class="fl">Closes At</label>
+        <input type="time" class="fi" id="s-kitchen-close" onchange="saveOrderingPause()">
+      </div>
+    </div>
+  </div>
 </div>
     
 <!-- RESERVATION SETTINGS -->
@@ -2779,12 +2793,15 @@ applyAdminRestaurantName(restName);
   }
   if (el('s-service-charge')) el('s-service-charge').value = s.serviceChargeRate || '';
 
-      // Ordering pause
+// Ordering pause
       const paused = !!settings.orderingPaused;
       document.getElementById('ordering-paused').checked = paused;
       document.getElementById('s-pause-msg').value = settings.pauseMessage || "We're not taking orders right now.";
       document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
-loadResvSettings(settings);
+      if (el('s-kitchen-open'))  el('s-kitchen-open').value  = settings.kitchenOpenTime  || '';
+      if (el('s-kitchen-close')) el('s-kitchen-close').value = settings.kitchenCloseTime || '';
+      
+      loadResvSettings(settings);
       // Brand colors
       if (settings.brandColors) {
         const bc = settings.brandColors;
@@ -3671,12 +3688,20 @@ async function saveServiceChargeSettings() {
   
 // ── ORDERING PAUSE ─────────────────────────────
 async function saveOrderingPause() {
-  const paused = document.getElementById('ordering-paused').checked;
-  const msg    = document.getElementById('s-pause-msg').value.trim() || "We're not taking orders right now.";
+  const paused    = document.getElementById('ordering-paused').checked;
+  const msg       = document.getElementById('s-pause-msg').value.trim() || "We're not taking orders right now.";
+  const openTime  = document.getElementById('s-kitchen-open').value  || '';
+  const closeTime = document.getElementById('s-kitchen-close').value || '';
   try {
-    await db.collection('settings').doc('global').set({ orderingPaused: paused, pauseMessage: msg }, { merge: true });
+    await db.collection('settings').doc('global').set({
+      orderingPaused: paused,
+      pauseMessage:   msg,
+      kitchenOpenTime:  openTime,
+      kitchenCloseTime: closeTime
+    }, { merge: true });
     document.getElementById('pause-status-banner').style.display = paused ? 'flex' : 'none';
-    toast(paused ? '⏸ Orders paused — customers see a hold message' : '▶ Orders resumed','success');
+    const hasSchedule = openTime && closeTime;
+    toast(paused ? '⏸ Orders paused — customers see a hold message' : (hasSchedule ? `▶ Orders live · Auto-pause ${openTime}–${closeTime}` : '▶ Orders resumed'), 'success');
   } catch(e) { toast('Failed to save','error'); }
 }
 
