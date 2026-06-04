@@ -3935,17 +3935,22 @@ async function exportOrdersCSV() {
 // ── CUSTOMERS (PHONE LEADS) ────────────────────
 let allCustomers = [];
 
-async function loadCustomers() {
+let customersListener = null;
+
+function loadCustomers() {
   if (!db) return;
   const con = document.getElementById('customers-container');
   con.innerHTML = '<div class="spinner"></div>';
-  try {
-    const snap = await db.collection('phone_leads').orderBy('createdAt','desc').limit(500).get();
-    allCustomers = snap.docs.map(d=>({...d.data(),_id:d.id}));
-    renderCustomers();
-  } catch(e) {
-    con.innerHTML = `<div class="empty-state"><div class="emoji">📵</div><h3>No guests yet</h3><p>Phone numbers will appear here once customers start sharing them at checkout.</p></div>`;
-  }
+  if (customersListener) customersListener(); // detach any previous listener
+  customersListener = db.collection('phone_leads')
+    .orderBy('createdAt', 'desc')
+    .limit(500)
+    .onSnapshot(snap => {
+      allCustomers = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+      renderCustomers();
+    }, e => {
+      con.innerHTML = `<div class="empty-state"><div class="emoji">📵</div><h3>No guests yet</h3><p>Phone numbers will appear here once customers start sharing them at checkout.</p></div>`;
+    });
 }
 
 function renderCustomers() {
