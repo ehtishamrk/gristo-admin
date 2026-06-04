@@ -2417,7 +2417,12 @@ async function toggleItemAvail(id, avail) {
   try {
     await db.collection('menu_items').doc(id).update({ avail });
     if (item) item.avail = avail;
-    // Re-render AFTER item is updated so brightness and toggle state are correct
+    // Update card brightness directly
+    const card = document.querySelector(`#mi-${id}`);
+    if (card) {
+      if (avail) card.classList.remove('unavail');
+      else card.classList.add('unavail');
+    }
     if (categoryWasAutoEnabled) renderMenuItems();
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
   } catch(e) {
