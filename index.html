@@ -3677,7 +3677,7 @@ async function saveServiceChargeSettings() {
   const rate    = parseFloat(document.getElementById('s-service-charge')?.value) || 0;
   const wrap    = document.getElementById('service-charge-fields-wrap');
   if (wrap) wrap.style.opacity = enabled ? '1' : '0.4';
-  const data = { serviceChargeEnabled: enabled, serviceChargeRate: rate };
+  const data = { serviceChargeEnabled: enabled, serviceChargeRate: rate, serviceCharge: rate };
   try {
     await db.collection('settings').doc('global').set(data, { merge: true });
     Object.assign(settings, data);
