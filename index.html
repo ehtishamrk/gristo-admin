@@ -1002,24 +1002,47 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div class="setup-title">📅 Reservation Settings</div>
   <div class="setup-desc">Control when reservations are open, operating hours, slot intervals, and table duration.</div>
 
-  <!-- Master toggle -->
+<!-- Master toggle -->
   <div class="setup-row" style="margin-bottom:18px;">
     <div>
       <div style="font-size:13.5px;font-weight:600;">Accept Reservations</div>
       <div style="font-size:12px;color:var(--tm);">Turn off to stop all new reservations instantly</div>
     </div>
     <label class="toggle">
-      <input type="checkbox" id="s-resv-enabled" onchange="saveResvSettings(); document.getElementById('resv-pause-msg-wrap').style.display = this.checked ? 'none' : 'block';">
+      <input type="checkbox" id="s-resv-enabled" onchange="saveResvSettings(); updateResvOffUI();">
       <span class="toggle-slider"></span>
     </label>
   </div>
 
-  <!-- Pause message -->
-  <div class="fg" id="resv-pause-msg-wrap">
-    <label class="fl">Message shown when reservations are off</label>
-    <input type="text" class="fi" id="s-resv-pause-msg"
-      placeholder="Reservations are currently unavailable."
-      maxlength="120" onchange="saveResvSettings()">
+  <!-- When-off behaviour -->
+  <div id="resv-pause-msg-wrap" style="display:none;">
+    <div style="font-size:11px;font-weight:700;color:var(--td);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">When Reservations Are Off</div>
+
+    <!-- Mode selector -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);cursor:pointer;">
+        <input type="radio" name="resv-off-mode" id="resv-mode-hide" value="hide" onchange="saveResvSettings()" style="margin-top:2px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;">Hide the button entirely</div>
+          <div style="font-size:11.5px;color:var(--tm);">The Reservations button disappears from the customer portal</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);cursor:pointer;">
+        <input type="radio" name="resv-off-mode" id="resv-mode-msg" value="message" onchange="saveResvSettings()" style="margin-top:2px;" checked>
+        <div>
+          <div style="font-size:13px;font-weight:600;">Show button with a message</div>
+          <div style="font-size:11.5px;color:var(--tm);">Button stays visible — tapping it shows your message below</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Message field (only relevant for "message" mode) -->
+    <div class="fg" id="resv-msg-field-wrap">
+      <label class="fl">Message shown to customers</label>
+      <input type="text" class="fi" id="s-resv-pause-msg"
+        placeholder="Sorry, we're not accepting reservations right now."
+        maxlength="120" onchange="saveResvSettings()">
+    </div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;">
@@ -4837,15 +4860,28 @@ async function updateStaffStatus(uid, action) {
 }
   
   // ── RESERVATION SETTINGS ────────────────────────
+function updateResvOffUI() {
+  const enabled = document.getElementById('s-resv-enabled').checked;
+  const wrap = document.getElementById('resv-pause-msg-wrap');
+  if (!wrap) return;
+  wrap.style.display = enabled ? 'none' : 'block';
+  // Show/hide the message text field based on selected mode
+  const mode = document.querySelector('input[name="resv-off-mode"]:checked')?.value || 'message';
+  const msgWrap = document.getElementById('resv-msg-field-wrap');
+  if (msgWrap) msgWrap.style.display = mode === 'message' ? 'block' : 'none';
+}
+
 async function saveResvSettings() {
   if (!db) return;
+  const mode = document.querySelector('input[name="resv-off-mode"]:checked')?.value || 'message';
   const data = {
     reservationsEnabled: document.getElementById('s-resv-enabled').checked,
-    reservationPauseMsg: document.getElementById('s-resv-pause-msg').value.trim() || 'Reservations are currently unavailable.',
-    reservationOpenTime: document.getElementById('s-resv-open').value,   // "15:00"
-    reservationCloseTime: document.getElementById('s-resv-close').value, // "22:00"
-    reservationSlotInterval: parseInt(document.getElementById('s-resv-interval').value),   // minutes
-    reservationDuration: parseInt(document.getElementById('s-resv-duration').value),        // minutes
+    reservationOffMode: mode,  // 'hide' or 'message'
+    reservationPauseMsg: document.getElementById('s-resv-pause-msg').value.trim() || "Sorry, we're not accepting reservations right now.",
+    reservationOpenTime: document.getElementById('s-resv-open').value,
+    reservationCloseTime: document.getElementById('s-resv-close').value,
+    reservationSlotInterval: parseInt(document.getElementById('s-resv-interval').value),
+    reservationDuration: parseInt(document.getElementById('s-resv-duration').value),
   };
   try {
     await db.collection('settings').doc('global').set(data, { merge: true });
@@ -4854,18 +4890,21 @@ async function saveResvSettings() {
 }
 
 function loadResvSettings(s) {
-  // Called from your existing settings loader — pass the settings object
   const el = (id) => document.getElementById(id);
   if (el('s-resv-enabled')) {
-  el('s-resv-enabled').checked = s.reservationsEnabled !== false;
-  const wrap = el('resv-pause-msg-wrap');
-  if (wrap) wrap.style.display = s.reservationsEnabled !== false ? 'none' : 'block';
-}
-  if (el('s-resv-pause-msg')) el('s-resv-pause-msg').value   = s.reservationPauseMsg  || '';
-  if (el('s-resv-open'))      el('s-resv-open').value        = s.reservationOpenTime   || '15:00';
-  if (el('s-resv-close'))     el('s-resv-close').value       = s.reservationCloseTime  || '22:00';
-  if (el('s-resv-interval'))  el('s-resv-interval').value    = s.reservationSlotInterval || 30;
-  if (el('s-resv-duration'))  el('s-resv-duration').value    = s.reservationDuration    || 90;
+    el('s-resv-enabled').checked = s.reservationsEnabled !== false;
+  }
+  // Restore mode radio
+  const mode = s.reservationOffMode || 'message';
+  const modeRadio = document.getElementById(mode === 'hide' ? 'resv-mode-hide' : 'resv-mode-msg');
+  if (modeRadio) modeRadio.checked = true;
+  if (el('s-resv-pause-msg')) el('s-resv-pause-msg').value = s.reservationPauseMsg || '';
+  if (el('s-resv-open'))      el('s-resv-open').value      = s.reservationOpenTime  || '15:00';
+  if (el('s-resv-close'))     el('s-resv-close').value     = s.reservationCloseTime || '22:00';
+  if (el('s-resv-interval'))  el('s-resv-interval').value  = s.reservationSlotInterval || 30;
+  if (el('s-resv-duration'))  el('s-resv-duration').value  = s.reservationDuration    || 90;
+  // Apply UI state after loading
+  updateResvOffUI();
 }
   let breakRequestsListener = null;
 let allBreakRequests = [];
