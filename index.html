@@ -2737,6 +2737,13 @@ applyAdminRestaurantName(restName);
     if (wrap) wrap.style.opacity = s.taxEnabled !== false ? '1' : '0.4';
   }
 
+      if (el('s-service-charge-enabled')) {
+    el('s-service-charge-enabled').checked = s.serviceChargeEnabled === true;
+    const wrap = el('service-charge-fields-wrap');
+    if (wrap) wrap.style.opacity = s.serviceChargeEnabled ? '1' : '0.4';
+  }
+  if (el('s-service-charge')) el('s-service-charge').value = s.serviceChargeRate || '';
+
       // Ordering pause
       const paused = !!settings.orderingPaused;
       document.getElementById('ordering-paused').checked = paused;
