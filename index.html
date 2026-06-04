@@ -2414,8 +2414,6 @@ async function toggleItemAvail(id, avail) {
       return;
     }
   }
-  }
-
 try {
     await db.collection('menu_items').doc(id).update({ avail });
     // Update local array
