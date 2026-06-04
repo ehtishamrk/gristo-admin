@@ -2406,17 +2406,10 @@ async function toggleItemAvail(id, avail) {
     return;
   }
 
-  try {
+try {
     await db.collection('menu_items').doc(id).update({ avail });
     // Update local array
     if (item) item.avail = avail;
-    const itemName = item?.name || 'Menu item';
-    await notifyStaffPortal({
-      role: 'chef',
-      type: avail ? 'menu_item_enabled' : 'menu_item_disabled',
-      title: avail ? 'Menu Item Turned On' : 'Menu Item Turned Off',
-      message: `"${itemName}" was ${avail ? 'turned on' : 'turned off'} by admin.`
-    });
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
   } catch(e) {
     console.warn('toggleItemAvail error:', e);
@@ -2425,7 +2418,16 @@ async function toggleItemAvail(id, avail) {
     if (cb) cb.checked = !avail;
     if (item) item.avail = !avail;
     toast('Error updating item', 'error');
+    return;
   }
+  // Fire-and-forget notification — don't let it affect the toggle result
+  const itemName = item?.name || 'Menu item';
+  notifyStaffPortal({
+    role: 'chef',
+    type: avail ? 'menu_item_enabled' : 'menu_item_disabled',
+    title: avail ? 'Menu Item Turned On' : 'Menu Item Turned Off',
+    message: `"${itemName}" was ${avail ? 'turned on' : 'turned off'} by admin.`
+  }).catch(e => console.warn('notifyStaffPortal error (non-critical):', e));
 }
 
 async function toggleCategory(catId, enabled) {
@@ -2444,21 +2446,19 @@ async function toggleCategory(catId, enabled) {
     // 2. Persist to Firestore
     await db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true });
 
-    // 3. If turning OFF, also mark all items in this category as unavailable
-    if (!enabled) {
-      const itemsSnap = await db.collection('menu_items').where('cat', '==', catId).get();
-      if (!itemsSnap.empty) {
-        const batch = db.batch();
-        itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: false }));
-        await batch.commit();
-        // Update local menuItems array
-        menuItems.forEach(m => { if ((m.cat || m.category) === catId) m.avail = false; });
-      }
+    // 3. Sync all items in this category to match the category state
+    const itemsSnap = await db.collection('menu_items').where('cat', '==', catId).get();
+    if (!itemsSnap.empty) {
+      const batch = db.batch();
+      itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: enabled }));
+      await batch.commit();
+      // Update local menuItems array
+      menuItems.forEach(m => { if ((m.cat || m.category) === catId) m.avail = enabled; });
     }
 
     // 4. Re-render from updated in-memory state (no Firestore re-fetch needed)
     renderMenuItems();
-    toast(enabled ? 'Category turned on' : 'Category turned off — all items hidden', 'success');
+    toast(enabled ? 'Category turned on — all items enabled' : 'Category turned off — all items hidden', 'success');
   } catch(e) {
     console.warn('toggleCategory error:', e);
     // Revert the in-memory change on failure
