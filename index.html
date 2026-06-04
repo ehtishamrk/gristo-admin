@@ -2388,25 +2388,24 @@ if (editItemId) {
 
 async function toggleItemAvail(id, avail) {
   if (!db) {
-    // Revert toggle visually
     const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
     if (cb) cb.checked = !avail;
     return;
   }
 
-// Check if this item's category is OFF — auto-enable the category but keep other items off
   const item = menuItems.find(m => m._id === id);
   const catId = item?.cat || item?.category;
   const catData = settings.categories?.find(c => c.id === catId);
+  let categoryWasAutoEnabled = false;
+
+  // If category is OFF and admin is turning an item ON, silently enable the category
   if (avail && catData && catData.enabled === false) {
-    // Silently turn the category ON in Firestore (don't touch other items)
     try {
       catData.enabled = true;
       await db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true });
-      renderMenuItems();
+      categoryWasAutoEnabled = true;
     } catch(e) {
       console.warn('Auto-enable category error:', e);
-      // Revert category in memory and block the item toggle
       catData.enabled = false;
       const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
       if (cb) cb.checked = false;
@@ -2414,21 +2413,29 @@ async function toggleItemAvail(id, avail) {
       return;
     }
   }
-try {
+
+  try {
     await db.collection('menu_items').doc(id).update({ avail });
-    // Update local array
     if (item) item.avail = avail;
+    // Re-render AFTER item is updated so brightness and toggle state are correct
+    if (categoryWasAutoEnabled) renderMenuItems();
     toast(avail ? 'Item turned on' : 'Item turned off', 'success');
   } catch(e) {
     console.warn('toggleItemAvail error:', e);
-    // Revert toggle on error
+    // Revert item toggle
     const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
     if (cb) cb.checked = !avail;
     if (item) item.avail = !avail;
+    // Revert category auto-enable if it happened
+    if (categoryWasAutoEnabled) {
+      catData.enabled = false;
+      db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true }).catch(() => {});
+    }
     toast('Error updating item', 'error');
     return;
   }
-  // Fire-and-forget notification — don't let it affect the toggle result
+
+  // Fire-and-forget notification
   const itemName = item?.name || 'Menu item';
   notifyStaffPortal({
     role: 'chef',
