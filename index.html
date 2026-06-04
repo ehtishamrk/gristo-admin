@@ -897,6 +897,30 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div id="tax-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
 </div>
 
+<!-- SERVICE CHARGE -->
+<div class="setup-card">
+  <div class="setup-title">🧾 Service Charge</div>
+  <div class="setup-desc">A percentage added to every order total. Shown as a separate line item on receipts.</div>
+  <div class="setup-row" style="margin-bottom:16px;">
+    <div>
+      <div style="font-size:13.5px;font-weight:600;">Apply Service Charge</div>
+      <div style="font-size:12px;color:var(--tm);">Turn off to stop charging service fees on all orders</div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="s-service-charge-enabled" onchange="saveServiceChargeSettings()">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <div id="service-charge-fields-wrap">
+    <div class="fg">
+      <label class="fl">Service Charge Rate (%)</label>
+      <input type="number" class="fi" id="s-service-charge" placeholder="e.g. 5" min="0" max="20" step="0.01" style="max-width:130px;" oninput="saveServiceChargeSettings()">
+    </div>
+    <div style="font-size:11px;color:var(--td);margin-top:8px;">ℹ️ This is charged on top of subtotal and tax, before tip.</div>
+  </div>
+  <div id="svc-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
+</div>
+    
 <div class="setup-card">
   <div class="setup-title">🛵 Delivery</div>
   <div class="setup-desc">Enable delivery orders on the customer portal. Turn off when riders are unavailable.</div>
@@ -3601,6 +3625,21 @@ async function saveTaxSettings() {
   } catch(e) { toast('Save failed','error'); }
 }
 
+async function saveServiceChargeSettings() {
+  if (!db) return;
+  const enabled = document.getElementById('s-service-charge-enabled')?.checked === true;
+  const rate    = parseFloat(document.getElementById('s-service-charge')?.value) || 0;
+  const wrap    = document.getElementById('service-charge-fields-wrap');
+  if (wrap) wrap.style.opacity = enabled ? '1' : '0.4';
+  const data = { serviceChargeEnabled: enabled, serviceChargeRate: rate };
+  try {
+    await db.collection('settings').doc('global').set(data, { merge: true });
+    Object.assign(settings, data);
+    const msg = document.getElementById('svc-save-msg');
+    if (msg) { msg.style.display='block'; setTimeout(()=>msg.style.display='none',2500); }
+  } catch(e) { toast('Save failed','error'); }
+}
+  
 // ── ORDERING PAUSE ─────────────────────────────
 async function saveOrderingPause() {
   const paused = document.getElementById('ordering-paused').checked;
