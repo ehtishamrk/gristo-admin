@@ -3513,7 +3513,7 @@ function _buildQRCard(url, tableNum, wifiName, wifiPass, restName) {
     <!-- WiFi section -->
     ${(wifiName || wifiPass) ? `
     <div style="margin:0 16px 16px;background:#f0ebe2;border-radius:10px;padding:10px 14px;border:1px solid #d8c8a0;">
-      <div style="font-size:8px;font-weight:700;color:#8a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">📶 WiFi</div>
+      <div style="font-size:8px;font-weight:700;color:#8a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;text-align:center;">WiFi Info</div>
       ${wifiName ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:10px;color:#6a5a4a;">Network</span><span style="font-size:11px;font-weight:700;color:#1a1208;">${wifiName}</span></div>` : ''}
       ${wifiPass ? `<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:#6a5a4a;">Password</span><span style="font-size:11px;font-weight:700;color:#1a1208;">${wifiPass}</span></div>` : ''}
     </div>` : `<div style="height:12px;"></div>`}
@@ -3531,10 +3531,13 @@ function _buildQRCard(url, tableNum, wifiName, wifiPass, restName) {
   // Generate QR after insertion
   setTimeout(() => {
     const canvas = document.getElementById(qrId);
-    if (!canvas || !window.QRCode) return;
-    QRCode.toCanvas(canvas, url, { width: 200, margin: 1, color: { dark: '#1a1208', light: '#ffffff' } }, err => {
-      if (err) console.warn('QR error:', err);
-    });
+    if (!canvas) return;
+    if (window.QRious) {
+      canvas.width = 200; canvas.height = 200;
+      new QRious({ element: canvas, value: url, size: 200, background: '#ffffff', foreground: '#1a1208', padding: 10 });
+    } else if (window.QRCode) {
+      new QRCode(canvas, { text: url, width: 200, height: 200, colorDark: '#1a1208', colorLight: '#ffffff' });
+    } else { console.warn('No QR library available'); }
   }, 50);
 
   return wrap;
