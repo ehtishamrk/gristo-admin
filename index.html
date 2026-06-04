@@ -3487,7 +3487,7 @@ function generateGeneralQR() {
   canvas.style.cssText = 'width:260px;height:260px;image-rendering:pixelated;';
 
   if (window.QRious) {
-    new QRious({ element: canvas, value: base, size: SIZE, background: '#ffffff', foreground: '#000000', padding: 40 });
+    new QRious({ element: canvas, value: base, size: SIZE, background: 'transparent', foreground: '#000000', padding: 40 });
   } else if (window.QRCode) {
     new QRCode(canvas, { text: base, width: SIZE, height: SIZE, colorDark: '#000000', colorLight: '#ffffff' });
   }
