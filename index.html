@@ -2394,16 +2394,26 @@ async function toggleItemAvail(id, avail) {
     return;
   }
 
-  // Check if this item's category is OFF — block turning ON
+// Check if this item's category is OFF — auto-enable the category but keep other items off
   const item = menuItems.find(m => m._id === id);
   const catId = item?.cat || item?.category;
   const catData = settings.categories?.find(c => c.id === catId);
   if (avail && catData && catData.enabled === false) {
-    // Revert toggle
-    const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
-    if (cb) cb.checked = false;
-    toast('Turn the category on first before enabling individual items', 'error');
-    return;
+    // Silently turn the category ON in Firestore (don't touch other items)
+    try {
+      catData.enabled = true;
+      await db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true });
+      renderMenuItems();
+    } catch(e) {
+      console.warn('Auto-enable category error:', e);
+      // Revert category in memory and block the item toggle
+      catData.enabled = false;
+      const cb = document.querySelector(`#mi-${id} .mi-toggle input`);
+      if (cb) cb.checked = false;
+      toast('Error enabling category', 'error');
+      return;
+    }
+  }
   }
 
 try {
