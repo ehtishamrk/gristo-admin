@@ -666,6 +666,7 @@ textarea.fi{resize:vertical;min-height:70px;}
     <div class="page-hd">
       <div class="page-title">Analytics</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="exportOrdersCSV()">↓ Export CSV</button>
         <select class="fi" id="an-period" onchange="renderAnalytics()" style="width:auto;font-size:12px;padding:6px 10px;">
           <option value="today">Today</option>
           <option value="week">This Week</option>
@@ -674,7 +675,7 @@ textarea.fi{resize:vertical;min-height:70px;}
           <option value="year">This Year</option>
           <option value="custom">Custom Range</option>
         </select>
-        <div id="an-custom-range" style="display:none;gap:6px;display:none;align-items:center;">
+        <div id="an-custom-range" style="display:none;gap:6px;align-items:center;">
           <input type="date" id="an-date-from" class="fi" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderAnalytics()">
           <span style="color:var(--td);">→</span>
           <input type="date" id="an-date-to" class="fi" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderAnalytics()">
@@ -1739,11 +1740,14 @@ startAdminNotificationsListener();
   startIncomingCallListener();
 }
 
+let breakRequestsBadgeListener = null;
+
 function updateStaffOnlineBadge() {
   if (!db) return;
   // Staff badge only shows pending break requests, not online count
   // (online count was causing always-visible "1" on the tab)
-  db.collection('break_requests').where('status','==','pending').onSnapshot(snap => {
+  if (breakRequestsBadgeListener) breakRequestsBadgeListener();
+  breakRequestsBadgeListener = db.collection('break_requests').where('status','==','pending').onSnapshot(snap => {
     const badge = document.getElementById('staff-notif');
     if (!badge) return;
     const n = snap.size;
@@ -1769,9 +1773,8 @@ function switchTab(t) {
   if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
   if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
-  if (t==='staff') { loadStaff(); }
+  if (t==='staff') { loadStaff(); renderStaffList(); renderBreakRequests(); }
   if (t==='analytics') { initTaxYearDropdown(); renderAnalytics(); }
-  if (t === 'staff') { renderStaffList(); renderBreakRequests(); }
   if (t === 'purchase-orders') renderPurchaseOrders();
 if (t === 'admin-notifications') renderAdminNotifications();
   if (t === 'tables') { renderTablePreview(); loadTableOccupancy(); renderTableAssignments(); if(localStorage.getItem('hx_portal_url') && document.getElementById('qr-portal-url')) document.getElementById('qr-portal-url').value = localStorage.getItem('hx_portal_url'); }
@@ -1934,8 +1937,6 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
-  function escHtml(s) { return escapeHtml(s); }
-  // Alias used in purchase orders and notifications render
 function escHtml(s) { return escapeHtml(s); }
   function renderDaySummary() {
   const el = document.getElementById('day-summary');
@@ -2614,11 +2615,11 @@ function renderDeals() {
     const applyLabel = deal.applyTo==='all' ? 'All items' : deal.applyTo==='category' ? `Categories: ${(deal.categories||[]).join(', ')}` : `${(deal.itemIds||[]).length} specific items`;
     card.innerHTML = `
       <div class="dc-head">
-        <span class="dc-name">${deal.name||'Unnamed Deal'}</span>
+        <span class="dc-name">${escapeHtml(deal.name||'Unnamed Deal')}</span>
         <span class="badge ${deal.active?'badge-green':'badge-grey'}">${deal.active?'Active':'Inactive'}</span>
         ${isNowActive?'<span class="active-now">● Live Now</span>':''}
       </div>
-      <div class="dc-desc">${deal.description||''}</div>
+      <div class="dc-desc">${escapeHtml(deal.description||'')}</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--tm);margin-bottom:10px">
         <span>🕐 ${deal.startTime||'00:00'} – ${deal.endTime||'23:59'}</span>
         <span>📅 ${daysLabel}</span>
@@ -2914,8 +2915,6 @@ function statCard(label, value, color) {
     <div style="font-size:26px;font-weight:700;color:${color};">${value}</div>
   </div>`;
 }
-
-let analyticsRange = 'today';
 
 // ══════════════════════════════════════════
 // ★ ANALYTICS
@@ -3307,173 +3306,6 @@ async function downloadTaxCSV() {
   }
 }
 
-function buildDateTabs() {
-  const tabs = ['today','yesterday','week','month'];
-  const labels = {today:'Today',yesterday:'Yesterday',week:'7 Days',month:'This Month'};
-  return `<div class="date-tabs">${tabs.map(t=>`<button class="dtab${analyticsRange===t?' active':''}" data-range="${t}">${labels[t]}</button>`).join('')}</div>`;
-}
-
-function attachDateTabListeners() {
-  document.querySelectorAll('.dtab').forEach(btn => {
-    btn.onclick = () => { analyticsRange = btn.dataset.range; renderAnalytics(); };
-  });
-}
-
-function renderAnalyticsData(panel, orders, rangeLabel) {
-  const cur      = settings.currencySymbol || '$';
-  const revenue  = orders.reduce((s,o) => s+(o.total||0), 0);
-  const cardPaid = orders.filter(o => o.paymentMethod==='card' && o.paymentStatus==='paid').length;
-  const cash     = orders.filter(o => o.paymentMethod!=='card').length;
-  const avgOrder = orders.length ? revenue / orders.length : 0;
-
-  // ── BEST SELLERS ───────────────────────────────
-  const itemCounts = {}, itemRevenue = {};
-  orders.forEach(o => (o.items||[]).forEach(i => {
-    itemCounts[i.name]  = (itemCounts[i.name]  || 0) + (i.qty||1);
-    itemRevenue[i.name] = (itemRevenue[i.name] || 0) + (i.unitPrice||0) * (i.qty||1);
-  }));
-  const topItems = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxQty   = topItems[0]?.[1] || 1;
-
-  // ── CATEGORY BREAKDOWN ─────────────────────────
-  const catRevenue = {};
-  orders.forEach(o => (o.items||[]).forEach(i => {
-    const menuItem = menuItems.find(m => m.name === i.name);
-    const cat = menuItem ? (menuItem.cat || menuItem.category || 'other') : 'other';
-    const catName = (settings.categories||[]).find(c=>c.id===cat)?.name || cat;
-    catRevenue[catName] = (catRevenue[catName]||0) + (i.unitPrice||0)*(i.qty||1);
-  }));
-  const catEntries = Object.entries(catRevenue).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const maxCatRev  = catEntries[0]?.[1] || 1;
-  const totalCatRev = catEntries.reduce((s,[,v])=>s+v,0);
-
-  // ── PEAK HOURS ─────────────────────────────────
-  const hourCounts = Array(24).fill(0);
-  orders.forEach(o => {
-    const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp||0);
-    if (ts) hourCounts[ts.getHours()]++;
-  });
-  const maxHour    = Math.max(...hourCounts, 1);
-  const peakHour   = hourCounts.indexOf(Math.max(...hourCounts));
-  const peakLabel  = peakHour === 0 ? '12am' : peakHour < 12 ? peakHour+'am' : peakHour===12 ? '12pm' : (peakHour-12)+'pm';
-  // Show hours 8am–11pm (indices 8–23)
-  const visibleHours = Array.from({length:16},(_,i)=>i+8);
-
-  // ── QUEUE ──────────────────────────────────────
-  const pending   = allOrders.filter(o=>o.status==='pending').length;
-  const preparing = allOrders.filter(o=>o.status==='preparing').length;
-  const ready     = allOrders.filter(o=>o.status==='ready').length;
-  const done      = orders.filter(o=>o.status==='completed').length;
-
-  const queueItem = (label, val, color) =>
-    `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;text-align:center;min-width:80px;">
-      <div style="font-size:24px;font-weight:700;color:${color}">${val}</div>
-      <div style="font-size:11px;color:var(--td);margin-top:2px;">${label}</div>
-    </div>`;
-
-  const sectionHead = (title, sub='') =>
-    `<div style="margin-bottom:12px;margin-top:28px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--td);">${title}</div>
-      ${sub ? `<div style="font-size:11px;color:var(--tm);margin-top:2px;">${sub}</div>` : ''}
-    </div>`;
-
-  const existingHeader = panel.querySelector('.page-hd')?.outerHTML || '';
-  const existingTabs   = panel.querySelector('.date-tabs')?.outerHTML || '';
-
-  panel.innerHTML = `
-    ${existingHeader}
-    ${existingTabs}
-
-    <!-- KPI CARDS -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:0;">
-      ${statCard(rangeLabel+' Orders', orders.length, 'var(--blue)')}
-      ${statCard(rangeLabel+' Revenue', cur+revenue.toFixed(2), 'var(--gold)')}
-      ${statCard('Avg Order', cur+avgOrder.toFixed(2), 'var(--purple)')}
-      ${statCard('💳 Card', cardPaid, 'var(--green)')}
-    </div>
-
-    <!-- LIVE QUEUE -->
-    ${sectionHead('Live Queue')}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;">
-      ${queueItem('Pending',pending,'var(--gold)')}
-      ${queueItem('Preparing',preparing,'var(--blue)')}
-      ${queueItem('Ready',ready,'var(--green)')}
-      ${queueItem('Done',done,'var(--td)')}
-    </div>
-
-    <!-- PEAK HOURS CHART -->
-    ${sectionHead('Peak Hours', orders.length ? `Busiest hour: ${peakLabel} (${hourCounts[peakHour]} orders)` : 'No data')}
-    <div style="display:flex;align-items:flex-end;gap:3px;height:72px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:10px 10px 0;overflow-x:auto;">
-      ${visibleHours.map(h => {
-        const pct  = Math.round(hourCounts[h] / maxHour * 100);
-        const isPeak = h === peakHour && hourCounts[h] > 0;
-        const lbl  = h === 0 ? '12a' : h < 12 ? h+'a' : h===12 ? '12p' : (h-12)+'p';
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:22px;">
-          <div style="width:100%;background:${isPeak?'var(--gold)':'var(--s4)'};border-radius:3px 3px 0 0;height:${Math.max(pct*0.52,2)}px;transition:height .3s;"></div>
-          <div style="font-size:9px;color:var(--td);padding-bottom:6px;">${lbl}</div>
-        </div>`;
-      }).join('')}
-    </div>
-
-    <!-- CATEGORY BREAKDOWN -->
-    ${sectionHead('Revenue by Category', catEntries.length ? '' : 'No data')}
-    ${catEntries.length === 0
-      ? `<div style="color:var(--td);font-size:13px;">No category data.</div>`
-      : `<div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
-          ${catEntries.map(([name, rev]) => {
-            const pct = Math.round(rev / totalCatRev * 100);
-            return `<div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:12px;color:var(--tm);">${name}</span>
-                <span style="font-size:12px;font-weight:700;color:var(--gold);">${cur}${rev.toFixed(2)} <span style="color:var(--td);font-weight:400;">(${pct}%)</span></span>
-              </div>
-              <div style="background:var(--s3);border-radius:4px;height:6px;overflow:hidden;">
-                <div style="height:100%;background:var(--gold);border-radius:4px;width:${pct}%;"></div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>`}
-
-    <!-- BEST SELLERS -->
-    ${sectionHead('Best Sellers')}
-    ${topItems.length===0
-      ? `<div style="color:var(--td);font-size:13px;">No orders in this period.</div>`
-      : `<div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
-          ${topItems.map(([name,qty],i)=>`
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="font-size:11px;font-weight:700;color:${i===0?'var(--gold)':'var(--td)'};width:18px;text-align:right;">${i+1}</div>
-              <div style="font-size:13px;color:var(--tm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</div>
-              <div style="flex:0 0 100px;background:var(--s3);border-radius:4px;height:6px;overflow:hidden;">
-                <div style="height:100%;background:var(--gold);border-radius:4px;width:${Math.round(qty/maxQty*100)}%;"></div>
-              </div>
-              <div style="font-size:12px;font-weight:700;color:var(--gold);width:28px;text-align:right;">${qty}</div>
-              <div style="font-size:11px;color:var(--td);width:54px;text-align:right;">${cur}${(itemRevenue[name]||0).toFixed(2)}</div>
-            </div>`).join('')}
-        </div>`}
-
-    <!-- PAYMENT SPLIT -->
-    ${sectionHead('Payment Split')}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;">
-      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
-        <div style="font-size:20px;font-weight:700;color:var(--green)">${cash}</div>
-        <div style="font-size:11px;color:var(--td);margin-top:2px;">💵 Cash</div>
-      </div>
-      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
-        <div style="font-size:20px;font-weight:700;color:var(--blue)">${cardPaid}</div>
-        <div style="font-size:11px;color:var(--td);margin-top:2px;">💳 Card</div>
-      </div>
-      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 18px;min-width:100px;">
-        <div style="font-size:20px;font-weight:700;color:var(--gold)">${orders.length ? Math.round(cash/orders.length*100) : 0}%</div>
-        <div style="font-size:11px;color:var(--td);margin-top:2px;">Cash Rate</div>
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:-16px;margin-bottom:32px;">
-      <button class="btn btn-ghost btn-sm" onclick="exportOrdersCSV()">↓ Export CSV</button>
-    </div>`;
-
-  attachDateTabListeners();
-}
 function _makeQRCanvas(text, size) {
   const canvas = document.createElement('canvas');
   canvas.width  = size;
@@ -3666,19 +3498,6 @@ function _downloadQRCard(card, tableNum, restName, qrId) {
   a.click();
 }
   
-function renderTablePreview() {
-  const g = document.getElementById('table-display');
-  if (!g) return;
-  g.innerHTML = '';
-  const n = tableCount || settings.tableCount || 10;
-  for (let i=1;i<=n;i++) {
-    const t = document.createElement('div');
-    t.className = 'table-tile';
-    t.textContent = i;
-    g.appendChild(t);
-  }
-}
-
 async function saveTableCount() {
   if (!db) { toast('Firebase not connected','error'); return; }
   try {
@@ -3755,7 +3574,7 @@ async function saveOrderingPause() {
   try {
 await db.collection('settings').doc('global').set({
       orderingPaused:      paused,
-      kitchenOverride:     paused === false, // true = admin manually forced open
+      kitchenOverride:     !paused, // true = admin forced kitchen OPEN; false = paused/closed
       pauseMessage:        msg,
       kitchenOpenTime:     openTime,
       kitchenCloseTime:    closeTime
@@ -3980,20 +3799,19 @@ async function saveCategories() {
 // ── CSV EXPORT ─────────────────────────────────
 async function exportOrdersCSV() {
   if (!db) { toast('Firebase not connected','error'); return; }
-  const range = analyticsRange;
-  const now   = new Date();
-  let start;
-  if (range==='yesterday') { start=new Date(now); start.setDate(start.getDate()-1); start.setHours(0,0,0,0); }
-  else if (range==='week') { start=new Date(now); start.setDate(start.getDate()-7); start.setHours(0,0,0,0); }
-  else if (range==='month') { start=new Date(now.getFullYear(),now.getMonth(),1); }
-  else { start=new Date(now.getFullYear(),now.getMonth(),now.getDate()); }
+  const { from, to } = getAnalyticsPeriod();
+  const period = document.getElementById('an-period')?.value || 'month';
 
   try {
-    const snap = await db.collection('orders').where('timestamp','>=',start).orderBy('timestamp','desc').limit(1000).get();
-    const orders = snap.docs.map(d=>({...d.data(),_id:d.id}));
+    const snap = await db.collection('orders')
+      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(from))
+      .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(to))
+      .orderBy('timestamp', 'desc')
+      .limit(1000)
+      .get();
+    const orders = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
     if (!orders.length) { toast('No orders in this period','error'); return; }
 
-    const cur = settings.currencySymbol || '$';
     const rows = [['Order#','Date','Time','Type','Table','Customer','Items','Subtotal','Tax','Tip','Total','Payment','Status']];
     orders.forEach(o => {
       const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
@@ -4014,7 +3832,7 @@ async function exportOrdersCSV() {
     const blob = new Blob([csv], {type:'text/csv'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `orders-${range}-${now.toISOString().split('T')[0]}.csv`;
+    a.download = `orders-${period}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     toast(`Exported ${orders.length} orders`,'success');
   } catch(e) { toast('Export failed: '+e.message,'error'); }
@@ -4630,7 +4448,7 @@ async function hashEmail(email) {
 // ★ STAFF MANAGEMENT
 // ══════════════════════════════════════════
 
-let allStaff = [], staffFilter = 'active', staffListener = null;
+let allStaff = [], staffFilter = 'active', staffListener = null, presenceListener = null;
 let _currentStaffEditId = null;
 
 function loadStaff() {
@@ -4644,7 +4462,8 @@ function loadStaff() {
     }, e => console.warn('staff listener:', e));
 
   // Also listen to presence
-  db.collection('presence').onSnapshot(snap => {
+  if (presenceListener) presenceListener();
+  presenceListener = db.collection('presence').onSnapshot(snap => {
     snap.docs.forEach(d => {
       const el = document.getElementById(`staff-card-${d.id}`);
       if (!el) return;
