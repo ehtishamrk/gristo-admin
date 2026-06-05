@@ -1840,7 +1840,6 @@ function switchTab(t) {
   if (t==='deals')     renderDeals();
   if (t==='customers') loadCustomers();
   if (t==='loyalty')   { loadLoyaltySettings(); loadLoyaltyMembers(); }
-  if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
   if (t==='staff') { loadStaff(); renderStaffList(); renderBreakRequests(); }
   if (t === 'setup') { loadPosDiscountPinUI(); }
@@ -4742,6 +4741,9 @@ actions.innerHTML = `
           ↩ Revoke Admin
         </button>` : ''}
       ${!isArchived ? `
+                <button onclick="changePosPin('${uid}')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--gold-d);color:var(--gold);border:1px solid rgba(200,146,42,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;">
+          🔑 Change POS PIN
+        </button>
         <button onclick="updateStaffStatus('${uid}','resigned')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--s3);color:var(--tm);border:1px solid var(--bd);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;grid-column:1/-1;">
           📝 Mark Resigned
         </button>
@@ -5912,6 +5914,41 @@ async function loadPosDiscountLog() {
 // Add this call inside your existing tab-switch logic where t === 'setup':
 // if (t === 'setup') { loadPosDiscountPinUI(); }
 
+function changePosPin(uid) {
+  closeStaffStatusModal();
+  const emp = allStaff.find(s => s._uid === uid);
+  const name = emp ? emp.name : 'Employee';
+  // Re-use the existing modal overlay
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">🔑 Change POS PIN — ${escapeHtml(name)}</div>
+    <div style="font-size:12px;color:var(--tm);margin-bottom:12px;">Enter a new 6-digit PIN for this employee.</div>
+    <input class="modal-input" id="new-pos-pin-inp" type="password" maxlength="6"
+      placeholder="6-digit PIN" style="letter-spacing:6px;font-size:18px;text-align:center;"
+      oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+    <div class="modal-err" id="new-pos-pin-err"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold" style="flex:1" onclick="saveNewPosPin('${uid}')">Save PIN</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-overlay').classList.remove('show')">Cancel</button>
+    </div>`;
+  setTimeout(() => document.getElementById('new-pos-pin-inp')?.focus(), 100);
+}
+
+async function saveNewPosPin(uid) {
+  const pin = (document.getElementById('new-pos-pin-inp')?.value || '').trim();
+  const errEl = document.getElementById('new-pos-pin-err');
+  if (!pin || pin.length !== 6) { errEl.textContent = 'PIN must be exactly 6 digits.'; return; }
+  try {
+    await db.collection('employees').doc(uid).update({ posPin: pin });
+    const emp = allStaff.find(s => s._uid === uid);
+    if (emp) emp.posPin = pin;
+    document.getElementById('modal-overlay').classList.remove('show');
+    toast('POS PIN updated ✓', 'success');
+  } catch(e) {
+    errEl.textContent = 'Failed: ' + e.message;
+  }
+}
+  
 </script>
 </body>
 </html>
