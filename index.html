@@ -799,12 +799,12 @@ textarea.fi{resize:vertical;min-height:70px;}
           <textarea id="st-notes" class="fi" style="height:64px;display:block;resize:none;" placeholder="Any additional notes…" maxlength="300"></textarea>
         </div>
          
-        <div class="fg span2">
-      <label class="fl">POS PIN <span style="color:var(--td);font-weight:400;">(6-digit PIN for POS login — optional)</span></label>
-      <input type="password" class="fi" id="st-pos-pin" maxlength="6" placeholder="e.g. 123456"
-        style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+<div class="fg span2">
+          <label class="fl">POS PIN <span style="color:var(--td);font-weight:400;">(6-digit PIN for POS login — optional)</span></label>
+          <input type="password" class="fi" id="st-pos-pin" maxlength="6" placeholder="e.g. 123456"
+            style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+        </div>
       </div>
-</div>
       <div style="font-size:12px;color:var(--tm);background:var(--s3);border-radius:var(--rs);padding:10px 14px;margin:16px 0;">
         📧 A password setup link will be sent to the employee's email automatically. They set their own password.
       </div>
@@ -4754,11 +4754,40 @@ actions.innerHTML = `
         <button onclick="updateStaffStatus('${uid}','active')" style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;background:var(--green-d);color:var(--green);border:1px solid rgba(61,155,106,.3);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;grid-column:1/-1;">
           ↩ Reinstate
         </button>` : ''}
+</div>
+    <div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px;">
+      <label class="fl" style="margin-bottom:6px;">Set POS PIN</label>
+      <div style="display:flex;gap:8px;">
+        <input type="password" id="sst-pos-pin" class="fi" maxlength="6" placeholder="6-digit PIN"
+          style="letter-spacing:6px;font-size:16px;flex:1;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+        <button onclick="saveStaffPosPin('${uid}')" class="btn btn-gold btn-sm" style="white-space:nowrap;">Save PIN</button>
+      </div>
+      <div id="sst-pin-msg" style="font-size:11px;color:var(--green);margin-top:4px;min-height:16px;"></div>
     </div>`;
 
   document.getElementById('staff-status-overlay').style.display = 'flex';
+  // Pre-fill existing PIN if set
+  const pinField = document.getElementById('sst-pos-pin');
+  if (pinField && emp.posPin) pinField.value = emp.posPin;
 }
 
+async function saveStaffPosPin(uid) {
+  const pin = (document.getElementById('sst-pos-pin')?.value || '').trim();
+  const msg = document.getElementById('sst-pin-msg');
+  if (!pin) { if (msg) msg.textContent = ''; return; }
+  if (!/^\d{6}$/.test(pin)) { if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Must be exactly 6 digits.'; } return; }
+  try {
+    await db.collection('employees').doc(uid).update({ posPin: pin });
+    // Update local cache
+    const emp = allStaff.find(s => s._uid === uid);
+    if (emp) emp.posPin = pin;
+    if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✓ PIN saved'; }
+    setTimeout(() => { if (msg) msg.textContent = ''; }, 2500);
+  } catch(e) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Failed: ' + e.message; }
+  }
+}
+  
 function closeStaffStatusModal() {
   document.getElementById('staff-status-overlay').style.display = 'none';
 }
