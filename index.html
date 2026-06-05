@@ -1571,6 +1571,10 @@ let orderFilter = 'all', knownOrderIds = new Set(), ordersListener = null;
 let purchaseOrders = [], purchaseOrdersListener = null;
 let adminNotifications = [], adminNotificationsListener = null, knownAdminNotifIds = new Set();
 let tableCount = 10;
+  function tableNum(n) {
+  const v = parseInt(n, 10);
+  return isNaN(v) ? null : v;
+}
 let allReservations = [], reservFilter = 'all', reservListener = null;
 const CATS = [
   {id:'bbq',name:'BBQ & Platters',e:'🔥'},
@@ -3830,7 +3834,9 @@ async function loadTableOccupancy() {
     const snap = await db.collection('orders')
       .where('status', 'in', ['pending','preparing','ready'])
       .where('orderType', '==', 'dine_in').get();
-    const activeTables = new Set(snap.docs.map(d=>d.data().tableNumber).filter(Boolean));
+        const activeTables = new Set(
+      snap.docs.map(d => tableNum(d.data().tableNumber)).filter(n => n != null)
+    );
     renderTablePreviewWithOccupancy(activeTables);
   } catch(e) { console.warn('occupancy:', e); }
 }
@@ -5404,7 +5410,7 @@ async function renderTableAssignments() {
 
 // Get today's orders for this table
       const tableOrders = allOrders.filter(o =>
-        o.tableNumber === i &&
+        tableNum(o.tableNumber) === i &&
         o.orderType === 'dine_in' &&
         (() => { const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date(o.timestamp||0); return ts.toDateString() === new Date().toDateString(); })()
       );
