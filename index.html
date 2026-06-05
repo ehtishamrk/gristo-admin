@@ -5685,8 +5685,7 @@ async function initiateCall(targetUid, targetName) {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   try {
     const callRef = await db.collection('staff_calls').add({
-          currentCallId = callRef.id;
-      type:         'admin_to_waiter',   // waiter portal listens for this
+      type:         'admin_to_waiter',
       callerName:   settings.restaurantName || 'Admin',
       callerUid:    firebase.auth().currentUser?.uid || 'admin',
       targetUid:    targetUid,
@@ -5698,8 +5697,8 @@ async function initiateCall(targetUid, targetName) {
       calledBy:     settings.restaurantName || 'Admin',
       calledAt:     firebase.firestore.FieldValue.serverTimestamp()
     });
+    currentCallId = callRef.id;
     toast(`📞 Calling ${targetName}...`, 'success');
-    // Auto-mark as expired after 30s if not acknowledged
     setTimeout(async () => {
       try {
         const doc = await callRef.get();
