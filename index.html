@@ -1995,8 +1995,12 @@ const itemsHTML = (o.items||[]).map(i =>
       ? `<span class="oc-type-badge" style="background:var(--blue-d);color:var(--blue)">🍽 Table ${o.tableNumber}</span>`
       : `<span class="oc-type-badge" style="background:var(--s4);color:var(--tm)">📦 Takeaway</span>`;
 
-const payBadge = o.paymentMethod === 'card'
+const isCardPaid = o.paymentMethod === 'card' && o.paymentStatus === 'paid';
+const isCard     = o.paymentMethod === 'card';
+const payBadge = isCardPaid
       ? `<span class="oc-type-badge" style="background:var(--green-d);color:var(--green)">💳 Paid</span>`
+      : isCard
+      ? `<span class="oc-type-badge" style="background:var(--amber-d);color:var(--amber)">💳 Card · Unpaid</span>`
       : `<span class="oc-type-badge" style="background:var(--s4);color:var(--td)">💵 Cash</span>`;
     
 const statusBtns = !['served','delivered','completed'].includes(o.status) ? `
@@ -2029,8 +2033,8 @@ ${o.status==='arriving' && o.orderType==='delivery' ? `<span class="sbtn" style=
       <div class="oc-items">${itemsHTML}</div>
       <div class="oc-foot">
         <div>
-          <div class="oc-total">$${(o.total||0).toFixed(2)}</div>
-          ${o.savings>0.005?`<div style="font-size:11px;color:var(--gold)">Saved $${o.savings.toFixed(2)}</div>`:''}
+          <div class="oc-total">${settings.currencySymbol || '$'}${(o.total||0).toFixed(2)}</div>
+          ${o.savings>0.005?`<div style="font-size:11px;color:var(--gold)">Saved ${settings.currencySymbol || '$'}${o.savings.toFixed(2)}</div>`:''}
         </div>
         <div class="status-btns">${statusBtns}</div>
       </div>`;
@@ -2049,10 +2053,15 @@ async function setStatus(id, status) {
 
 async function markAllDone() {
   if (!db) return;
-  if (!confirm('Mark all active orders as completed?')) return;
+  if (!confirm('Mark all active kitchen orders as done (served/delivered/completed)?')) return;
   const batch = db.batch();
-  allOrders.filter(o=>o.status!=='completed').forEach(o => {
-    batch.update(db.collection('orders').doc(o._id), { status: 'completed' });
+  const DONE = ['served', 'delivered', 'completed', 'picked_up'];
+  const ACTIVE = ['pending', 'received', 'confirmed', 'preparing', 'ready'];
+  allOrders.filter(o => ACTIVE.includes(o.status) && !DONE.includes(o.status)).forEach(o => {
+    const finalStatus = o.orderType === 'dine_in' ? 'served'
+      : o.orderType === 'delivery' ? 'delivered'
+      : 'completed';
+    batch.update(db.collection('orders').doc(o._id), { status: finalStatus });
   });
   await batch.commit().catch(e=>console.warn(e));
 }
@@ -2534,12 +2543,17 @@ async function toggleCategory(catId, enabled) {
     await db.collection('settings').doc('global').set({ categories: settings.categories }, { merge: true });
 
     // 3. Sync all items in this category to match the category state
-    const itemsSnap = await db.collection('menu_items').where('cat', '==', catId).get();
-    if (!itemsSnap.empty) {
+    const [byCat, byCategory] = await Promise.all([
+      db.collection('menu_items').where('cat', '==', catId).get(),
+      db.collection('menu_items').where('category', '==', catId).get()
+    ]);
+    const itemDocs = new Map();
+    byCat.docs.forEach(doc => itemDocs.set(doc.id, doc));
+    byCategory.docs.forEach(doc => itemDocs.set(doc.id, doc));
+    if (itemDocs.size > 0) {
       const batch = db.batch();
-      itemsSnap.docs.forEach(doc => batch.update(doc.ref, { avail: enabled }));
+      itemDocs.forEach(doc => batch.update(doc.ref, { avail: enabled }));
       await batch.commit();
-      // Update local menuItems array
       menuItems.forEach(m => { if ((m.cat || m.category) === catId) m.avail = enabled; });
     }
 
@@ -2622,13 +2636,20 @@ function renderDeals() {
 
 function isDealActiveNow(deal) {
   if (!deal.active) return false;
-  const now = new Date();
-  const mins = now.getHours()*60+now.getMinutes();
+  const now  = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
   const day  = now.getDay();
   if (deal.days && deal.days.length && !deal.days.includes(day)) return false;
-  const [sh,sm] = (deal.startTime||'00:00').split(':').map(Number);
-  const [eh,em] = (deal.endTime||'23:59').split(':').map(Number);
-  return mins >= sh*60+sm && mins < eh*60+em;
+
+  const [sh, sm] = (deal.startTime || '00:00').split(':').map(Number);
+  const [eh, em] = (deal.endTime   || '23:59').split(':').map(Number);
+  const start = sh * 60 + sm;
+  const end   = eh * 60 + em;
+
+  if (start === end) return true; // same time = all day
+  if (start < end) return mins >= start && mins < end;
+  // Overnight window (e.g. 22:00 → 02:00)
+  return mins >= start || mins < end;
 }
 
 function renderActiveDealsPreview() {
@@ -2841,7 +2862,6 @@ applyAdminRestaurantName(restName);
       if (el('s-kitchen-open'))  el('s-kitchen-open').value  = settings.kitchenOpenTime  || '';
       if (el('s-kitchen-close')) el('s-kitchen-close').value = settings.kitchenCloseTime || '';
       
-      loadResvSettings(settings);
       // Brand colors
       if (settings.brandColors) {
         const bc = settings.brandColors;
@@ -4897,11 +4917,14 @@ async function updateStaffStatus(uid, action) {
     empUpdate  = { status: 'fired', frozen: true, firedAt: firebase.firestore.FieldValue.serverTimestamp() };
     roleUpdate = { active: false };
   } else if (action === 'grant_admin') {
-    empUpdate  = { role: 'admin' };
+    empUpdate  = {
+      role: 'admin',
+      originalRole: emp.role !== 'admin' ? emp.role : (emp.originalRole || 'waiter')
+    };
     roleUpdate = { role: 'admin' };
   } else if (action === 'revoke_admin') {
     const originalRole = emp.originalRole || 'waiter';
-    empUpdate  = { role: originalRole };
+    empUpdate  = { role: originalRole, originalRole: firebase.firestore.FieldValue.delete() };
     roleUpdate = { role: originalRole };
   }
 
@@ -5820,8 +5843,9 @@ function renderAdminCart() {
       </div>
       <button onclick="removeFromAdminCart('${item.id}')" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;">×</button>
     </div>`).join('');
-  const subtotal = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
-  const tax = subtotal * ((settings.taxRate||0)/100);
+  const subtotal   = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const taxEnabled = settings.taxEnabled !== false;
+  const tax        = taxEnabled ? subtotal * ((settings.taxRate||0)/100) : 0;
   document.getElementById('ao-total').textContent = cur + (subtotal+tax).toFixed(2);
 }
 
@@ -5852,10 +5876,11 @@ async function submitAdminOrder() {
 
   if (type==='dine_in' && !tableN) { toast('Enter table number','error'); return; }
 
-  const subtotal = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
-  const taxRate  = settings.taxRate || 0;
-  const taxAmt   = subtotal * taxRate/100;
-  const total    = subtotal + taxAmt;
+  const subtotal   = adminCartItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const taxEnabled = settings.taxEnabled !== false;
+  const taxRate    = taxEnabled ? (settings.taxRate || 0) : 0;
+  const taxAmt     = subtotal * taxRate / 100;
+  const total      = subtotal + taxAmt;
 
   const orderNum = Math.floor(Math.random()*9000)+1000;
 
