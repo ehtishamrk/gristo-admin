@@ -5622,6 +5622,7 @@ async function initiateCall(targetUid, targetName) {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   try {
     const callRef = await db.collection('staff_calls').add({
+          currentCallId = callRef.id;
       type:         'admin_to_waiter',   // waiter portal listens for this
       callerName:   settings.restaurantName || 'Admin',
       callerUid:    firebase.auth().currentUser?.uid || 'admin',
@@ -5650,8 +5651,11 @@ async function initiateCall(targetUid, targetName) {
 }
 
 async function endCall() {
-  if (currentCallId) {
-    await db.collection('calls').doc(currentCallId).update({ status: 'ended' }).catch(()=>{});
+  if (currentCallId && db) {
+    await db.collection('staff_calls').doc(currentCallId).update({
+      status:  'ended',
+      endedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
   }
   cleanupCall();
 }
@@ -5709,6 +5713,7 @@ async function answerCall() {
   banner.style.display = 'none';
     banner._callId = null;
   if (!callId || !db) return;
+    currentCallId = callId;
   await db.collection('staff_calls').doc(callId).update({
     status:         'acknowledged',
     acknowledged:   true,
