@@ -5649,12 +5649,6 @@ async function initiateCall(targetUid, targetName) {
   }
 }
 
-function rejectCall() {
-  document.getElementById('incoming-call-banner').style.display = 'none';
-  if (callDoc) callDoc.ref.update({ status: 'rejected' }).catch(()=>{});
-  callDoc = null;
-}
-
 async function endCall() {
   if (currentCallId) {
     await db.collection('calls').doc(currentCallId).update({ status: 'ended' }).catch(()=>{});
@@ -5713,6 +5707,7 @@ async function answerCall() {
   const banner = document.getElementById('incoming-call-banner');
   const callId = banner._callId;
   banner.style.display = 'none';
+    banner._callId = null;
   if (!callId || !db) return;
   await db.collection('staff_calls').doc(callId).update({
     status:         'acknowledged',
@@ -5726,6 +5721,7 @@ function rejectCall() {
   const banner = document.getElementById('incoming-call-banner');
   const callId = banner._callId;
   banner.style.display = 'none';
+  banner._callId = null;
   if (!callId || !db) return;
   db.collection('staff_calls').doc(callId).update({
     status: 'rejected',
