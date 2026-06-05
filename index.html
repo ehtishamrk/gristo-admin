@@ -1625,6 +1625,15 @@ function tryLogin() {
       setTimeout(() => document.getElementById('login-err').textContent = '', 2500);
     });
 }
+
+function showSessionKickedAlert() {
+  const o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:5000;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;';
+  o.innerHTML = '<div><div style="font-size:52px;margin-bottom:16px;">📵</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:var(--gold);margin-bottom:8px;">Session Ended</div><div style="color:var(--tm);font-size:14px;">You logged in from another tab or device.</div></div>';
+  document.body.appendChild(o);
+  setTimeout(() => location.reload(), 3000);
+}
+  
 function logout() {
   firebase.auth().signOut();
 }
@@ -1708,9 +1717,20 @@ firebase.auth().onAuthStateChanged(async user => {
       document.getElementById('login-err').style.color = 'var(--red)';
       return;
     }
-    document.getElementById('login-overlay').style.display = 'none';
+document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('setup-overlay').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
+
+    const _sessionToken = 'a-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    await db.collection('employees').doc(user.uid).set({ sessionToken: _sessionToken }, { merge: true });
+    db.collection('employees').doc(user.uid).onSnapshot(snap => {
+      if (!snap.exists) return;
+      if (snap.data().sessionToken !== _sessionToken) {
+        firebase.auth().signOut();
+        showSessionKickedAlert();
+      }
+    });
+
     initAdmin();
   } else {
     // Check if first time setup needed
