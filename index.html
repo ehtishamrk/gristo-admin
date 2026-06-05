@@ -2776,24 +2776,26 @@ toggleFeeFields();
       const restName = settings.restaurantName || 'Spice Korner';
 applyAdminRestaurantName(restName);
       // Tax
+      const el = (id) => document.getElementById(id);
       document.getElementById('s-tax-rate').value        = settings.taxRate        ?? 8.5;
-      document.getElementById('s-service-charge').value  = settings.serviceCharge  ?? 0;
       document.getElementById('s-currency-symbol').value = settings.currencySymbol || '$';
       document.getElementById('s-currency-code').value   = settings.currencyCode   || 'USD';
       if (el('s-tax-enabled')) {
-    el('s-tax-enabled').checked = s.taxEnabled !== false;
-    const wrap = el('tax-fields-wrap');
-    if (wrap) wrap.style.opacity = s.taxEnabled !== false ? '1' : '0.4';
-  }
+        el('s-tax-enabled').checked = settings.taxEnabled !== false;
+        const wrap = el('tax-fields-wrap');
+        if (wrap) wrap.style.opacity = settings.taxEnabled !== false ? '1' : '0.4';
+      }
 
       if (el('s-service-charge-enabled')) {
-    el('s-service-charge-enabled').checked = s.serviceChargeEnabled === true;
-    const wrap = el('service-charge-fields-wrap');
-    if (wrap) wrap.style.opacity = s.serviceChargeEnabled ? '1' : '0.4';
-  }
-  if (el('s-service-charge')) el('s-service-charge').value = s.serviceChargeRate || '';
+        el('s-service-charge-enabled').checked = settings.serviceChargeEnabled === true;
+        const wrap = el('service-charge-fields-wrap');
+        if (wrap) wrap.style.opacity = settings.serviceChargeEnabled ? '1' : '0.4';
+      }
+      if (el('s-service-charge')) {
+        el('s-service-charge').value = settings.serviceChargeRate ?? settings.serviceCharge ?? 0;
+      }
 
-// Ordering pause
+      // Ordering pause
       const paused = !!settings.orderingPaused;
       document.getElementById('ordering-paused').checked = paused;
       document.getElementById('s-pause-msg').value = settings.pauseMessage || "We're not taking orders right now.";
