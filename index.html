@@ -798,8 +798,13 @@ textarea.fi{resize:vertical;min-height:70px;}
           <label class="fl">Notes</label>
           <textarea id="st-notes" class="fi" style="height:64px;display:block;resize:none;" placeholder="Any additional notes…" maxlength="300"></textarea>
         </div>
+         
+        <div class="fg span2">
+      <label class="fl">POS PIN <span style="color:var(--td);font-weight:400;">(6-digit PIN for POS login — optional)</span></label>
+      <input type="password" class="fi" id="st-pos-pin" maxlength="6" placeholder="e.g. 123456"
+        style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
       </div>
-
+</div>
       <div style="font-size:12px;color:var(--tm);background:var(--s3);border-radius:var(--rs);padding:10px 14px;margin:16px 0;">
         📧 A password setup link will be sent to the employee's email automatically. They set their own password.
       </div>
@@ -1243,10 +1248,54 @@ textarea.fi{resize:vertical;min-height:70px;}
   <div class="setup-desc">The system prints using the browser's built-in print dialog. For thermal printers (80mm receipt):<br><br>1. Set paper size to <b>80mm × Auto</b> (or "Receipt")<br>2. Disable headers/footers in browser print settings<br>3. Set margins to None<br>4. Test print from the customer app</div>
 </div>
 
+<!-- POS MANAGER DISCOUNT PIN -->
+<div class="setup-card" id="pos-discount-card">
+  <div class="setup-title">🔐 POS Manager Discount PIN</div>
+  <div class="setup-desc">
+    This 8-digit PIN is required at the POS to apply a custom discount to any order.
+    Keep it confidential — only share with managers. All discount uses are logged.
+  </div>
+  <div class="form-grid" style="max-width:400px;margin-top:14px;">
+    <div class="fg">
+      <label class="fl">Current PIN</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="password" class="fi" id="pos-disc-pin-display" maxlength="8"
+          placeholder="••••••••" style="letter-spacing:6px;font-size:16px;" readonly>
+        <button class="btn btn-ghost btn-sm" onclick="togglePosDiscPinVisibility()" id="pos-disc-pin-eye" title="Show/Hide">👁</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Set New PIN</label>
+      <input type="password" class="fi" id="pos-disc-pin-new" maxlength="8" placeholder="8-digit PIN"
+        style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+    </div>
+    <div class="fg">
+      <label class="fl">Confirm New PIN</label>
+      <input type="password" class="fi" id="pos-disc-pin-confirm" maxlength="8" placeholder="Repeat PIN"
+        style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+    </div>
+    <div class="fg" style="display:flex;align-items:flex-end;">
+      <button class="btn btn-gold btn-sm" onclick="savePosDiscountPin()" style="width:100%;">Save PIN</button>
+    </div>
+  </div>
+  <div id="pos-disc-pin-msg" style="display:none;color:var(--green);font-size:12px;margin-top:8px;">✓ PIN saved successfully</div>
+  <div id="pos-disc-pin-err" style="color:var(--red);font-size:12px;margin-top:8px;height:18px;"></div>
+</div>
+
 <!-- SECURITY RULES -->
 <div class="setup-card">
   <div class="setup-title">🔒 Firebase Security Rules</div>
   <div class="setup-desc">Updated rules are in the upgrade guide. Always update rules when adding new collections.</div>
+</div>
+
+<!-- POS DISCOUNT LOG -->
+<div class="setup-card">
+  <div class="setup-title">📋 POS Manager Discount Log</div>
+  <div class="setup-desc">Every use of the Manager Discount PIN at the POS is recorded here.</div>
+  <button class="btn btn-ghost btn-sm" style="margin:10px 0;" onclick="loadPosDiscountLog()">🔄 Load Log</button>
+  <div id="pos-disc-log" style="max-height:280px;overflow-y:auto;">
+    <div style="color:var(--td);font-size:12px;">Click "Load Log" to view entries.</div>
+  </div>
 </div>
 
 <!-- DANGER ZONE -->
@@ -1794,6 +1843,7 @@ function switchTab(t) {
   if (t==='setup')        {}
   if (t==='reservations') { loadReservations(); }
   if (t==='staff') { loadStaff(); renderStaffList(); renderBreakRequests(); }
+  if (t === 'setup') { loadPosDiscountPinUI(); }
   if (t==='analytics') { initTaxYearDropdown(); renderAnalytics(); }
   if (t === 'purchase-orders') renderPurchaseOrders();
 if (t === 'admin-notifications') renderAdminNotifications();
@@ -4560,7 +4610,7 @@ function openAddStaffModal() {
   _currentStaffEditId = null;
   document.getElementById('staff-modal-title').textContent = 'Add Employee';
   document.getElementById('staff-modal-submit-btn').textContent = 'Send Invite →';
-  ['st-name','st-fname','st-email','st-phone','st-address','st-notes'].forEach(id => {
+  ['st-name','st-fname','st-email','st-phone','st-address','st-notes','st-pos-pin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -4607,12 +4657,14 @@ async function submitAddStaff() {
     const uid = data.localId;
 
     // Write employee record
+    const posPin = (document.getElementById('st-pos-pin')?.value || '').trim();
     await db.collection('employees').doc(uid).set({
       name, fatherName: fname, email, phone, role,
       joining, address, notes,
       status:    'active',
       active:    true,
       frozen:    false,
+      posPin:    posPin || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -5759,7 +5811,107 @@ source: 'admin',
   } catch(e) { toast('Error placing order: '+e.message,'error'); }
 }
   
+// ── POS DISCOUNT PIN FUNCTIONS ──────────────────────────────────
+
+function togglePosDiscPinVisibility() {
+  const inp = document.getElementById('pos-disc-pin-display');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function loadPosDiscountPinUI() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('global').get();
+    if (snap.exists && snap.data().posDiscountPin) {
+      const inp = document.getElementById('pos-disc-pin-display');
+      if (inp) inp.value = snap.data().posDiscountPin;
+    }
+  } catch(e) {}
+}
+
+async function savePosDiscountPin() {
+  const newPin     = (document.getElementById('pos-disc-pin-new')?.value     || '').trim();
+  const confirmPin = (document.getElementById('pos-disc-pin-confirm')?.value || '').trim();
+  const errEl      = document.getElementById('pos-disc-pin-err');
+  const msgEl      = document.getElementById('pos-disc-pin-msg');
+
+  errEl.textContent = '';
+  msgEl.style.display = 'none';
+
+  if (!newPin)              { errEl.textContent = 'Enter a new PIN.';                          return; }
+  if (newPin.length !== 8)  { errEl.textContent = 'PIN must be exactly 8 digits.';             return; }
+  if (!/^\d{8}$/.test(newPin)) { errEl.textContent = 'PIN must contain digits only.';         return; }
+  if (newPin !== confirmPin){ errEl.textContent = 'PINs do not match.';                        return; }
+
+  try {
+    await db.collection('settings').doc('global').set({ posDiscountPin: newPin }, { merge: true });
+    settings.posDiscountPin = newPin;
+
+    const dispInp = document.getElementById('pos-disc-pin-display');
+    if (dispInp) dispInp.value = newPin;
+    document.getElementById('pos-disc-pin-new').value     = '';
+    document.getElementById('pos-disc-pin-confirm').value = '';
+
+    msgEl.style.display = 'block';
+    setTimeout(() => msgEl.style.display = 'none', 3000);
+    toast('POS discount PIN saved', 'success');
+  } catch(e) {
+    errEl.textContent = 'Save failed: ' + e.message;
+  }
+}
+
+async function loadPosDiscountLog() {
+  const container = document.getElementById('pos-disc-log');
+  if (!container || !db) return;
+  container.innerHTML = '<div class="spinner"></div>';
+  try {
+    const snap = await db.collection('pos_discount_log')
+      .orderBy('appliedAt', 'desc')
+      .limit(50)
+      .get();
+    if (snap.empty) {
+      container.innerHTML = '<div style="color:var(--td);font-size:12px;padding:8px 0;">No discount log entries yet.</div>';
+      return;
+    }
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="color:var(--td);border-bottom:1px solid var(--bd);">
+            <th style="text-align:left;padding:6px 8px;">Order #</th>
+            <th style="text-align:left;padding:6px 8px;">Cashier</th>
+            <th style="text-align:left;padding:6px 8px;">Discount</th>
+            <th style="text-align:left;padding:6px 8px;">Saved</th>
+            <th style="text-align:left;padding:6px 8px;">Order Total</th>
+            <th style="text-align:left;padding:6px 8px;">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${snap.docs.map(d => {
+            const e = d.data();
+            const ts = e.appliedAt?.toDate ? e.appliedAt.toDate().toLocaleString() : '—';
+            const cur = settings.currencySymbol || '$';
+            return `<tr style="border-bottom:1px solid var(--bd);">
+              <td style="padding:7px 8px;font-weight:600;">#${e.orderNumber||'—'}</td>
+              <td style="padding:7px 8px;">${e.cashierName||'—'}</td>
+              <td style="padding:7px 8px;color:var(--amber);">${e.discountPct||0}% off</td>
+              <td style="padding:7px 8px;color:var(--green);">-${cur}${(e.discountAmt||0).toFixed(2)}</td>
+              <td style="padding:7px 8px;">${cur}${(e.orderTotal||0).toFixed(2)}</td>
+              <td style="padding:7px 8px;color:var(--td);">${ts}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);font-size:12px;">Failed to load: ${e.message}</div>`;
+  }
+}
+
+// Load the current PIN into the display field when Setup tab is opened
+// Add this call inside your existing tab-switch logic where t === 'setup':
+// if (t === 'setup') { loadPosDiscountPinUI(); }
+
 </script>
-  
 </body>
 </html>
