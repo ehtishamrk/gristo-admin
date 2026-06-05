@@ -1666,9 +1666,43 @@ function startAdminSettingsListener() {
 startAdminSettingsListener();
   
 let currentUser = null;
+  async function verifyAdminAccess(user) {
+  if (!db || !user) return false;
+  try {
+    const empSnap = await db.collection('employees').doc(user.uid).get();
+    if (empSnap.exists) {
+      const emp = empSnap.data();
+      const allowedRoles = ['admin', 'superadmin'];
+      if (!allowedRoles.includes(emp.role)) return false;
+      if (emp.frozen === true) return false;
+      if (emp.active === false) return false;
+      if (['resigned', 'fired', 'archived'].includes(emp.status)) return false;
+      return true;
+    }
+    // Fallback during first-time setup (auth can fire before employees doc is written)
+    const settingsSnap = await db.collection('settings').doc('global').get();
+    if (settingsSnap.exists && settingsSnap.data().superadminUid === user.uid) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.warn('verifyAdminAccess:', e);
+    return false;
+  }
+}
 firebase.auth().onAuthStateChanged(async user => {
   currentUser = user;
   if (user) {
+    const allowed = await verifyAdminAccess(user);
+    if (!allowed) {
+      await firebase.auth().signOut();
+      document.getElementById('admin-app').style.display = 'none';
+      document.getElementById('setup-overlay').style.display = 'none';
+      document.getElementById('login-overlay').style.display = 'flex';
+      document.getElementById('login-err').textContent = 'Access denied. This account is not authorized for the admin panel.';
+      document.getElementById('login-err').style.color = 'var(--red)';
+      return;
+    }
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('setup-overlay').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
