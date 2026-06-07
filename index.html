@@ -1684,6 +1684,7 @@ function showSessionKickedAlert() {
 }
   
 function logout() {
+  stopIdleWatcher();
   firebase.auth().signOut();
 }
 
@@ -1781,6 +1782,7 @@ document.getElementById('login-overlay').style.display = 'none';
     });
 
     initAdmin();
+    startIdleWatcher(logout);
   } else {
     // Check if first time setup needed
     await checkFirstTimeSetup();
@@ -1793,6 +1795,40 @@ startAdminSettingsListener();
   }
 });
 
+// ── IDLE / TAB-CLOSE WATCHER ──────────────────
+let _idleTimer = null;
+let _tabHideTimer = null;
+const IDLE_MS = 30 * 60 * 1000; // 30 minutes
+
+function startIdleWatcher(logoutFn) {
+  const _logout = logoutFn;
+
+  function resetIdle() {
+    clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(() => _logout(), IDLE_MS);
+  }
+
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt => {
+    document.addEventListener(evt, resetIdle, { passive: true });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      _tabHideTimer = setTimeout(() => _logout(), 15000);
+    } else {
+      clearTimeout(_tabHideTimer);
+      resetIdle();
+    }
+  });
+
+  resetIdle();
+}
+
+function stopIdleWatcher() {
+  clearTimeout(_idleTimer);
+  clearTimeout(_tabHideTimer);
+}
+  
 // ── INIT ───────────────────────────────────────
 async function initAdmin() {
   tickTime();
