@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel</title>
+<link rel="icon" id="favicon" type="image/png" href="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -865,6 +866,19 @@ textarea.fi{resize:vertical;min-height:70px;}
       <input type="text" class="fi" id="s-footer" placeholder="e.g. Thank you for dining with us!">
     </div>
   </div>
+<div class="fg span2" style="margin-top:16px;">
+    <label class="fl">Restaurant Logo</label>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px;">
+      <img id="logo-preview" src="" alt="" style="display:none;height:64px;max-width:180px;object-fit:contain;border-radius:8px;border:1px solid var(--bd);background:var(--s2);padding:6px;">
+      <div id="logo-placeholder" style="height:64px;width:100px;border-radius:8px;border:1px dashed var(--bd);background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--td);">No logo</div>
+      <label style="cursor:pointer;">
+        <input type="file" id="logo-file-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="handleLogoUpload(event)">
+        <span class="btn btn-sm" style="background:var(--s3);border:1px solid var(--bd);color:var(--text);border-radius:var(--rs);padding:8px 16px;font-size:13px;cursor:pointer;">Upload Logo</span>
+      </label>
+      <button class="btn btn-sm" style="background:var(--red-d);border:1px solid rgba(192,64,64,.3);color:var(--red);border-radius:var(--rs);padding:8px 16px;font-size:13px;" onclick="removeLogo()">Remove</button>
+    </div>
+    <div style="font-size:11px;color:var(--td);margin-top:6px;">PNG, JPG, SVG or WebP. Recommended: square, under 200KB. Saved as base64 — applies to all portals and receipts in real time.</div>
+  </div>
   <button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveBrandingSettings()">Save Branding</button>
   <div id="brand-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
 </div>
@@ -1700,14 +1714,50 @@ let adminSettingsListener = null;
 
 function applyAdminRestaurantName(name) {
   const restaurantName = name || localStorage.getItem('restaurantName') || 'Restaurant';
-
   const loginLogo = document.getElementById('admin-login-logo');
   const topbarBrand = document.getElementById('admin-topbar-brand');
-
   if (loginLogo) loginLogo.textContent = restaurantName;
   if (topbarBrand) topbarBrand.textContent = restaurantName;
-
   document.title = restaurantName + ' - Admin Panel';
+}
+
+function applyLogoEverywhere(base64) {
+  // Login logo
+  const loginLogo = document.getElementById('admin-login-logo');
+  if (loginLogo) {
+    if (base64) {
+      loginLogo.innerHTML = `<img src="${base64}" style="max-height:60px;max-width:180px;object-fit:contain;">`;
+    } else {
+      loginLogo.innerHTML = loginLogo.dataset.name || 'Restaurant';
+    }
+  }
+  // Topbar logo
+  const topbarBrand = document.getElementById('admin-topbar-brand');
+  if (topbarBrand) {
+    if (base64) {
+      topbarBrand.innerHTML = `<img src="${base64}" style="max-height:32px;max-width:120px;object-fit:contain;vertical-align:middle;">`;
+    } else {
+      topbarBrand.textContent = topbarBrand.dataset.name || 'Restaurant';
+    }
+  }
+  // Logo preview in settings card
+  const preview = document.getElementById('logo-preview');
+  const placeholder = document.getElementById('logo-placeholder');
+  if (preview && placeholder) {
+    if (base64) {
+      preview.src = base64;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      preview.style.display = 'none';
+      placeholder.style.display = 'flex';
+    }
+  }
+  // Favicon
+  let favicon = document.getElementById('favicon');
+  if (favicon && base64 && base64.startsWith('data:image')) {
+    favicon.setAttribute('href', base64);
+  }
 }
 
 function startAdminSettingsListener() {
@@ -1716,14 +1766,14 @@ function startAdminSettingsListener() {
   const cachedName = localStorage.getItem('restaurantName');
   if (cachedName) applyAdminRestaurantName(cachedName);
 
-  adminSettingsListener = db.collection('settings').doc('global').onSnapshot(snap => {
+adminSettingsListener = db.collection('settings').doc('global').onSnapshot(snap => {
     if (!snap.exists) return;
-
-    const name = snap.data().restaurantName;
-    if (!name) return;
-
-    localStorage.setItem('restaurantName', name);
-    applyAdminRestaurantName(name);
+    const d = snap.data();
+    if (d.restaurantName) {
+      localStorage.setItem('restaurantName', d.restaurantName);
+      applyAdminRestaurantName(d.restaurantName);
+    }
+    applyLogoEverywhere(d.restaurantLogo || null);
   }, err => console.warn('admin settings listener:', err));
 }
 
@@ -2933,13 +2983,14 @@ toggleFeeFields();
       document.getElementById('backend-url').value     = settings.backendURL  || '';
       document.getElementById('wait-minutes').value    = settings.waitMinutes || 15;
 
-      // Branding
+// Branding
       document.getElementById('s-rest-name').value = settings.restaurantName || 'Spice Korner';
       document.getElementById('s-tagline').value   = settings.tagline        || 'Self Checkout';
       document.getElementById('s-footer').value    = settings.receiptFooter  || 'Thank you for dining with us!';
       // Update live admin topbar
       const restName = settings.restaurantName || 'Spice Korner';
-applyAdminRestaurantName(restName);
+      applyAdminRestaurantName(restName);
+      applyLogoEverywhere(settings.restaurantLogo || null);
       // Tax
       const el = (id) => document.getElementById(id);
       document.getElementById('s-tax-rate').value        = settings.taxRate        ?? 8.5;
@@ -3612,6 +3663,29 @@ async function saveTableCount() {
   } catch(e) { toast('Error saving','error'); }
 }
 
+// ── LOGO UPLOAD ────────────────────────────────
+function handleLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 300 * 1024) { toast('Logo must be under 300KB', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    try {
+      await db.collection('settings').doc('global').set({ restaurantLogo: base64 }, { merge: true });
+      toast('Logo saved — all portals updating in real time', 'success');
+    } catch(err) { toast('Failed to save logo', 'error'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removeLogo() {
+  try {
+    await db.collection('settings').doc('global').set({ restaurantLogo: '' }, { merge: true });
+    toast('Logo removed', 'success');
+  } catch(err) { toast('Failed to remove logo', 'error'); }
+}
+  
 // ── SAVE BRANDING ──────────────────────────────
 async function saveBrandingSettings() {
   const name    = document.getElementById('s-rest-name').value.trim();
