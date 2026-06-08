@@ -35,23 +35,144 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .login-err{font-size:12px;color:var(--red);margin-bottom:10px;height:18px;}
 
 /* ── TOPBAR ── */
-#topbar{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
-.tb-brand{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:3px;}
-.tb-badge{font-size:10px;font-weight:700;background:var(--s3);border:1px solid var(--bd);color:var(--tm);padding:3px 9px;border-radius:100px;letter-spacing:.5px;}
-.tb-badge.live{background:var(--green-d);border-color:rgba(61,155,106,.3);color:var(--green);}
-.tb-spacer{flex:1;}
-.tb-time{font-size:12px;color:var(--td);}
-.tb-logout{font-size:12px;color:var(--tm);background:none;border:none;cursor:pointer;padding:5px 10px;border-radius:var(--rs);transition:background .15s;}
-.tb-logout:hover{background:var(--s3);}
+#topbar {
+  background: var(--s1); border-bottom: 1px solid var(--bd);
+  padding: 0 20px; height: 56px; display: flex; align-items: center;
+  gap: 12px; position: sticky; top: 0; z-index: 100;
+}
+.tb-logo-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.tb-logo-wrap img { max-height: 30px; max-width: 110px; object-fit: contain; }
+.tb-logo-wrap .tb-name {
+  font-family: 'Cormorant Garamond', serif; font-size: 18px;
+  font-weight: 700; color: var(--gold); letter-spacing: 2px; line-height: 1;
+}
+.tb-badge {
+  font-size: 9px; font-weight: 700; background: var(--s3);
+  border: 1px solid var(--bd); color: var(--tm); padding: 3px 9px;
+  border-radius: 100px; letter-spacing: .5px; white-space: nowrap;
+}
+.tb-badge.live { background: var(--green-d); border-color: rgba(61,155,106,.3); color: var(--green); }
+.tb-spacer { flex: 1; }
+.tb-time { font-size: 11px; color: var(--td); font-family: 'DM Mono', monospace; white-space: nowrap; }
+.tb-icon-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--bd);
+  background: var(--s2); color: var(--tm); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; transition: all .15s; flex-shrink: 0;
+  position: relative;
+}
+.tb-icon-btn:hover { background: var(--s3); color: var(--text); }
+.tb-icon-btn svg { width: 16px; height: 16px; }
+.tb-icon-btn .tb-notif-dot {
+  position: absolute; top: 6px; right: 6px; width: 7px; height: 7px;
+  background: var(--red); border-radius: 50%; display: none;
+  border: 1.5px solid var(--s1);
+}
+.tb-logout {
+  font-size: 12px; color: var(--tm); background: none; border: none;
+  cursor: pointer; padding: 5px 10px; border-radius: var(--rs); transition: background .15s;
+}
+.tb-logout:hover { background: var(--s3); }
 
-/* ── TABS ── */
-#tab-nav{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;}
-#tab-nav::-webkit-scrollbar{display:none;}
-.tab-btn{padding:12px 16px;border:none;background:transparent;color:var(--tm);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;font-family:'DM Sans',sans-serif;}
-.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600;}
-.tab-btn:hover:not(.active){color:var(--text);}
-.tab-btn .notif{background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;margin-left:5px;padding:0 4px;}
+/* ── TAB NAV ── */
+#tab-nav {
+  background: var(--s1); border-bottom: 1px solid var(--bd);
+  padding: 0 20px; display: flex; gap: 0; overflow-x: auto;
+  scrollbar-width: none; flex-shrink: 0;
+}
+#tab-nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 18px; height: 44px; border: none; background: transparent;
+  color: var(--tm); font-size: 12.5px; font-weight: 500; cursor: pointer;
+  white-space: nowrap; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all .18s; font-family: 'DM Sans', sans-serif;
+  letter-spacing: .1px;
+}
+.tab-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+.tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.03); }
+.tab-btn .notif {
+  background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 100px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 2px; padding: 0 4px;
+}
 
+/* ── PROFILE SLIDE-OVER ── */
+#profile-drawer {
+  position: fixed; inset: 0; z-index: 600; pointer-events: none;
+}
+#profile-drawer.open { pointer-events: all; }
+#profile-backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,0);
+  transition: background .25s; cursor: pointer;
+}
+#profile-drawer.open #profile-backdrop { background: rgba(0,0,0,0.65); }
+#profile-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 340px; max-width: 92vw;
+  background: var(--s1); border-left: 1px solid var(--bd);
+  transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#profile-drawer.open #profile-panel { transform: translateX(0); }
+.profile-header {
+  padding: 24px 20px 20px; border-bottom: 1px solid var(--bd); flex-shrink: 0;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.profile-avatar-lg {
+  width: 56px; height: 56px; border-radius: 14px; background: var(--gold-d);
+  border: 1px solid rgba(200,146,42,.3); display: flex; align-items: center;
+  justify-content: center; font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 700; color: var(--gold); flex-shrink: 0;
+}
+.profile-name { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.profile-role-pill {
+  display: inline-block; font-size: 9px; letter-spacing: 1.5px;
+  text-transform: uppercase; font-weight: 700; padding: 3px 9px;
+  border-radius: 100px; background: var(--s3); border: 1px solid var(--bd);
+  color: var(--tm);
+}
+.profile-emp-id { font-size: 11px; color: var(--td); margin-top: 4px; font-family: 'DM Mono', monospace; }
+.profile-body { flex: 1; overflow-y: auto; padding: 20px; }
+.profile-row { margin-bottom: 16px; }
+.profile-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--td); font-weight: 700; margin-bottom: 4px; }
+.profile-val { font-size: 14px; color: var(--text); }
+.profile-footer { padding: 16px 20px; border-top: 1px solid var(--bd); flex-shrink: 0; }
+
+/* ── STAFF PROFILE MODAL (admin full view) ── */
+#staff-profile-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 700; align-items: center; justify-content: center; padding: 20px;
+}
+#staff-profile-overlay.open { display: flex; }
+#staff-profile-modal {
+  background: var(--s1); border: 1px solid var(--bd); border-radius: 18px;
+  width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;
+  padding: 28px 24px;
+}
+.spm-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.spm-avatar {
+  width: 64px; height: 64px; border-radius: 16px; background: var(--s3);
+  border: 1px solid var(--bd); display: flex; align-items: center;
+  justify-content: center; font-family: 'Cormorant Garamond', serif;
+  font-size: 24px; font-weight: 700; color: var(--gold); flex-shrink: 0;
+}
+.spm-name { font-size: 20px; font-weight: 700; color: var(--text); }
+.spm-sub { font-size: 12px; color: var(--tm); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.spm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.spm-field { display: flex; flex-direction: column; gap: 3px; }
+.spm-field-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--td); font-weight: 700; }
+.spm-field-val { font-size: 13.5px; color: var(--text); }
+.spm-field input, .spm-field select {
+  background: var(--s2); border: 1px solid var(--bd); border-radius: var(--rs);
+  color: var(--text); font-size: 13.5px; padding: 8px 12px;
+  font-family: 'DM Sans', sans-serif; width: 100%;
+}
+.spm-section-title {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--td); font-weight: 700; margin: 20px 0 12px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--bd);
+}
 /* ── PANELS ── */
 .tab-panel{display:none;padding:20px;max-width:1100px;margin:0 auto;}
 .tab-panel.active{display:block;}
@@ -434,36 +555,81 @@ textarea.fi{resize:vertical;min-height:70px;}
 <!-- ADMIN APP -->
 <div id="admin-app" style="display:none">
   <div id="topbar">
-    <span class="tb-brand" id="admin-topbar-brand">Restaurant</span>
+    <div class="tb-logo-wrap" id="admin-topbar-brand">
+      <span class="tb-name">Restaurant</span>
+    </div>
     <span class="tb-badge">Admin</span>
     <span class="tb-badge live" id="live-badge"><span class="live-dot"></span>LIVE</span>
     <div class="tb-spacer"></div>
     <span class="tb-time" id="tb-time"></span>
+    <!-- Profile button -->
+    <button class="tb-icon-btn" onclick="openAdminProfile()" title="My Profile">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="10" cy="7" r="3.5"/>
+        <path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke-linecap="round"/>
+      </svg>
+    </button>
     <button class="tb-logout" onclick="logout()">Sign Out</button>
   </div>
 
 <nav id="tab-nav">
   <button class="tab-btn active" onclick="switchTab('orders')" id="tab-orders-btn">
-    📋 Orders <span class="notif" id="new-notif" style="display:none">0</span>
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>
+    Orders <span class="notif" id="new-notif" style="display:none">0</span>
   </button>
-  <button class="tab-btn" onclick="switchTab('menu')"      id="tab-menu-btn">🍽 Menu</button>
-  <button class="tab-btn" onclick="switchTab('deals')"     id="tab-deals-btn">🏷 Deals</button>
-  <button class="tab-btn" onclick="switchTab('tables')"    id="tab-tables-btn">🪑 Tables</button>
-  <button class="tab-btn" onclick="switchTab('customers')" id="tab-customers-btn">👥 Guests</button>
-  <button class="tab-btn" onclick="switchTab('loyalty')"   id="tab-loyalty-btn">⭐ Loyalty</button>
-  <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">📊 Stats</button>
-  <button class="tab-btn" onclick="switchTab('reservations')" id="tab-reservations-btn">📅 Reservations <span class="notif" id="reserv-notif" style="display:none">0</span></button>
-  <button class="tab-btn" onclick="switchTab('staff')" id="tab-staff-btn">👥 Staff <span class="notif" id="staff-notif" style="display:none">0</span></button>
+  <button class="tab-btn" onclick="switchTab('new-order')" id="tab-new-order-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 7v6M7 10h6"/></svg>
+    New Order
+  </button>
+  <button class="tab-btn" onclick="switchTab('menu')" id="tab-menu-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 10h12M4 15h7"/></svg>
+    Menu
+  </button>
+  <button class="tab-btn" onclick="switchTab('tables')" id="tab-tables-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="16" height="3" rx="1"/><path d="M5 9v5M15 9v5M8 14h4"/></svg>
+    Tables
+  </button>
+  <button class="tab-btn" onclick="switchTab('reservations')" id="tab-reservations-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 3v2M13 3v2"/></svg>
+    Reservations <span class="notif" id="reserv-notif" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('customers')" id="tab-customers-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-2.8 2.7-5 6-5"/><circle cx="15" cy="9" r="2.5"/><path d="M12 17c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>
+    Guests
+  </button>
+  <button class="tab-btn" onclick="switchTab('loyalty')" id="tab-loyalty-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3l1.9 3.8 4.2.6-3 2.9.7 4.2L10 12.4l-3.8 2 .7-4.2-3-2.9 4.2-.6z"/></svg>
+    Loyalty
+  </button>
+  <button class="tab-btn" onclick="switchTab('analytics')" id="tab-analytics-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15l4-5 4 3 4-7"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Analytics
+  </button>
+  <button class="tab-btn" onclick="switchTab('deals')" id="tab-deals-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l7-7 7 7v7a1 1 0 01-1 1H4a1 1 0 01-1-1v-7z"/><path d="M8 17v-5h4v5"/></svg>
+    Deals
+  </button>
+  <button class="tab-btn" onclick="switchTab('staff')" id="tab-staff-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="3.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>
+    Staff <span class="notif" id="staff-notif" style="display:none">0</span>
+  </button>
   <button class="tab-btn" onclick="switchTab('purchase-orders')" id="tab-purchase-orders-btn">
-  📦 Purchase Orders <span class="notif" id="po-notif" style="display:none">0</span>
-</button>
-
-<button class="tab-btn" onclick="switchTab('admin-notifications')" id="tab-admin-notifications-btn">
-  🔔 Notifications <span class="notif" id="admin-notif" style="display:none">0</span>
-</button>
-  <button class="tab-btn" onclick="switchTab('new-order')" id="tab-new-order-btn">🧾 New Order</button>
-  <button class="tab-btn" onclick="switchTab('call')" id="tab-call-btn">📞 Call Staff</button>
-  <button class="tab-btn" onclick="switchTab('setup')"     id="tab-setup-btn">⚙️ Setup</button>
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h12l-1.5 8H5.5z"/><circle cx="8" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg>
+    Purchases <span class="notif" id="po-notif" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('admin-notifications')" id="tab-admin-notifications-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3a5 5 0 015 5v3l1.5 2.5H3.5L5 11V8a5 5 0 015-5z"/><path d="M8.5 16a1.5 1.5 0 003 0"/></svg>
+    Alerts <span class="notif" id="admin-notif-badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('call')" id="tab-call-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h4l2 4-2.5 1.5a9 9 0 004 4L13 11l4 2v4a1 1 0 01-1 1A15 15 0 013 5a1 1 0 011-1z"/></svg>
+    Call Staff
+  </button>
+  <button class="tab-btn" onclick="switchTab('setup')" id="tab-setup-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
+    Setup
+  </button>
+</nav>
 </nav>
 
   <!-- ORDERS TAB -->
@@ -758,6 +924,138 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
   </div>
 
+<!-- ── ADMIN PROFILE DRAWER ── -->
+  <div id="profile-drawer">
+    <div id="profile-backdrop" onclick="closeAdminProfile()"></div>
+    <div id="profile-panel">
+      <div class="profile-header">
+        <div class="profile-avatar-lg" id="ap-avatar">A</div>
+        <div>
+          <div class="profile-name" id="ap-name">—</div>
+          <div><span class="profile-role-pill" id="ap-role">Admin</span></div>
+          <div class="profile-emp-id" id="ap-empid">—</div>
+        </div>
+      </div>
+      <div class="profile-body">
+        <div class="profile-row">
+          <div class="profile-label">Email</div>
+          <div class="profile-val" id="ap-email">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Phone</div>
+          <div class="profile-val" id="ap-phone">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Joined</div>
+          <div class="profile-val" id="ap-joined">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Address</div>
+          <div class="profile-val" id="ap-address">—</div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-label">Notes</div>
+          <div class="profile-val" id="ap-notes" style="color:var(--tm)">—</div>
+        </div>
+        <div style="font-size:11px;color:var(--td);background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;margin-top:8px;">
+          🔒 Name, email, designation and employee ID are managed by the system. Contact Anthropic support to modify core identity fields.
+        </div>
+      </div>
+      <div class="profile-footer">
+        <button class="btn btn-ghost" style="width:100%;" onclick="closeAdminProfile()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAFF FULL PROFILE MODAL ── -->
+  <div id="staff-profile-overlay">
+    <div id="staff-profile-modal">
+      <div class="spm-header">
+        <div class="spm-avatar" id="spm-avatar">?</div>
+        <div>
+          <div class="spm-name" id="spm-name">—</div>
+          <div class="spm-sub" id="spm-empid">—</div>
+        </div>
+        <div style="flex:1"></div>
+        <button onclick="closeStaffProfile()" style="background:none;border:none;color:var(--tm);cursor:pointer;font-size:20px;line-height:1;">✕</button>
+      </div>
+
+      <div class="spm-section-title">Identity (Read-Only)</div>
+      <div class="spm-grid">
+        <div class="spm-field"><div class="spm-field-label">Full Name</div><div class="spm-field-val" id="spm-name-val">—</div></div>
+        <div class="spm-field"><div class="spm-field-label">Email</div><div class="spm-field-val" id="spm-email-val">—</div></div>
+        <div class="spm-field"><div class="spm-field-label">Employee ID</div><div class="spm-field-val" id="spm-empid-val" style="font-family:'DM Mono',monospace;">—</div></div>
+        <div class="spm-field"><div class="spm-field-label">Joined</div><div class="spm-field-val" id="spm-joined-val">—</div></div>
+      </div>
+
+      <div class="spm-section-title">Role & Access</div>
+      <div class="spm-grid">
+        <div class="spm-field">
+          <div class="spm-field-label">Role</div>
+          <select id="spm-role" class="fi" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;font-family:'DM Sans',sans-serif;">
+            <option value="chef">Chef</option>
+            <option value="waiter">Waiter</option>
+            <option value="rider">Rider</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="spm-field">
+          <div class="spm-field-label">Status</div>
+          <select id="spm-status" class="fi" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;font-family:'DM Sans',sans-serif;">
+            <option value="active">Active</option>
+            <option value="on_leave">On Leave</option>
+            <option value="resigned">Resigned</option>
+            <option value="fired">Fired</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="spm-section-title">Contact & Details</div>
+      <div class="spm-grid">
+        <div class="spm-field">
+          <div class="spm-field-label">Father's Name</div>
+          <input type="text" id="spm-fname" class="fi" maxlength="60" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+        </div>
+        <div class="spm-field">
+          <div class="spm-field-label">Phone</div>
+          <input type="tel" id="spm-phone" class="fi" maxlength="20" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+        </div>
+        <div class="spm-field" style="grid-column:1/-1;">
+          <div class="spm-field-label">Address</div>
+          <input type="text" id="spm-address" class="fi" maxlength="120" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+        </div>
+        <div class="spm-field" style="grid-column:1/-1;">
+          <div class="spm-field-label">Notes</div>
+          <textarea id="spm-notes" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;height:60px;resize:none;" maxlength="300"></textarea>
+        </div>
+      </div>
+
+      <div class="spm-section-title">POS Access</div>
+      <div class="spm-grid">
+        <div class="spm-field">
+          <div class="spm-field-label">POS PIN (6-digit)</div>
+          <input type="password" id="spm-pin" maxlength="6" placeholder="••••••"
+            style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Mono',monospace;letter-spacing:6px;font-size:16px;"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="spm-field">
+          <div class="spm-field-label">Frozen</div>
+          <select id="spm-frozen" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+            <option value="false">No (Active)</option>
+            <option value="true">Yes (Frozen)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button class="btn btn-gold" style="flex:1;" onclick="saveStaffProfile()">Save Changes</button>
+        <button class="btn btn-ghost" onclick="closeStaffProfile()">Cancel</button>
+      </div>
+      <div id="spm-err" style="font-size:12px;color:var(--red);margin-top:8px;min-height:18px;"></div>
+    </div>
+  </div>
+  
   <!-- ADD STAFF MODAL -->
   <div id="staff-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:flex-end;justify-content:center;">
     <div style="background:var(--s1);border-radius:20px 20px 0 0;padding:28px 24px 40px;width:100%;max-width:520px;border-top:1px solid var(--bd);max-height:90vh;overflow-y:auto;">
@@ -864,9 +1162,18 @@ textarea.fi{resize:vertical;min-height:70px;}
       <label class="fl">Tagline / Subtitle</label>
       <input type="text" class="fi" id="s-tagline" placeholder="e.g. Self Checkout">
     </div>
-    <div class="fg span2">
+<div class="fg span2">
       <label class="fl">Receipt Footer</label>
       <input type="text" class="fi" id="s-footer" placeholder="e.g. Thank you for dining with us!">
+    </div>
+    <div class="fg">
+      <label class="fl">Employee ID Prefix <span style="color:var(--td);font-weight:400;">(optional)</span></label>
+      <input type="text" class="fi" id="s-emp-prefix" maxlength="6" placeholder="e.g. NOS"
+        style="text-transform:uppercase;letter-spacing:2px;"
+        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+      <div style="font-size:11px;color:var(--td);margin-top:4px;">
+        3–5 letters shown before each employee's number (e.g. <b>NOS-001</b>). Leave blank to auto-derive from restaurant name. Changing this updates all employee IDs in real time.
+      </div>
     </div>
   </div>
 <div class="fg span2" style="margin-top:16px;">
@@ -1735,13 +2042,14 @@ function applyLogoEverywhere(base64) {
       loginLogo.innerHTML = loginLogo.dataset.name || 'Restaurant';
     }
   }
-  // Topbar logo
+// Topbar logo
   const topbarBrand = document.getElementById('admin-topbar-brand');
   if (topbarBrand) {
+    const name = settings.restaurantName || localStorage.getItem('restaurantName') || 'Restaurant';
     if (base64) {
-      topbarBrand.innerHTML = `<img src="${base64}" style="max-height:32px;max-width:120px;object-fit:contain;vertical-align:middle;">`;
+      topbarBrand.innerHTML = `<img src="${base64}" alt="${name}">`;
     } else {
-      topbarBrand.textContent = topbarBrand.dataset.name || 'Restaurant';
+      topbarBrand.innerHTML = `<span class="tb-name">${name}</span>`;
     }
   }
   // Logo preview in settings card
@@ -2999,9 +3307,12 @@ toggleFeeFields();
       document.getElementById('wait-minutes').value    = settings.waitMinutes || 15;
 
 // Branding
-      document.getElementById('s-rest-name').value = settings.restaurantName || 'Spice Korner';
-      document.getElementById('s-tagline').value   = settings.tagline        || 'Self Checkout';
-      document.getElementById('s-footer').value    = settings.receiptFooter  || 'Thank you for dining with us!';
+document.getElementById('s-rest-name').value  = settings.restaurantName || 'Spice Korner';
+      document.getElementById('s-tagline').value    = settings.tagline        || 'Self Checkout';
+      document.getElementById('s-footer').value     = settings.receiptFooter  || 'Thank you for dining with us!';
+      if (document.getElementById('s-emp-prefix')) {
+        document.getElementById('s-emp-prefix').value = settings.empPrefix || '';
+      }
       // Update live admin topbar
       const restName = settings.restaurantName || 'Spice Korner';
       applyAdminRestaurantName(restName);
@@ -3678,6 +3989,128 @@ async function saveTableCount() {
   } catch(e) { toast('Error saving','error'); }
 }
 
+// ── EMPLOYEE ID SYSTEM ─────────────────────────
+function getEmpPrefix() {
+  // Manual prefix wins; falls back to first 3 letters of restaurant name
+  const manual = (settings.empPrefix || '').trim().toUpperCase();
+  if (manual.length >= 2) return manual;
+  const name = (settings.restaurantName || 'EMP').replace(/\s+/g,'').toUpperCase();
+  return name.slice(0, 3);
+}
+
+function buildEmployeeId(seqNumber) {
+  const prefix = getEmpPrefix();
+  const num = String(seqNumber).padStart(3, '0');
+  return `${prefix}-${num}`;
+}
+
+async function getNextEmployeeSeq() {
+  // Count all employees ever created (including archived) to get next seq
+  const snap = await db.collection('employees').orderBy('createdAt').get();
+  return snap.size + 1; // next number
+}
+
+// ── ADMIN PROFILE DRAWER ───────────────────────
+function openAdminProfile() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  // Find self in allStaff
+  const emp = allStaff.find(s => s._uid === user.uid) || {};
+  const name = emp.name || user.email || 'Admin';
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const empId = emp.employeeId || buildEmployeeId(1);
+  const joined = emp.joining ? new Date(emp.joining).toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'}) : '—';
+
+  document.getElementById('ap-avatar').textContent = initials;
+  document.getElementById('ap-name').textContent = name;
+  document.getElementById('ap-role').textContent = (emp.role || 'admin').charAt(0).toUpperCase() + (emp.role||'admin').slice(1);
+  document.getElementById('ap-empid').textContent = empId;
+  document.getElementById('ap-email').textContent = emp.email || user.email || '—';
+  document.getElementById('ap-phone').textContent = emp.phone || '—';
+  document.getElementById('ap-joined').textContent = joined;
+  document.getElementById('ap-address').textContent = emp.address || '—';
+  document.getElementById('ap-notes').textContent = emp.notes || '—';
+
+  document.getElementById('profile-drawer').classList.add('open');
+}
+
+function closeAdminProfile() {
+  document.getElementById('profile-drawer').classList.remove('open');
+}
+
+// ── STAFF FULL PROFILE MODAL ───────────────────
+let _spmUid = null;
+
+function openStaffProfile(uid) {
+  const emp = allStaff.find(s => s._uid === uid);
+  if (!emp) return;
+  _spmUid = uid;
+
+  const name = emp.name || '—';
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const empId = emp.employeeId || '—';
+  const joined = emp.joining ? new Date(emp.joining).toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'}) : '—';
+
+  document.getElementById('spm-avatar').textContent = initials;
+  document.getElementById('spm-name').textContent = name;
+  document.getElementById('spm-empid').textContent = empId;
+  document.getElementById('spm-name-val').textContent = name;
+  document.getElementById('spm-email-val').textContent = emp.email || '—';
+  document.getElementById('spm-empid-val').textContent = empId;
+  document.getElementById('spm-joined-val').textContent = joined;
+  document.getElementById('spm-role').value = emp.role || 'waiter';
+  document.getElementById('spm-status').value = emp.status || 'active';
+  document.getElementById('spm-fname').value = emp.fatherName || '';
+  document.getElementById('spm-phone').value = emp.phone || '';
+  document.getElementById('spm-address').value = emp.address || '';
+  document.getElementById('spm-notes').value = emp.notes || '';
+  document.getElementById('spm-pin').value = '';
+  document.getElementById('spm-frozen').value = emp.frozen ? 'true' : 'false';
+  document.getElementById('spm-err').textContent = '';
+
+  document.getElementById('staff-profile-overlay').classList.add('open');
+}
+
+function closeStaffProfile() {
+  document.getElementById('staff-profile-overlay').classList.remove('open');
+  _spmUid = null;
+}
+
+async function saveStaffProfile() {
+  if (!_spmUid) return;
+  const errEl = document.getElementById('spm-err');
+  errEl.textContent = '';
+
+  const role    = document.getElementById('spm-role').value;
+  const status  = document.getElementById('spm-status').value;
+  const frozen  = document.getElementById('spm-frozen').value === 'true';
+  const fname   = document.getElementById('spm-fname').value.trim();
+  const phone   = document.getElementById('spm-phone').value.trim();
+  const address = document.getElementById('spm-address').value.trim();
+  const notes   = document.getElementById('spm-notes').value.trim();
+  const pinRaw  = document.getElementById('spm-pin').value.trim();
+  const posPin  = pinRaw.length === 6 ? pinRaw : undefined;
+
+  if (phone && (phone.length < 5 || phone.length > 20)) {
+    errEl.textContent = 'Phone number must be 5–20 characters'; return;
+  }
+
+  const emp = allStaff.find(s => s._uid === _spmUid);
+  if (!emp) return;
+
+  const update = { role, status, frozen, fatherName: fname, phone, address, notes, active: !frozen };
+  if (posPin !== undefined) update.posPin = posPin;
+
+  try {
+    await db.collection('employees').doc(_spmUid).update(update);
+    // Sync role hash
+    const hash = await hashEmail(emp.email);
+    await db.collection('employee_roles').doc(hash).update({ role, active: !frozen && status === 'active', frozen });
+    toast(`${emp.name}'s profile updated`, 'success');
+    closeStaffProfile();
+  } catch(e) { errEl.textContent = e.message; }
+}
+    
 // ── LOGO UPLOAD ────────────────────────────────
 function handleLogoUpload(event) {
   const file = event.target.files[0];
@@ -3706,18 +4139,20 @@ async function saveBrandingSettings() {
   const name    = document.getElementById('s-rest-name').value.trim();
   const tagline = document.getElementById('s-tagline').value.trim();
   const footer  = document.getElementById('s-footer').value.trim();
+  const rawPrefix = (document.getElementById('s-emp-prefix')?.value || '').trim().toUpperCase();
+  const empPrefix = rawPrefix.length >= 2 ? rawPrefix : ''; // blank = use auto-derive
   if (!name) { toast('Enter a restaurant name','error'); return; }
   try {
     await db.collection('settings').doc('global').set(
-      { restaurantName: name, tagline, receiptFooter: footer }, { merge: true }
+      { restaurantName: name, tagline, receiptFooter: footer, empPrefix }, { merge: true }
     );
-    settings.restaurantName = name; settings.tagline = tagline; settings.receiptFooter = footer;
-    // Update admin topbar immediately
-localStorage.setItem('restaurantName', name);
-applyAdminRestaurantName(name);
+    settings.restaurantName = name; settings.tagline = tagline;
+    settings.receiptFooter = footer; settings.empPrefix = empPrefix;
+    localStorage.setItem('restaurantName', name);
+    applyAdminRestaurantName(name);
     const msg = document.getElementById('brand-save-msg');
     msg.style.display = 'block'; setTimeout(()=>msg.style.display='none', 2500);
-    toast('Branding saved — customer portal will update in real time','success');
+    toast('Branding saved — all portals updating in real time','success');
   } catch(e) { toast('Save failed','error'); }
 }
 
@@ -4722,7 +5157,8 @@ function renderStaffList() {
         </div>
       </div>
 <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-        <button class="btn btn-gold btn-sm" onclick="openStaffStatusModal('${s._uid}')" style="font-size:11px;padding:6px 14px;">⚙ Manage</button>
+<button class="btn btn-gold btn-sm" onclick="openStaffProfile('${s._uid}')" style="font-size:11px;padding:6px 14px;">View Profile</button>
+        <button class="btn btn-ghost btn-sm" onclick="openStaffStatusModal('${s._uid}')" style="font-size:11px;">⚙ Manage</button>
         <button class="btn btn-ghost btn-sm" onclick="resendStaffInvite('${s._uid}')" style="font-size:11px;">📧 Invite</button>
         <button class="btn btn-red btn-sm" onclick="confirmDeleteStaff('${s._uid}','${escapeHtml(s.name||'')}')" style="font-size:11px;">🗑 Delete</button>
       </div>`;
@@ -4782,6 +5218,10 @@ async function submitAddStaff() {
 
     // Write employee record
     const posPin = (document.getElementById('st-pos-pin')?.value || '').trim();
+// Assign sequential employee ID
+    const seqNum = await getNextEmployeeSeq();
+    const employeeId = buildEmployeeId(seqNum);
+
     await db.collection('employees').doc(uid).set({
       name, fatherName: fname, email, phone, role,
       joining, address, notes,
@@ -4789,6 +5229,8 @@ async function submitAddStaff() {
       active:    true,
       frozen:    false,
       posPin:    posPin || null,
+      employeeId,
+      empSeq:    seqNum,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
