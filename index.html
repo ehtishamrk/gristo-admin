@@ -2092,6 +2092,7 @@ textarea.fi{resize:vertical;min-height:70px;}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 <script>
 // ════════════════════════════════════════════════
 // ★ FIREBASE CONFIG — replace with your config ★
@@ -5752,8 +5753,15 @@ async function confirmDeleteStaff(uid, name) {
       const hash = await hashEmail(emp.email);
       await db.collection('employee_roles').doc(hash).delete().catch(()=>{});
     }
-    // Delete presence doc if exists
+// Delete presence doc if exists
     await db.collection('presence').doc(uid).delete().catch(()=>{});
+    // Delete Firebase Auth account so the email can be re-registered later
+    try {
+      const deleteAuthUser = firebase.functions().httpsCallable('deleteAuthUser');
+      await deleteAuthUser({ uid });
+    } catch (authErr) {
+      console.warn('Auth deletion failed:', authErr.message);
+    }
     toast(`${name} deleted`, 'success');
   } catch(e) {
     toast('Error deleting staff: ' + e.message, 'error');
