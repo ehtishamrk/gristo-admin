@@ -1980,6 +1980,8 @@ textarea.fi{resize:vertical;min-height:70px;}
       <button class="btn btn-gold" onclick="saveOrderEdit()" id="oe-save-btn">Save Changes</button>
     </div>
   </div>
+
+
   
   <!-- DEAL MODAL -->
   <div class="modal" id="deal-modal" style="display:none">
@@ -2073,6 +2075,25 @@ textarea.fi{resize:vertical;min-height:70px;}
       <button class="btn btn-gold" onclick="saveDeal()">Save Deal</button>
     </div>
   </div>
+
+<!-- Purchase Order Edit Modal -->
+<div id="po-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:24px;width:min(480px,94vw);max-height:88vh;overflow-y:auto;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">Edit Purchase Order</div>
+    <div style="font-size:12px;color:var(--tm);margin-bottom:18px;">Make changes and approve. Chef will be notified of the edits.</div>
+    <div id="po-edit-items-wrap" style="margin-bottom:16px;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addPOEditRow()" style="margin-bottom:16px;">+ Add Item</button>
+    <div class="fg">
+      <label class="fl">Notes to Chef</label>
+      <textarea class="fi" id="po-edit-notes" style="height:72px;" placeholder="Explain what was changed and why…" maxlength="400"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-gold" onclick="submitPOEdit()">Approve with Changes</button>
+      <button class="btn btn-ghost" onclick="closePOEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+  
 </div>
 
 <div id="active-call-banner" style="display:none;position:fixed;top:60px;right:20px;background:var(--s1);border:2px solid rgba(61,155,106,.5);border-radius:16px;padding:16px 20px;z-index:800;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.6);align-items:center;gap:12px;">
@@ -5964,12 +5985,14 @@ function renderPurchaseOrders() {
 
         ${po.notes ? `<div style="font-size:13px;color:var(--tm);margin-bottom:12px;">Notes: ${escHtml(po.notes)}</div>` : ''}
 
-        ${po.status === 'pending' ? `
+${po.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-gold btn-sm" onclick="approvePurchaseOrder('${po._id}')">Approve</button>
+            <button class="btn btn-ghost btn-sm" onclick="openPOEditModal('${po._id}')">✏️ Edit & Approve</button>
             <button class="btn btn-red btn-sm" onclick="rejectPurchaseOrder('${po._id}')">Reject</button>
           </div>
         ` : ''}
+        ${po.approvedWithChanges ? `<div style="font-size:12px;color:var(--gold);margin-top:6px;">✏️ Approved with changes</div>` : ''}
       </div>
     `;
   }).join('');
@@ -5997,6 +6020,81 @@ async function approvePurchaseOrder(id) {
   toast('Purchase order approved', 'success');
 }
 
+let _editingPOId = null;
+let _editingPORows = [];
+
+function openPOEditModal(id) {
+  const po = purchaseOrders.find(p => p._id === id);
+  if (!po) return;
+  _editingPOId = id;
+  _editingPORows = (po.items || []).map(i => ({ ...i }));
+
+  const wrap = document.getElementById('po-edit-items-wrap');
+  renderPOEditRows(wrap);
+  document.getElementById('po-edit-notes').value = po.notes || '';
+  const modal = document.getElementById('po-edit-modal');
+  modal.style.display = 'flex';
+}
+
+function renderPOEditRows(wrap) {
+  wrap.innerHTML = _editingPORows.map((item, idx) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;" id="po-edit-row-${idx}">
+      <input class="fi" style="flex:2;" value="${escHtml(item.name||'')}" oninput="_editingPORows[${idx}].name=this.value" placeholder="Item name">
+      <input class="fi" style="width:70px;" value="${escHtml(item.qty||'')}" oninput="_editingPORows[${idx}].qty=this.value" placeholder="Qty">
+      <input class="fi" style="width:80px;" value="${escHtml(item.unit||'')}" oninput="_editingPORows[${idx}].unit=this.value" placeholder="Unit">
+      <button class="btn btn-red btn-sm" onclick="removePOEditRow(${idx})" style="padding:0 10px;">✕</button>
+    </div>
+  `).join('');
+}
+
+function addPOEditRow() {
+  _editingPORows.push({ name: '', qty: '', unit: '' });
+  renderPOEditRows(document.getElementById('po-edit-items-wrap'));
+}
+
+function removePOEditRow(idx) {
+  _editingPORows.splice(idx, 1);
+  renderPOEditRows(document.getElementById('po-edit-items-wrap'));
+}
+
+function closePOEditModal() {
+  document.getElementById('po-edit-modal').style.display = 'none';
+  _editingPOId = null;
+  _editingPORows = [];
+}
+
+async function submitPOEdit() {
+  const validItems = _editingPORows.filter(i => i.name.trim());
+  if (!validItems.length) { toast('Add at least one item', 'error'); return; }
+
+  const notes = document.getElementById('po-edit-notes').value.trim();
+  const po = purchaseOrders.find(p => p._id === _editingPOId);
+  if (!po) return;
+
+  await db.collection('purchase_orders').doc(_editingPOId).update({
+    items: validItems,
+    notes,
+    status: 'approved',
+    approvedWithChanges: true,
+    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (po.requestedByUid) {
+    await notifyStaffPortal({
+      toUid: po.requestedByUid,
+      role: 'chef',
+      type: 'purchase_order_approved_with_changes',
+      title: 'Purchase Request Approved with Changes',
+      message: `Your purchase request was approved with edits. ${notes ? 'Note: ' + notes : ''}`,
+      changedItems: validItems,
+      adminNotes: notes
+    });
+  }
+
+  toast('Purchase order approved with changes', 'success');
+  closePOEditModal();
+}
+  
 async function rejectPurchaseOrder(id) {
   const po = purchaseOrders.find(p => p._id === id);
   if (!po) return;
