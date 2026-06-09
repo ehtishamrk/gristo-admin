@@ -2279,13 +2279,13 @@ function startAdminSettingsListener() {
 adminSettingsListener = db.collection('settings').doc('global').onSnapshot(snap => {
     if (!snap.exists) return;
     const d = snap.data();
+    settings = { ...settings, ...d };
     if (d.restaurantName) {
       localStorage.setItem('restaurantName', d.restaurantName);
       applyAdminRestaurantName(d.restaurantName);
     }
     applyLogoEverywhere(d.restaurantLogo || null);
   }, err => console.warn('admin settings listener:', err));
-}
 
 startAdminSettingsListener();
   
