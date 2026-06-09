@@ -139,6 +139,72 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .profile-val { font-size: 14px; color: var(--text); }
 .profile-footer { padding: 16px 20px; border-top: 1px solid var(--bd); flex-shrink: 0; }
 
+/* ── ID CARD ── */
+.id-card-wrap { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+.id-card {
+  width:340px; border-radius:16px; overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.45); font-family:'DM Sans',sans-serif;
+  flex-shrink:0;
+}
+.id-card-front {
+  background:linear-gradient(145deg,#1a1a1a 0%,#111 100%);
+  border:1px solid rgba(200,146,42,.25); padding:0; position:relative; overflow:hidden;
+}
+.id-card-front::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:200px; height:200px; border-radius:50%;
+  background:radial-gradient(circle,rgba(200,146,42,.15),transparent 70%);
+}
+.id-card-header {
+  background:rgba(200,146,42,.12); border-bottom:1px solid rgba(200,146,42,.2);
+  padding:12px 16px; display:flex; align-items:center; gap:10px;
+}
+.id-card-logo { max-height:32px; max-width:90px; object-fit:contain; }
+.id-card-logo-text { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; color:#c8922a; letter-spacing:2px; }
+.id-card-rest-name { font-size:11px; color:rgba(200,146,42,.8); letter-spacing:1.5px; text-transform:uppercase; font-weight:600; }
+.id-card-body { padding:16px; display:flex; gap:14px; align-items:flex-start; }
+.id-card-photo {
+  width:72px; height:88px; border-radius:8px; object-fit:cover; flex-shrink:0;
+  border:2px solid rgba(200,146,42,.4); background:#1e1e1e;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#c8922a;
+}
+.id-card-photo img { width:100%; height:100%; object-fit:cover; border-radius:6px; }
+.id-card-details { flex:1; }
+.id-card-name { font-size:15px; font-weight:700; color:#fff; margin-bottom:2px; line-height:1.2; }
+.id-card-desig { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#c8922a; font-weight:600; margin-bottom:8px; }
+.id-card-field { display:flex; flex-direction:column; margin-bottom:5px; }
+.id-card-field-label { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,.4); font-weight:700; }
+.id-card-field-val { font-size:11px; color:rgba(255,255,255,.85); font-family:'DM Mono',monospace; }
+.id-card-shift {
+  margin:0 16px 14px; padding:6px 10px; border-radius:6px; display:inline-flex;
+  align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+}
+.id-card-shift.day { background:rgba(200,146,42,.15); color:#c8922a; border:1px solid rgba(200,146,42,.3); }
+.id-card-shift.night { background:rgba(100,120,200,.15); color:#8899ee; border:1px solid rgba(100,120,200,.3); }
+.id-card-back {
+  background:linear-gradient(145deg,#161616 0%,#0e0e0e 100%);
+  border:1px solid rgba(255,255,255,.06); border-top:none;
+  padding:14px 16px; font-size:9px; color:rgba(255,255,255,.45); line-height:1.7;
+}
+.id-card-back-title { font-size:10px; font-weight:700; color:rgba(255,255,255,.7); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+.id-card-back-rules { margin-bottom:10px; }
+.id-card-back-rules li { margin-bottom:2px; }
+.id-card-back-contact { border-top:1px solid rgba(255,255,255,.08); padding-top:8px; margin-top:6px; }
+.id-card-back-contact div { margin-bottom:2px; }
+
+/* ── ID CARD MODAL ── */
+#idcard-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85);
+  z-index:800; align-items:center; justify-content:center; padding:20px;
+  overflow-y:auto;
+}
+#idcard-overlay.open { display:flex; }
+#idcard-modal {
+  background:var(--s1); border:1px solid var(--bd); border-radius:18px;
+  width:100%; max-width:740px; padding:28px 24px; max-height:90vh; overflow-y:auto;
+}
+    
 /* ── STAFF PROFILE MODAL (admin full view) ── */
 #staff-profile-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -1031,6 +1097,42 @@ textarea.fi{resize:vertical;min-height:70px;}
         </div>
       </div>
 
+<div class="spm-section-title">Photo</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
+        <div id="spm-photo-preview" style="width:72px;height:88px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--gold);font-family:'Cormorant Garamond',serif;overflow:hidden;flex-shrink:0;">?</div>
+        <div>
+          <label style="cursor:pointer;">
+            <input type="file" id="spm-photo-input" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleStaffPhotoUpload(event)">
+            <span class="btn btn-sm" style="background:var(--s3);border:1px solid var(--bd);color:var(--text);border-radius:var(--rs);padding:8px 16px;font-size:12px;cursor:pointer;display:block;margin-bottom:6px;">Upload Photo</span>
+          </label>
+          <button onclick="removeStaffPhoto()" class="btn btn-sm" style="background:var(--red-d);border:1px solid rgba(192,64,64,.3);color:var(--red);border-radius:var(--rs);padding:6px 14px;font-size:12px;">Remove</button>
+          <div style="font-size:10px;color:var(--td);margin-top:6px;">JPG, PNG or WebP. Under 300KB. Used on ID card.</div>
+        </div>
+      </div>
+
+      <div class="spm-section-title">Emergency Contact</div>
+      <div class="spm-grid">
+        <div class="spm-field">
+          <div class="spm-field-label">Emergency Contact Name</div>
+          <input type="text" id="spm-emergency-name" class="fi" maxlength="60" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+        </div>
+        <div class="spm-field">
+          <div class="spm-field-label">Emergency Contact Phone</div>
+          <input type="tel" id="spm-emergency-phone" class="fi" maxlength="20" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+        </div>
+      </div>
+
+      <div class="spm-section-title">Shift</div>
+      <div class="spm-grid">
+        <div class="spm-field">
+          <div class="spm-field-label">Assigned Shift</div>
+          <select id="spm-shift" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--text);padding:8px 12px;width:100%;font-family:'DM Sans',sans-serif;">
+            <option value="day">Day Shift</option>
+            <option value="night">Night Shift</option>
+          </select>
+        </div>
+      </div>
+      
       <div class="spm-section-title">POS Access</div>
       <div class="spm-grid">
         <div class="spm-field">
@@ -1053,6 +1155,21 @@ textarea.fi{resize:vertical;min-height:70px;}
         <button class="btn btn-ghost" onclick="closeStaffProfile()">Cancel</button>
       </div>
       <div id="spm-err" style="font-size:12px;color:var(--red);margin-top:8px;min-height:18px;"></div>
+    </div>
+  </div>
+
+<!-- ID CARD MODAL -->
+  <div id="idcard-overlay">
+    <div id="idcard-modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:18px;font-weight:700;">Employee ID Card</div>
+        <button onclick="closeIdCard()" style="background:none;border:none;color:var(--tm);font-size:22px;cursor:pointer;">✕</button>
+      </div>
+      <div id="idcard-preview" class="id-card-wrap"></div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:center;">
+        <button class="btn btn-gold" onclick="downloadIdCard()">⬇ Download ID Card</button>
+        <button class="btn btn-ghost" onclick="closeIdCard()">Close</button>
+      </div>
     </div>
   </div>
   
@@ -1101,7 +1218,22 @@ textarea.fi{resize:vertical;min-height:70px;}
           <textarea id="st-notes" class="fi" style="height:64px;display:block;resize:none;" placeholder="Any additional notes…" maxlength="300"></textarea>
         </div>
          
-<div class="fg span2">
+<div class="fg">
+          <label class="fl">Emergency Contact Name</label>
+          <input type="text" class="fi" id="st-emergency-name" placeholder="e.g. Ali Ahmed" maxlength="60">
+        </div>
+        <div class="fg">
+          <label class="fl">Emergency Contact Phone</label>
+          <input type="tel" class="fi" id="st-emergency-phone" placeholder="e.g. +92 300 1234567" maxlength="20">
+        </div>
+        <div class="fg">
+          <label class="fl">Shift</label>
+          <select class="fi" id="st-shift">
+            <option value="day">Day Shift</option>
+            <option value="night">Night Shift</option>
+          </select>
+        </div>
+        <div class="fg span2">
           <label class="fl">POS PIN <span style="color:var(--td);font-weight:400;">(6-digit PIN for POS login — optional)</span></label>
           <input type="password" class="fi" id="st-pos-pin" maxlength="6" placeholder="e.g. 123456"
             style="letter-spacing:6px;font-size:16px;" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
@@ -1166,6 +1298,20 @@ textarea.fi{resize:vertical;min-height:70px;}
       <label class="fl">Receipt Footer</label>
       <input type="text" class="fi" id="s-footer" placeholder="e.g. Thank you for dining with us!">
     </div>
+
+<div class="fg span2">
+      <label class="fl">Restaurant Address</label>
+      <input type="text" class="fi" id="s-rest-address" placeholder="e.g. 24-B, Main Boulevard, Gulberg III, Lahore" maxlength="200">
+    </div>
+    <div class="fg">
+      <label class="fl">Restaurant Phone</label>
+      <input type="text" class="fi" id="s-rest-phone" placeholder="e.g. +92 42 111 000 000" maxlength="30">
+    </div>
+    <div class="fg">
+      <label class="fl">HR Department Contact</label>
+      <input type="text" class="fi" id="s-hr-contact" placeholder="e.g. hr@restaurant.com or +92 300 0000000" maxlength="60">
+    </div>
+    
     <div class="fg">
       <label class="fl">Employee ID Prefix <span style="color:var(--td);font-weight:400;">(optional)</span></label>
       <input type="text" class="fi" id="s-emp-prefix" maxlength="6" placeholder="e.g. NOS"
@@ -1189,8 +1335,38 @@ textarea.fi{resize:vertical;min-height:70px;}
     </div>
     <div style="font-size:11px;color:var(--td);margin-top:6px;">PNG, JPG, SVG or WebP. Recommended: square, under 200KB. Saved as base64 — applies to all portals and receipts in real time.</div>
   </div>
-  <button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveBrandingSettings()">Save Branding</button>
+<button class="btn btn-gold btn-sm" style="margin-top:12px;" onclick="saveBrandingSettings()">Save Branding</button>
   <div id="brand-save-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
+</div>
+
+<!-- ORDER EDITING CONTROLS -->
+<div class="setup-card">
+  <div class="setup-title">✏️ Order Editing Rules</div>
+  <div class="setup-desc">Control who can edit orders and for how long after placement.</div>
+  <div class="form-grid">
+    <div class="fg">
+      <label class="fl">Edit window (minutes)</label>
+      <input type="number" class="fi" id="s-edit-window" min="0" max="120" placeholder="e.g. 10"
+        style="width:100%;">
+      <div style="font-size:11px;color:var(--td);margin-top:4px;">Orders become locked after this many minutes. Set 0 to lock immediately after placement.</div>
+    </div>
+    <div class="fg" style="display:flex;flex-direction:column;gap:10px;justify-content:center;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;">
+        <input type="checkbox" id="s-edit-waiter" style="width:16px;height:16px;accent-color:var(--gold);">
+        Waiter can edit orders
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;">
+        <input type="checkbox" id="s-edit-chef" style="width:16px;height:16px;accent-color:var(--gold);">
+        Chef can edit orders
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;">
+        <input type="checkbox" id="s-edit-customer" style="width:16px;height:16px;accent-color:var(--gold);">
+        Customer (self-checkout) can edit orders
+      </label>
+    </div>
+  </div>
+  <button class="btn btn-gold btn-sm" style="margin-top:14px;" onclick="saveOrderEditSettings()">Save Rules</button>
+  <div id="edit-rules-msg" style="display:none;font-size:12.5px;color:var(--green);margin-top:8px;">✓ Saved</div>
 </div>
 
 <!-- TAX & CURRENCY -->
@@ -2705,14 +2881,19 @@ const doc = printFrame.contentWindow.document;
   const rows = (o.items||[]).map(i=>`<tr><td style="padding:3px 0">${i.qty}× ${escapeHtml(i.name)}${i.note?`<br><span style="font-size:9px;color:#777">↳ ${escapeHtml(i.note)}</span>`:''}</td><td style="text-align:right;padding-left:8px;white-space:nowrap">$${((i.unitPrice||i.price||0)*i.qty).toFixed(2)}</td></tr>`).join('');
   const ts = o.timestamp?.toDate ? o.timestamp.toDate() : new Date();
 const cur  = settings.currencySymbol || '$';
-const name = settings.restaurantName  || 'Spice Korner';
-const foot = settings.receiptFooter   || 'Thank you for choosing us!';
+const name    = settings.restaurantName    || 'Spice Korner';
+const foot    = settings.receiptFooter     || 'Thank you for choosing us!';
+const addr    = settings.restaurantAddress || '';
+const logoB64 = settings.restaurantLogo   || '';
+const logoHtml = logoB64
+  ? `<div class="c" style="margin-bottom:4px"><img src="${logoB64}" style="max-height:48px;max-width:120px;object-fit:contain;"></div>`
+  : `<div class="c b" style="font-size:20px;letter-spacing:5px">${name}</div>`;
 const taxAmt  = (o.taxAmount  || 0).toFixed(2);
 const tipAmt  = (o.tipAmount  || 0).toFixed(2);
 const svcAmt  = (o.serviceCharge || 0).toFixed(2);
 doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{margin:4mm;size:80mm auto}*{margin:0;padding:0}body{font-family:'Courier New',monospace;font-size:11px;width:72mm;padding:3mm}.c{text-align:center}.b{font-weight:bold}hr{border:none;border-top:1px dashed #000;margin:5px 0}table{width:100%;border-collapse:collapse}.gt td{font-weight:bold;font-size:13px;border-top:1px solid #000;padding-top:5px}</style></head><body>
-<div class="c b" style="font-size:20px;letter-spacing:5px">${name}</div>
-<div class="c" style="font-size:8px;letter-spacing:2px">RESTAURANT</div>
+${logoHtml}
+${addr ? `<div class="c" style="font-size:8px;color:#555;margin-bottom:2px">${addr}</div>` : ''}
 <hr>
 <div style="font-size:10px;line-height:1.6">
 <div>${ts.toLocaleDateString()} ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
@@ -3310,9 +3491,14 @@ toggleFeeFields();
 document.getElementById('s-rest-name').value  = settings.restaurantName || 'Spice Korner';
       document.getElementById('s-tagline').value    = settings.tagline        || 'Self Checkout';
       document.getElementById('s-footer').value     = settings.receiptFooter  || 'Thank you for dining with us!';
-      if (document.getElementById('s-emp-prefix')) {
-        document.getElementById('s-emp-prefix').value = settings.empPrefix || '';
-      }
+if (document.getElementById('s-emp-prefix'))     document.getElementById('s-emp-prefix').value     = settings.empPrefix        || '';
+      if (document.getElementById('s-rest-address'))   document.getElementById('s-rest-address').value   = settings.restaurantAddress || '';
+      if (document.getElementById('s-rest-phone'))     document.getElementById('s-rest-phone').value     = settings.restaurantPhone   || '';
+      if (document.getElementById('s-hr-contact'))     document.getElementById('s-hr-contact').value     = settings.hrContact         || '';
+      if (document.getElementById('s-edit-window'))    document.getElementById('s-edit-window').value    = settings.orderEditWindow   ?? 10;
+      if (document.getElementById('s-edit-waiter'))    document.getElementById('s-edit-waiter').checked  = settings.orderEditWaiter   ?? true;
+      if (document.getElementById('s-edit-chef'))      document.getElementById('s-edit-chef').checked    = settings.orderEditChef     ?? false;
+      if (document.getElementById('s-edit-customer'))  document.getElementById('s-edit-customer').checked = settings.orderEditCustomer ?? true;
       // Update live admin topbar
       const restName = settings.restaurantName || 'Spice Korner';
       applyAdminRestaurantName(restName);
@@ -3989,6 +4175,170 @@ async function saveTableCount() {
   } catch(e) { toast('Error saving','error'); }
 }
 
+// ── STAFF PHOTO UPLOAD ─────────────────────────
+let _spmCurrentPhoto = null;
+
+function handleStaffPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 300 * 1024) { toast('Photo must be under 300KB', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _spmCurrentPhoto = e.target.result;
+    const preview = document.getElementById('spm-photo-preview');
+    if (preview) preview.innerHTML = `<img src="${_spmCurrentPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeStaffPhoto() {
+  _spmCurrentPhoto = '';
+  const preview = document.getElementById('spm-photo-preview');
+  if (preview) preview.textContent = '?';
+}
+
+// ── ID CARD ────────────────────────────────────
+let _idCardUid = null;
+
+function openIdCard(uid) {
+  const emp = allStaff.find(s => s._uid === uid);
+  if (!emp) return;
+  _idCardUid = uid;
+  renderIdCard(emp);
+  document.getElementById('idcard-overlay').classList.add('open');
+}
+
+function closeIdCard() {
+  document.getElementById('idcard-overlay').classList.remove('open');
+  _idCardUid = null;
+}
+
+function renderIdCard(emp) {
+  const logo      = settings.restaurantLogo || '';
+  const restName  = settings.restaurantName || 'Restaurant';
+  const address   = settings.restaurantAddress || '';
+  const phone     = settings.restaurantPhone || '';
+  const hrContact = settings.hrContact || '';
+  const empId     = emp.employeeId || '—';
+  const name      = emp.name || '—';
+  const role      = (emp.role || 'staff').charAt(0).toUpperCase() + (emp.role||'staff').slice(1);
+  const shift     = emp.shift || 'day';
+  const emergency = emp.emergencyPhone || '—';
+  const photo     = emp.photo || '';
+  const initials  = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+  const logoHtml = logo
+    ? `<img class="id-card-logo" src="${logo}" alt="${restName}">`
+    : `<span class="id-card-logo-text">${restName.slice(0,3).toUpperCase()}</span>`;
+
+  const photoHtml = photo
+    ? `<div class="id-card-photo"><img src="${photo}" alt="${name}"></div>`
+    : `<div class="id-card-photo">${initials}</div>`;
+
+  const shiftLabel = shift === 'night' ? '🌙 Night Shift' : '☀️ Day Shift';
+  const shiftClass = shift === 'night' ? 'night' : 'day';
+
+  document.getElementById('idcard-preview').innerHTML = `
+    <div class="id-card">
+      <div class="id-card-front">
+        <div class="id-card-header">
+          ${logoHtml}
+          <div>
+            <div class="id-card-rest-name">${escapeHtml(restName)}</div>
+          </div>
+        </div>
+        <div class="id-card-body">
+          ${photoHtml}
+          <div class="id-card-details">
+            <div class="id-card-name">${escapeHtml(name)}</div>
+            <div class="id-card-desig">${role}</div>
+            <div class="id-card-field">
+              <span class="id-card-field-label">Employee ID</span>
+              <span class="id-card-field-val">${escapeHtml(empId)}</span>
+            </div>
+            <div class="id-card-field">
+              <span class="id-card-field-label">Emergency</span>
+              <span class="id-card-field-val">${escapeHtml(emergency)}</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:0 16px 14px;">
+          <span class="id-card-shift ${shiftClass}">${shiftLabel}</span>
+        </div>
+      </div>
+      <div class="id-card-back">
+        <div class="id-card-back-title">Terms & Conditions</div>
+        <div class="id-card-back-rules">
+          <ul style="padding-left:14px;list-style:disc;">
+            <li>This card is the property of ${escapeHtml(restName)} and must be returned upon separation.</li>
+            <li>The cardholder is responsible for safeguarding this ID card at all times.</li>
+            <li>Loss or theft must be reported to HR immediately.</li>
+            <li>This card must be worn visibly while on premises during working hours.</li>
+            <li>Misuse or transfer of this card to another person is strictly prohibited.</li>
+            <li>Access granted by this card is limited to areas required for your role.</li>
+            <li>Tampering with this card will result in immediate disciplinary action.</li>
+          </ul>
+        </div>
+        <div class="id-card-back-contact">
+          ${address ? `<div>📍 ${escapeHtml(address)}</div>` : ''}
+          ${phone   ? `<div>📞 ${escapeHtml(phone)}</div>` : ''}
+          ${hrContact ? `<div>👤 HR: ${escapeHtml(hrContact)}</div>` : ''}
+          <div style="margin-top:6px;font-size:8px;color:rgba(255,255,255,.25);">Authorised Signatory: ___________________</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function downloadIdCard() {
+  const emp = allStaff.find(s => s._uid === _idCardUid);
+  if (!emp) return;
+
+  // Use html2canvas if available, else fallback to print
+  if (typeof html2canvas !== 'undefined') {
+    const card = document.querySelector('#idcard-preview .id-card');
+    html2canvas(card, { scale: 3, backgroundColor: null }).then(canvas => {
+      const a = document.createElement('a');
+      a.download = `ID-${(emp.employeeId || emp.name || 'card').replace(/\s/g,'-')}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  } else {
+    // Fallback: print
+    const content = document.getElementById('idcard-preview').innerHTML;
+    const win = window.open('', '_blank', 'width=400,height=600');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <style>
+        body{margin:0;background:#000;display:flex;justify-content:center;padding:20px;font-family:'DM Sans',sans-serif;}
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap');
+        ${document.querySelector('style') ? '' : ''}
+      </style>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+    </head><body>${content}</body></html>`);
+    win.document.close();
+    setTimeout(() => { win.print(); }, 800);
+  }
+}
+
+// ── ORDER EDIT SETTINGS ────────────────────────
+async function saveOrderEditSettings() {
+  const editWindow   = parseInt(document.getElementById('s-edit-window')?.value || '10');
+  const editWaiter   = document.getElementById('s-edit-waiter')?.checked  || false;
+  const editChef     = document.getElementById('s-edit-chef')?.checked    || false;
+  const editCustomer = document.getElementById('s-edit-customer')?.checked || false;
+
+  try {
+    await db.collection('settings').doc('global').set({
+      orderEditWindow: isNaN(editWindow) ? 10 : editWindow,
+      orderEditWaiter:   editWaiter,
+      orderEditChef:     editChef,
+      orderEditCustomer: editCustomer
+    }, { merge: true });
+    const msg = document.getElementById('edit-rules-msg');
+    msg.style.display = 'block'; setTimeout(() => msg.style.display='none', 2500);
+    toast('Order edit rules saved', 'success');
+  } catch(e) { toast('Save failed', 'error'); }
+}
+  
 // ── EMPLOYEE ID SYSTEM ─────────────────────────
 function getEmpPrefix() {
   // Manual prefix wins; falls back to first 3 letters of restaurant name
@@ -4058,7 +4408,7 @@ function openStaffProfile(uid) {
   document.getElementById('spm-email-val').textContent = emp.email || '—';
   document.getElementById('spm-empid-val').textContent = empId;
   document.getElementById('spm-joined-val').textContent = joined;
-  document.getElementById('spm-role').value = emp.role || 'waiter';
+document.getElementById('spm-role').value = emp.role || 'waiter';
   document.getElementById('spm-status').value = emp.status || 'active';
   document.getElementById('spm-fname').value = emp.fatherName || '';
   document.getElementById('spm-phone').value = emp.phone || '';
@@ -4066,7 +4416,21 @@ function openStaffProfile(uid) {
   document.getElementById('spm-notes').value = emp.notes || '';
   document.getElementById('spm-pin').value = '';
   document.getElementById('spm-frozen').value = emp.frozen ? 'true' : 'false';
+  document.getElementById('spm-emergency-name').value  = emp.emergencyName  || '';
+  document.getElementById('spm-emergency-phone').value = emp.emergencyPhone || '';
+  document.getElementById('spm-shift').value = emp.shift || 'day';
   document.getElementById('spm-err').textContent = '';
+
+  // Photo preview
+  const photoPreview = document.getElementById('spm-photo-preview');
+  if (photoPreview) {
+    if (emp.photo) {
+      photoPreview.innerHTML = `<img src="${emp.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+    } else {
+      photoPreview.innerHTML = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    }
+  }
+  _spmCurrentPhoto = emp.photo || null;
 
   document.getElementById('staff-profile-overlay').classList.add('open');
 }
@@ -4098,8 +4462,15 @@ async function saveStaffProfile() {
   const emp = allStaff.find(s => s._uid === _spmUid);
   if (!emp) return;
 
-  const update = { role, status, frozen, fatherName: fname, phone, address, notes, active: !frozen };
+const emergencyName  = document.getElementById('spm-emergency-name').value.trim();
+  const emergencyPhone = document.getElementById('spm-emergency-phone').value.trim();
+  const shift          = document.getElementById('spm-shift').value;
+  const update = {
+    role, status, frozen, fatherName: fname, phone, address, notes,
+    active: !frozen, emergencyName, emergencyPhone, shift
+  };
   if (posPin !== undefined) update.posPin = posPin;
+  if (_spmCurrentPhoto !== undefined) update.photo = _spmCurrentPhoto || '';
 
   try {
     await db.collection('employees').doc(_spmUid).update(update);
@@ -4139,12 +4510,16 @@ async function saveBrandingSettings() {
   const name    = document.getElementById('s-rest-name').value.trim();
   const tagline = document.getElementById('s-tagline').value.trim();
   const footer  = document.getElementById('s-footer').value.trim();
-  const rawPrefix = (document.getElementById('s-emp-prefix')?.value || '').trim().toUpperCase();
-  const empPrefix = rawPrefix.length >= 2 ? rawPrefix : ''; // blank = use auto-derive
+const rawPrefix        = (document.getElementById('s-emp-prefix')?.value || '').trim().toUpperCase();
+  const empPrefix        = rawPrefix.length >= 2 ? rawPrefix : '';
+  const restaurantAddress = (document.getElementById('s-rest-address')?.value || '').trim();
+  const restaurantPhone   = (document.getElementById('s-rest-phone')?.value   || '').trim();
+  const hrContact         = (document.getElementById('s-hr-contact')?.value   || '').trim();
   if (!name) { toast('Enter a restaurant name','error'); return; }
   try {
     await db.collection('settings').doc('global').set(
-      { restaurantName: name, tagline, receiptFooter: footer, empPrefix }, { merge: true }
+      { restaurantName: name, tagline, receiptFooter: footer, empPrefix,
+        restaurantAddress, restaurantPhone, hrContact }, { merge: true }
     );
     settings.restaurantName = name; settings.tagline = tagline;
     settings.receiptFooter = footer; settings.empPrefix = empPrefix;
@@ -5158,6 +5533,7 @@ function renderStaffList() {
       </div>
 <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
 <button class="btn btn-gold btn-sm" onclick="openStaffProfile('${s._uid}')" style="font-size:11px;padding:6px 14px;">View Profile</button>
+        <button class="btn btn-ghost btn-sm" onclick="openIdCard('${s._uid}')" style="font-size:11px;">🪪 ID Card</button>
         <button class="btn btn-ghost btn-sm" onclick="openStaffStatusModal('${s._uid}')" style="font-size:11px;">⚙ Manage</button>
         <button class="btn btn-ghost btn-sm" onclick="resendStaffInvite('${s._uid}')" style="font-size:11px;">📧 Invite</button>
         <button class="btn btn-red btn-sm" onclick="confirmDeleteStaff('${s._uid}','${escapeHtml(s.name||'')}')" style="font-size:11px;">🗑 Delete</button>
@@ -5222,9 +5598,14 @@ async function submitAddStaff() {
     const seqNum = await getNextEmployeeSeq();
     const employeeId = buildEmployeeId(seqNum);
 
+const emergencyName  = (document.getElementById('st-emergency-name')?.value  || '').trim();
+    const emergencyPhone = (document.getElementById('st-emergency-phone')?.value || '').trim();
+    const shift          = document.getElementById('st-shift')?.value || 'day';
+
     await db.collection('employees').doc(uid).set({
       name, fatherName: fname, email, phone, role,
       joining, address, notes,
+      emergencyName, emergencyPhone, shift,
       status:    'active',
       active:    true,
       frozen:    false,
