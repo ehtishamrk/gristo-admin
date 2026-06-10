@@ -5770,13 +5770,12 @@ async function confirmDeleteStaff(uid, name) {
     }
 // Delete presence doc if exists
     await db.collection('presence').doc(uid).delete().catch(()=>{});
-    // Delete Firebase Auth account so the email can be re-registered later
-    try {
-      const deleteAuthUser = firebase.functions().httpsCallable('deleteAuthUser');
-      await deleteAuthUser({ uid });
-    } catch (authErr) {
-      console.warn('Auth deletion failed:', authErr.message);
-    }
+    // Log deleted Auth account for manual Firebase Console cleanup
+    await db.collection('deleted_auth_uids').doc(uid).set({
+      email: emp?.email || '',
+      name: name,
+      deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
     toast(`${name} deleted`, 'success');
   } catch(e) {
     toast('Error deleting staff: ' + e.message, 'error');
