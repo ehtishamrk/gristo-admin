@@ -2287,6 +2287,7 @@ adminSettingsListener = db.collection('settings').doc('global').onSnapshot(snap 
     }
     applyLogoEverywhere(d.restaurantLogo || null);
   }, err => console.warn('admin settings listener:', err));
+}
 
 startAdminSettingsListener();
   
