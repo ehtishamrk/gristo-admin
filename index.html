@@ -5968,7 +5968,7 @@ function renderPurchaseOrders() {
     return `
       <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-          <div style="font-weight:700;font-size:15px;">Purchase Request</div>
+          <div style="font-weight:700;font-size:15px;">${po.type === 'menu_removal_request' ? '🚫 Menu 86 Request' : 'Purchase Request'}</div>
           <span class="badge" style="color:${statusColor};border:1px solid ${statusColor};">${escHtml(po.status || 'pending')}</span>
           <span style="color:var(--td);font-size:12px;">${fmtAdminTs(po.createdAt)}</span>
           <span style="color:var(--tm);font-size:12px;">By ${escHtml(po.requestedBy || 'Chef')}</span>
